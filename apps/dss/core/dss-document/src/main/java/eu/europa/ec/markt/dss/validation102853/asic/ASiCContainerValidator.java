@@ -489,32 +489,43 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 		return signatureList;
 	}
 
-	@Override
-	public DSSDocument removeSignature(String signatureId) throws DSSException {
+  @Override
+  public DSSDocument removeSignature(String signatureId) throws DSSException {
     if (DSSUtils.isBlank(signatureId)) {
       throw new DSSNullException(String.class, "signatureId");
     }
-
     for (int i = 0; i < signatures.size(); i++) {
-      DSSDocument signature = signatures.get(i);
-      Document root = DSSXMLUtils.buildDOM(signature);
-      final Element signatureEl = (Element)root.getDocumentElement().getFirstChild();
-      final String idIdentifier = DSSXMLUtils.getIDIdentifier(signatureEl);
+      final String idIdentifier = getSignatureId(i);
       if (signatureId.equals(idIdentifier)) {
         signatures.remove(i);
-        Document signatureDOM = DSSXMLUtils.createDocument(ASiCService.ASICS_URI, ASiCService.ASICS_NS);
-        for (int j = 0; j < signatures.size(); j++) {
-          Document doc = DSSXMLUtils.buildDOM(signature);
-          Node signatureElement = doc.getDocumentElement().getFirstChild();
-
-          final Element newElement = signatureDOM.getDocumentElement();
-          signatureDOM.adoptNode(signatureElement);
-          newElement.appendChild(signatureElement);
-        }
-        return new InMemoryDocument(DSSXMLUtils.serializeNode(signatureDOM));
+        return getSignaturesAsDocument();
       }
     }
     throw new DSSException("The signature with the given id was not found!");
-	}
+  }
+
+  private String getSignatureId(int i) {
+    DSSDocument signature = signatures.get(i);
+    Document root = DSSXMLUtils.buildDOM(signature);
+    final Element signatureEl = (Element)root.getDocumentElement().getFirstChild();
+
+    return DSSXMLUtils.getIDIdentifier(signatureEl);
+  }
+
+  private DSSDocument getSignaturesAsDocument() {
+    DSSDocument signaturesAsDocument = createEmptySignatureDocument();
+    for (int j = 0; j < signatures.size(); j++) {
+      if (j == 0)
+        signaturesAsDocument = signatures.get(j);
+      else
+        signaturesAsDocument.setNextDocument(signatures.get(j));
+    }
+    return signaturesAsDocument;
+  }
+
+  private DSSDocument createEmptySignatureDocument() {
+    Document signatureDOM = DSSXMLUtils.createDocument(ASiCService.ASICS_URI, ASiCService.ASICS_NS);
+    return new InMemoryDocument(DSSXMLUtils.serializeNode(signatureDOM));
+  }
 
 }
