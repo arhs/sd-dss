@@ -221,7 +221,8 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			// TODO (29/08/2014): DSS-356
 			return new PDFDocumentValidator(dssDocument);
 		} else if (preamble[0] == 'P' && preamble[1] == 'K') {
-			return ASiCContainerValidator.getInstanceForAsics(dssDocument, preamble);
+
+			return ASiCContainerValidator.getInstanceForAsics(dssDocument);
 		} else if (preambleString.getBytes()[0] == 0x30) {
 
 			return new CMSDocumentValidator(dssDocument);
