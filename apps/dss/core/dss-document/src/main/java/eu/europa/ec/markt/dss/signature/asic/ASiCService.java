@@ -64,7 +64,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.*;
 
 /**
@@ -97,7 +99,7 @@ public class ASiCService extends AbstractSignatureService {
    * This is the constructor to create an instance of the {@code ASiCService}. A certificate verifier must be provided.
    *
    * @param certificateVerifier {@code CertificateVerifier} provides information on the sources to be used in the
-   *                                                       validation process in the context of a signature.
+   *                            validation process in the context of a signature.
    */
   public ASiCService(final CertificateVerifier certificateVerifier) {
 
@@ -201,34 +203,40 @@ public class ASiCService extends AbstractSignatureService {
       DSSException {
 
     final DocumentValidator validator = SignedDocumentValidator.fromDocument(toExtendDocument);
-    final DocumentValidator subordinatedValidator = validator.getSubordinatedValidator();
-    final DSSDocument signature = subordinatedValidator.getDocument();
+    DocumentValidator subordinatedValidator = validator.getSubordinatedValidator();
+
     final DSSDocument detachedContents = getDetachedContents(subordinatedValidator, parameters.getDetachedContent());
     final DocumentSignatureService specificService = getSpecificService(parameters);
     specificService.setTspSource(tspSource);
 
     final SignatureParameters xadesParameters = getParameters(parameters);
     xadesParameters.setDetachedContent(detachedContents);
-    final DSSDocument signedDocument = specificService.extendDocument(signature, xadesParameters);
+
+    Map<String, DSSDocument> updatedDocuments = new HashMap<String, DSSDocument>();
+    do {
+      final DSSDocument signature = subordinatedValidator.getDocument();
+      updatedDocuments.put(signature.getName(), specificService.extendDocument(signature, xadesParameters));
+      subordinatedValidator = subordinatedValidator.getNextValidator();
+    } while (subordinatedValidator != null);
 
     final ByteArrayOutputStream output = new ByteArrayOutputStream();
     final ZipOutputStream zip = new ZipOutputStream(output);
-
     final ZipInputStream input = new ZipInputStream(toExtendDocument.openStream());
     ZipEntry entry;
+
     while ((entry = getNextZipEntry(input)) != null) {
-
-      ZipEntry newEntry = new ZipEntry(entry.getName());
-      if (ZIP_ENTRY_ASICS_METAINF_XADES_SIGNATURE.equals(entry.getName())) {
-
+      String entryName = entry.getName();
+      ZipEntry newEntry = new ZipEntry(entryName);
+      DSSDocument updatedDocument = updatedDocuments.get(entryName);
+      if (updatedDocument != null) {
         createZipEntry(zip, newEntry);
-        DSSUtils.copy(signedDocument.openStream(), zip);
+        DSSUtils.copy(updatedDocument.openStream(), zip);
       } else {
-
         createZipEntry(zip, newEntry);
         DSSUtils.copy(input, zip);
       }
     }
+
     DSSUtils.close(zip);
     return new InMemoryDocument(output.toByteArray());
   }
@@ -768,7 +776,8 @@ public class ASiCService extends AbstractSignatureService {
   protected DocumentSignatureService getSpecificService(final SignatureParameters specificParameters) {
 
     final SignatureForm asicSignatureForm = specificParameters.aSiC().getUnderlyingForm();
-    final DocumentSignatureService underlyingASiCService = specificParameters.getContext().getUnderlyingASiCService(certificateVerifier, asicSignatureForm);
+    final DocumentSignatureService underlyingASiCService = specificParameters.getContext().getUnderlyingASiCService
+        (certificateVerifier, asicSignatureForm);
     underlyingASiCService.setTspSource(tspSource);
     return underlyingASiCService;
   }
