@@ -34,14 +34,17 @@ import eu.europa.ec.markt.dss.signature.ProfileParameters.Operation;
 import eu.europa.ec.markt.dss.validation102853.*;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
 import eu.europa.ec.markt.dss.validation102853.xades.XAdESSignature;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.dsig.XMLSignature;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -204,7 +207,34 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 			final String base64EncodeCertificate = DSSUtils.base64Encode(bytes);
 			DSSXMLUtils.addTextElement(documentDom, certificateValuesDom, XAdESNamespaces.XAdES, "xades:EncapsulatedX509Certificate", base64EncodeCertificate);
 		}
-	}
+
+    //todo CB experimental
+    final Set<CertificateToken> ocspResponderCerts = new HashSet<CertificateToken>();
+    Set<RevocationToken> processedRevocations = valContext.getProcessedRevocations();
+
+    if (processedRevocations.size() == 0)
+      throw new DSSException("OCSP request failed");
+
+    RevocationToken next = processedRevocations.iterator().next();
+    if (next instanceof OCSPToken) {
+      X500Name name = ((OCSPToken) next).getBasicOCSPResp().getResponderId().toASN1Object().getName();
+      X500Principal principal = null;
+      try {
+        principal = new X500Principal(name.getEncoded());
+      } catch (IOException e) {
+        throw new DSSException("OCSP response certificate load fails for " + principal.getName());
+      }
+      ocspResponderCerts.addAll(certificateVerifier.getTrustedCertSource().get(principal));
+    }
+    for (final CertificateToken certificateToken : ocspResponderCerts) {
+      final byte[] bytes = certificateToken.getEncoded();
+      final String base64EncodeCertificate = DSSUtils.base64Encode(bytes);
+      Element element = DSSXMLUtils.addElement(documentDom, certificateValuesDom, XAdESNamespaces.XAdES,
+          "xades:EncapsulatedX509Certificate");
+      element.setAttribute("Id", xadesSignature.getId() + "-RESPONDER_CERT");
+      DSSXMLUtils.setTextNode(documentDom, element, base64EncodeCertificate);
+    }
+  }
 
 	/**
 	 * Creates XAdES TimeStamp object representation. The time stamp token is obtained from TSP source
