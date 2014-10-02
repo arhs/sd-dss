@@ -204,12 +204,12 @@ public class ASiCService extends AbstractSignatureService {
 
     final DocumentValidator validator = SignedDocumentValidator.fromDocument(toExtendDocument);
     DocumentValidator subordinatedValidator = validator.getSubordinatedValidator();
-
-    final DSSDocument detachedContents = getDetachedContents(subordinatedValidator, parameters.getDetachedContent());
     final DocumentSignatureService specificService = getSpecificService(parameters);
     specificService.setTspSource(tspSource);
 
     final SignatureParameters xadesParameters = getParameters(parameters);
+    final DSSDocument detachedContent = parameters.getDetachedContent();
+    final DSSDocument detachedContents = getDetachedContents(subordinatedValidator, detachedContent);
     xadesParameters.setDetachedContent(detachedContents);
 
     Map<String, DSSDocument> updatedDocuments = new HashMap<String, DSSDocument>();
@@ -232,11 +232,11 @@ public class ASiCService extends AbstractSignatureService {
         createZipEntry(zip, newEntry);
         DSSUtils.copy(updatedDocument.openStream(), zip);
       } else {
+
         createZipEntry(zip, newEntry);
         DSSUtils.copy(input, zip);
       }
     }
-
     DSSUtils.close(zip);
     return new InMemoryDocument(output.toByteArray());
   }
@@ -288,7 +288,6 @@ public class ASiCService extends AbstractSignatureService {
 
     final ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
     ZipOutputStream zipOutputStream = new ZipOutputStream(outBytes);
-
     if (asice && signDocument != null) {
 
       copyZipContent(signDocument, zipOutputStream);
@@ -399,6 +398,7 @@ public class ASiCService extends AbstractSignatureService {
   }
 
   private static void createZipEntry(final ZipOutputStream outZip, final ZipEntry entrySignature) throws DSSException {
+
     try {
       outZip.putNextEntry(entrySignature);
     } catch (IOException e) {
@@ -608,6 +608,7 @@ public class ASiCService extends AbstractSignatureService {
     if (isXAdESForm(asicParameters)) {
 
       if (asice && enclosedSignature != null) {
+
         return META_INF + asicParameters.getSignatureFileName();
       } else {
         if (asice && asicParameters.getSignatureFileName() != null)
@@ -771,13 +772,13 @@ public class ASiCService extends AbstractSignatureService {
    * This method returns the specific service associated with the container: XAdES or CAdES.
    *
    * @param specificParameters {@code DocumentSignatureService}
-   * @return service
+   * @return
    */
   protected DocumentSignatureService getSpecificService(final SignatureParameters specificParameters) {
 
     final SignatureForm asicSignatureForm = specificParameters.aSiC().getUnderlyingForm();
-    final DocumentSignatureService underlyingASiCService = specificParameters.getContext().getUnderlyingASiCService
-        (certificateVerifier, asicSignatureForm);
+    final DocumentSignatureService underlyingASiCService = specificParameters.getContext().getUnderlyingASiCService(
+        certificateVerifier, asicSignatureForm);
     underlyingASiCService.setTspSource(tspSource);
     return underlyingASiCService;
   }
