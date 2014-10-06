@@ -1,7 +1,8 @@
 /*
  * DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
+ * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT),
+ * B-1049 Bruxelles/Brussel
  *
  * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
  *
@@ -29,11 +30,11 @@
  */
 package eu.europa.ec.markt.dss.signature;
 
+import eu.europa.ec.markt.dss.DSSUtils;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-
-import eu.europa.ec.markt.dss.DSSUtils;
 
 /**
  * TODO
@@ -45,78 +46,80 @@ import eu.europa.ec.markt.dss.DSSUtils;
  */
 public enum MimeType {
 
-	BINARY("application/octet-stream"), XML("text/xml"), PDF("application/pdf"), PKCS7("application/pkcs7-signature"), ASICS("application/vnd.etsi.asic-s+zip"), ASICE(
-		  "application/vnd.etsi.asic-e+zip"), TEXT("text/plain");
+  BINARY("application/octet-stream"), XML("text/xml"), PDF("application/pdf"), PKCS7("application/pkcs7-signature"),
+  ASICS("application/vnd.etsi.asic-s+zip"), ASICE(
+      "application/vnd.etsi.asic-e+zip"), TEXT("text/plain");
 
-	private String code;
+  private String code;
 
-	private static Map<String, MimeType> fileExtensions = new HashMap<String, MimeType>() {{
-		put("xml", XML);
-		put("pdf", PDF);
-		put("asics", ASICS);
-		put("scs", ASICS);
-		put("asice", ASICE);
-		put("bdoc", ASICE); // estonian bdoc file type is handled as asic-e document
-		put("sce", ASICE);
-		put("txt", TEXT);
-	}};
+  private static Map<String, MimeType> fileExtensions = new HashMap<String, MimeType>() {{
+    put("xml", XML);
+    put("pdf", PDF);
+    put("asics", ASICS);
+    put("scs", ASICS);
+    put("asice", ASICE);
+    put("bdoc", ASICE); // estonian bdoc file type is handled as asic-e document
+    put("sce", ASICE);
+    put("txt", TEXT);
+  }};
 
-	/**
-	 * The default constructor for MimeTypes.
-	 */
-	private MimeType(final String code) {
-		this.code = code;
-	}
+  /**
+   * The default constructor for MimeTypes.
+   */
+  private MimeType(final String code) {
+    this.code = code;
+  }
 
-	/**
-	 * @return the code
-	 */
-	public String getCode() {
-		return code;
-	}
+  /**
+   * @return the code
+   */
+  public String getCode() {
+    return code;
+  }
 
-	public static MimeType fromFileName(final String name) {
+  public static MimeType fromFileName(final String name) {
 
-		final String inLowerCaseName = name.toLowerCase();
-		final String fileExtension = DSSUtils.getFileExtension(inLowerCaseName);
-		final MimeType mimeType = fileExtensions.get(fileExtension);
-		if (mimeType != null) {
-			return mimeType;
-		}
-		return BINARY;
-	}
+    final String inLowerCaseName = name.toLowerCase();
+    final String fileExtension = DSSUtils.getFileExtension(inLowerCaseName);
+    final MimeType mimeType = fileExtensions.get(fileExtension);
+    if (mimeType != null) {
+      return mimeType;
+    }
+    return BINARY;
+  }
 
-	/**
-	 * This method returns the mime-type extrapolated from the file name. In case of a zip container its content is analysed to determinate if it is an ASiC signature.
-	 *
-	 * @param file the file to be analysed
-	 * @return the extrapolated mime-type of the file
-	 */
-	public static MimeType fromFile(final File file) {
+  /**
+   * This method returns the mime-type extrapolated from the file name. In case of a zip container its content is
+   * analysed to determinate if it is an ASiC signature.
+   *
+   * @param file the file to be analysed
+   * @return the extrapolated mime-type of the file
+   */
+  public static MimeType fromFile(final File file) {
 
-		final String fileName = file.getName();
-		final MimeType mimeType = fromFileName(fileName);
-		return mimeType;
-	}
+    final String fileName = file.getName();
+    final MimeType mimeType = fromFileName(fileName);
+    return mimeType;
+  }
 
-	public static MimeType fromCode(final String mimeTypeString) {
+  public static MimeType fromCode(final String mimeTypeString) {
 
-		for (final MimeType mimeType : values()) {
+    for (final MimeType mimeType : values()) {
 
-			if (mimeType.code.equals(mimeTypeString)) {
-				return mimeType;
-			}
-		}
-		return null;
-	}
+      if (mimeType.code.equals(mimeTypeString)) {
+        return mimeType;
+      }
+    }
+    return null;
+  }
 
-	/**
-	 * This method allows to define a new relationship between a file extension and a {@code MimeType}.
-	 *
-	 * @param extension to be defined. Example: "txt", note that there is no point before the extension name.
-	 */
-	public void defineFileExtension(final String extension) {
+  /**
+   * This method allows to define a new relationship between a file extension and a {@code MimeType}.
+   *
+   * @param extension to be defined. Example: "txt", note that there is no point before the extension name.
+   */
+  public void defineFileExtension(final String extension) {
 
-		fileExtensions.put(extension, this);
-	}
+    fileExtensions.put(extension, this);
+  }
 }
