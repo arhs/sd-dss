@@ -90,6 +90,7 @@ import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPRef;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.toolbox.XPointerResourceResolver;
+import eu.europa.ec.markt.dss.validation102853.xades.xmldsig.DSSXMLSignature;
 
 /**
  * Parse an XAdES signature structure. Note that for each signature to be validated a new instance of this object must be created.
@@ -1215,7 +1216,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 		DSSXMLUtils.recursiveIdBrowse(rootElement);
 		try {
 
-			final XMLSignature santuarioSignature = new XMLSignature(signatureElement, "");
+			final DSSXMLSignature santuarioSignature = new DSSXMLSignature(signatureElement, "");
 			santuarioSignature.addResourceResolver(new XPointerResourceResolver(signatureElement));
 			santuarioSignature.addResourceResolver(new OfflineResolver(detachedContents));
 
@@ -1285,7 +1286,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	 * @return the {@code List} of the {@code SigningCertificateValidity}
 	 * @throws KeyResolverException
 	 */
-	private List<SigningCertificateValidity> getSigningCertificateValidityList(final XMLSignature santuarioSignature, SignatureCryptographicVerification scv,
+	private List<SigningCertificateValidity> getSigningCertificateValidityList(final DSSXMLSignature santuarioSignature, SignatureCryptographicVerification scv,
 	                                                                           final CertificateToken providedSigningCertificate) throws KeyResolverException {
 
 		List<SigningCertificateValidity> signingCertificateValidityList;
