@@ -20,14 +20,6 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.bouncycastle.cert.ocsp.BasicOCSPResp;
-
 import eu.europa.ec.markt.dss.DSSRevocationUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
@@ -40,6 +32,10 @@ import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
 import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * TODO <p/> <p/> DISCLAIMER: Project owner DG-MARKT.
@@ -47,7 +43,7 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
-public abstract class DefaultAdvancedSignature implements AdvancedSignature {
+public abstract class DefaultAdvancedSignature implements AdvancedSignature, Serializable {
 
 	/**
 	 * This is the reference to the global (external) pool of certificates. All encapsulated certificates in the signature are added to this pool. See {@link
