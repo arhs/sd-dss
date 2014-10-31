@@ -22,6 +22,7 @@ package eu.europa.ec.markt.dss.validation102853.tsp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.URLConnection;
 
@@ -45,7 +46,7 @@ import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
  * @version $Revision$ - $Date$
  */
 
-public class OnlineTSPSource implements TSPSource {
+public class OnlineTSPSource implements TSPSource, Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(OnlineTSPSource.class);
 
