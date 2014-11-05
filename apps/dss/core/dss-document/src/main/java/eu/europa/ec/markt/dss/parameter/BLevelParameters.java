@@ -157,7 +157,7 @@ public class BLevelParameters implements Serializable {
    * postalAdddress [2] PostalAddress OPTIONAL }
    * PostalAddress ::= SEQUENCE SIZE(1..6) OF DirectoryString
    */
-  public static class SignerLocation {
+  public static class SignerLocation implements Serializable {
 
     private String country;
 

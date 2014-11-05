@@ -19,12 +19,14 @@
  */
 package eu.europa.ec.markt.dss.validation102853.bean;
 
+import java.io.Serializable;
+
 /**
  * This class represents the information concerning the signature production place.
  *
  * @author bielecro
  */
-public class SignatureProductionPlace {
+public class SignatureProductionPlace implements Serializable {
 
     private String City;
     private String StateOrProvince;

@@ -19,17 +19,18 @@
  */
 package eu.europa.ec.markt.dss.validation102853.bean;
 
-import java.security.PublicKey;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder;
 
+import java.io.Serializable;
+import java.security.PublicKey;
+
 /**
  * This class stores the information about the validity of the signing certificate.
  */
-public class SigningCertificateValidity {
+public class SigningCertificateValidity implements Serializable {
 
 	/**
 	 * This field is used when only the public key is available (non AdES signature)

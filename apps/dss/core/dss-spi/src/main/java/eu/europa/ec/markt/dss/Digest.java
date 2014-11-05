@@ -29,6 +29,8 @@
  */
 package eu.europa.ec.markt.dss;
 
+import java.io.Serializable;
+
 /**
  * Container for a Digest and his algorithm
  *  
@@ -37,7 +39,7 @@ package eu.europa.ec.markt.dss;
  * @version $Revision: 672 $ - $Date: 2011-05-12 11:59:21 +0200 (Thu, 12 May 2011) $
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  */
-public class Digest {
+public class Digest implements Serializable {
 
     private DigestAlgorithm algorithm;
     
