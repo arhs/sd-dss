@@ -201,7 +201,6 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 		final String dssDocumentName = dssDocument.getName();
 		if (dssDocumentName != null && MimeType.XML.equals(MimeType.fromFileName(dssDocumentName))) {
-
 			return new XMLDocumentValidator(dssDocument);
 		}
 
@@ -221,7 +220,9 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			// TODO (29/08/2014): DSS-356
 			return new PDFDocumentValidator(dssDocument);
 		} else if (preamble[0] == 'P' && preamble[1] == 'K') {
-
+			if (dssDocument.getMimeType() != MimeType.ASICE) {
+				return null;
+			}
 			return ASiCContainerValidator.getInstanceForAsics(dssDocument);
 		} else if (preambleString.getBytes()[0] == 0x30) {
 
