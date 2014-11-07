@@ -91,6 +91,8 @@ public class CommonsDataLoader implements DataLoader {
 
 	protected String contentType;
 
+	protected String userAgent;
+
 	// TODO: (Bob: 2014 Jan 28) It should be taken into account: Content-Transfer-Encoding if it is not the default value.
 	// TODO: (Bob: 2014 Jan 28) It is extracted from: https://joinup.ec.europa.eu/software/sd-dss/issue/dss-41-tsa-service-basic-auth
 	// tsaConnection.setRequestProperty("Content-Transfer-Encoding", "binary");
@@ -419,7 +421,9 @@ public class CommonsDataLoader implements DataLoader {
 			if (contentType != null) {
 				httpRequest.setHeader(CONTENT_TYPE, contentType);
 			}
-
+			if (userAgent != null ) {
+				httpRequest.setHeader("User-Agent", userAgent);
+			}
 			httpResponse = getHttpResponse(httpRequest, url);
 
 			final byte[] returnedBytes = readHttpResponse(url, httpResponse);
@@ -551,6 +555,16 @@ public class CommonsDataLoader implements DataLoader {
 
 		this.contentType = contentType;
 	}
+
+	/**
+	 * Sets HTTP header User-Agent value. If userAgent is not set then nothing is put to HTTP User-Agent header
+	 *
+	 * @param userAgent  user agent value
+	 */
+	public void setUserAgent(String userAgent) {
+		this.userAgent = userAgent;
+	}
+
 
 	/**
 	 * @param proxyPreferenceManager the proxyPreferenceManager to set
