@@ -676,9 +676,9 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 
 		final String keyUsage = certificateXmlDom.getValue("./KeyUsage/text()");
 		final String expectedKeyUsage = constraint.getExpectedValue();
-		final boolean contains = keyUsage.contains(expectedKeyUsage);
+
 		constraint.create(validationDataXmlNode, BBB_XCV_ISCGKU);
-		constraint.setValue(contains);
+		constraint.setValue(keyUsage.contains(expectedKeyUsage) == true ? expectedKeyUsage : "false");
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_XCV_ISCGKU_ANS);
 		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		constraint.setConclusionReceiver(conclusion);

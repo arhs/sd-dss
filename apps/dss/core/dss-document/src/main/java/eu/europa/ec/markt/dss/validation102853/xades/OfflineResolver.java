@@ -17,6 +17,8 @@
 package eu.europa.ec.markt.dss.validation102853.xades;
 
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.List;
 
 import org.apache.xml.security.Init;
@@ -62,7 +64,12 @@ public class OfflineResolver extends ResourceResolverSpi {
 		final Attr uriAttr = context.attr;
 		final String baseUriString = context.baseUri;
 
-		String documentUri = uriAttr.getNodeValue();
+    String documentUri = null;
+    try {
+      documentUri = URLDecoder.decode(uriAttr.getNodeValue(), "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      documentUri = uriAttr.getNodeValue();
+    }
 		if (documentUri.equals("") || documentUri.startsWith("#")) {
 			return false;
 		}
@@ -98,7 +105,15 @@ public class OfflineResolver extends ResourceResolverSpi {
 
 		final Attr uriAttr = context.attr;
 		final String baseUriString = context.baseUri;
-		String uriNodeValue = uriAttr.getNodeValue();
+
+    String uriNodeValue = null;
+    try {
+      uriNodeValue = URLDecoder.decode(uriAttr.getNodeValue(), "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      uriNodeValue = uriAttr.getNodeValue();
+    }
+
+
 		final DSSDocument document = getDocument(uriNodeValue);
 		if (document != null) {
 

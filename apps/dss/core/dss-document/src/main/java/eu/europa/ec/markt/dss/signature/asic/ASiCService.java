@@ -34,7 +34,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -203,7 +205,7 @@ public class ASiCService extends AbstractSignatureService {
 	public DSSDocument extendDocument(final DSSDocument toExtendDocument, final SignatureParameters parameters) throws DSSException {
 
 		final DocumentValidator validator = SignedDocumentValidator.fromDocument(toExtendDocument);
-		final DocumentValidator subordinatedValidator = validator.getSubordinatedValidator();
+    DocumentValidator subordinatedValidator = validator.getSubordinatedValidator();
 		final DocumentSignatureService specificService = getSpecificService(parameters);
 		specificService.setTspSource(tspSource);
 
@@ -211,21 +213,26 @@ public class ASiCService extends AbstractSignatureService {
 		final DSSDocument detachedContent = parameters.getDetachedContent();
 		final DSSDocument detachedContents = getDetachedContents(subordinatedValidator, detachedContent);
 		xadesParameters.setDetachedContent(detachedContents);
+
+    Map<String, DSSDocument> updatedDocuments = new HashMap<String, DSSDocument>();
+    do {
 		final DSSDocument signature = subordinatedValidator.getDocument();
-		final DSSDocument signedDocument = specificService.extendDocument(signature, xadesParameters);
+      updatedDocuments.put(signature.getName(), specificService.extendDocument(signature, xadesParameters));
+      subordinatedValidator = subordinatedValidator.getNextValidator();
+    } while (subordinatedValidator != null);
 
 		final ByteArrayOutputStream output = new ByteArrayOutputStream();
 		final ZipOutputStream zip = new ZipOutputStream(output);
 		final ZipInputStream input = new ZipInputStream(toExtendDocument.openStream());
 		ZipEntry entry;
-		while ((entry = getNextZipEntry(input)) != null) {
 
-			final String name = entry.getName();
-			final ZipEntry newEntry = new ZipEntry(name);
-			if (ASiCContainerValidator.isXAdES(name) || ASiCContainerValidator.isCAdES(name)) {
-
+    while ((entry = getNextZipEntry(input)) != null) {
+      String entryName = entry.getName();
+      ZipEntry newEntry = new ZipEntry(entryName);
+      DSSDocument updatedDocument = updatedDocuments.get(entryName);
+      if (updatedDocument != null) {
 				createZipEntry(zip, newEntry);
-				DSSUtils.copy(signedDocument.openStream(), zip);
+        DSSUtils.copy(updatedDocument.openStream(), zip);
 			} else {
 
 				createZipEntry(zip, newEntry);
@@ -270,14 +277,16 @@ public class ASiCService extends AbstractSignatureService {
 		return null;
 	}
 
-	private InMemoryDocument buildASiCContainer(final DSSDocument toSignDocument, DSSDocument signDocument, final SignatureParameters underlyingParameters,
+	public InMemoryDocument buildASiCContainer(final DSSDocument toSignDocument, DSSDocument signDocument, final SignatureParameters underlyingParameters,
 	                                            final DSSDocument signature) {
+
+    final DSSDocument detachedDocument = underlyingParameters.getDetachedContent();
+    final String toSignDocumentName = detachedDocument.getName();
 
 		final ASiCParameters asicParameters = underlyingParameters.aSiC();
 		final boolean asice = isAsice(asicParameters);
 		final boolean cadesForm = isCAdESForm(asicParameters);
 
-		final String toSignDocumentName = toSignDocument.getName();
 
 		final ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
 		ZipOutputStream zipOutputStream = new ZipOutputStream(outBytes);
@@ -296,6 +305,8 @@ public class ASiCService extends AbstractSignatureService {
 
 		if (asice && cadesForm) {
 			storeAsicManifest(underlyingParameters, toSignDocument, zipOutputStream);
+    } else if (isAsice(asicParameters) && isXAdESForm(asicParameters)) {
+      storeManifest(toSignDocument, zipOutputStream);
 		}
 		DSSUtils.close(zipOutputStream);
 
@@ -305,15 +316,34 @@ public class ASiCService extends AbstractSignatureService {
 
 	private void copyZipContent(DSSDocument toSignAsicContainer, ZipOutputStream zipOutputStream) {
 		final ZipInputStream zipInputStream = new ZipInputStream(toSignAsicContainer.openStream());
-		for (ZipEntry entry = getNextZipEntry(zipInputStream); entry != null; entry = getNextZipEntry(zipInputStream)) {
 
+    for (ZipEntry entry = getNextZipEntry(zipInputStream); entry != null; entry = getNextZipEntry(zipInputStream)) {
+      if (entry.getName().equals("META-INF/manifest.xml"))
+        continue;
 			createZipEntry(zipOutputStream, entry);
 			DSSUtils.copy(zipInputStream, zipOutputStream);
 		}
+
 		DSSUtils.closeQuietly(zipInputStream);
 	}
 
-	private void storeAsicManifest(final SignatureParameters underlyingParameters, final DSSDocument detachedDocument, final ZipOutputStream outZip) {
+  private void storeManifest(DSSDocument document, ZipOutputStream outZip) {
+    Manifest manifest = new Manifest();
+    manifest.addFileEntry(document);
+    try {
+      outZip.putNextEntry(new ZipEntry("META-INF/manifest.xml"));
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      manifest.save(out);
+      outZip.write(out.toByteArray());
+    } catch (IOException e) {
+      LOG.error(e.getMessage());
+      throw new DSSException(e);
+    }
+  }
+
+
+  private void storeAsicManifest(final SignatureParameters underlyingParameters, final DSSDocument detachedDocument,
+                                 final ZipOutputStream outZip) {
 
 		final String signatureName = getSignatureFileName(underlyingParameters.aSiC());
 		final int indexOfSignature = signatureName.indexOf("signature");
@@ -573,6 +603,8 @@ public class ASiCService extends AbstractSignatureService {
 
 				return META_INF + asicParameters.getSignatureFileName();
 			} else {
+        if (asice && asicParameters.getSignatureFileName() != null)
+          return META_INF + asicParameters.getSignatureFileName();
 
 				return asice ? ZIP_ENTRY_ASICE_METAINF_XADES_SIGNATURE : ZIP_ENTRY_ASICS_METAINF_XADES_SIGNATURE;
 			}
