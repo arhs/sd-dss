@@ -323,7 +323,6 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	public XAdESCertificateSource getCertificateSource() {
 
 		if (certificatesSource == null) {
-
 			certificatesSource = new XAdESCertificateSource(signatureElement, xPathQueryHolder, certPool);
 		}
 		return certificatesSource;
@@ -340,15 +339,19 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	@Override
 	public OfflineCRLSource getCRLSource() {
 
-		final XAdESCRLSource xadesCRLSource = new XAdESCRLSource(signatureElement, xPathQueryHolder);
-		return xadesCRLSource;
+		if (offlineCRLSource == null) {
+			offlineCRLSource = new XAdESCRLSource(signatureElement, xPathQueryHolder);
+		}
+		return offlineCRLSource;
 	}
 
 	@Override
 	public OfflineOCSPSource getOCSPSource() {
 
-		final XAdESOCSPSource xadesOCSPSource = new XAdESOCSPSource(signatureElement, xPathQueryHolder);
-		return xadesOCSPSource;
+		if (offlineOCSPSource == null) {
+			offlineOCSPSource = new XAdESOCSPSource(signatureElement, xPathQueryHolder);
+		}
+		return offlineOCSPSource;
 	}
 
 	@Override
@@ -554,10 +557,10 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 		final Element policyIdentifier = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_SIGNATURE_POLICY_IDENTIFIER);
 		if (policyIdentifier != null) {
 
-         /* There is a policy */
+			// There is a policy
 			final Element policyId = DSSXMLUtils.getElement(policyIdentifier, xPathQueryHolder.XPATH__POLICY_ID);
 			if (policyId != null) {
-			/* Explicit policy */
+				// Explicit policy
 				final String policyIdString = policyId.getTextContent();
 				final SignaturePolicy signaturePolicy = new SignaturePolicy(policyIdString);
 				final Node policyDigestMethod = DSSXMLUtils.getNode(policyIdentifier, xPathQueryHolder.XPATH__POLICY_DIGEST_METHOD);
@@ -569,7 +572,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				signaturePolicy.setDigestValue(digestValue);
 				return signaturePolicy;
 			} else {
-			    /* Implicit policy */
+				// Implicit policy
 				final Element signaturePolicyImplied = DSSXMLUtils.getElement(policyIdentifier, xPathQueryHolder.XPATH__SIGNATURE_POLICY_IMPLIED);
 				if (signaturePolicyImplied != null) {
 					return new SignaturePolicy();
@@ -577,7 +580,6 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			}
 		}
 		return null;
-
 	}
 
 	@Override
@@ -691,6 +693,13 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	private TimestampToken makeTimestampToken(int id, Element element, TimestampType timestampType) throws DSSException {
 
 		final Element timestampTokenNode = DSSXMLUtils.getElement(element, xPathQueryHolder.XPATH__ENCAPSULATED_TIMESTAMP);
+		if (timestampTokenNode == null) {
+
+			// TODO (09/11/2014): The error message must be propagated to the validation report
+			LOG.warn("The timestamp (" + timestampType.name() + ") cannot be extracted from the signature!");
+			return null;
+
+		}
 		final String base64EncodedTimestamp = timestampTokenNode.getTextContent();
 		final TimeStampToken timeStampToken = DSSASN1Utils.createTimeStampToken(base64EncodedTimestamp);
 		final TimestampToken timestampToken = new TimestampToken(timeStampToken, timestampType, certPool);
@@ -1353,22 +1362,21 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	public List<AdvancedSignature> getCounterSignatures() {
 
 		// see ETSI TS 101 903 V1.4.2 (2010-12) pp. 38/39/40
-		NodeList counterSigs = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_COUNTER_SIGNATURE);
-		if (counterSigs == null) {
+		final NodeList counterSignatures = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_COUNTER_SIGNATURE);
+		if (counterSignatures == null) {
 			return null;
 		}
+		final List<AdvancedSignature> xadesList = new ArrayList<AdvancedSignature>();
+		for (int ii = 0; ii < counterSignatures.getLength(); ii++) {
 
-		List<AdvancedSignature> xadesList = new ArrayList<AdvancedSignature>();
-
-		for (int i = 0; i < counterSigs.getLength(); i++) {
-			Element counterSigEl = (Element) counterSigs.item(i);
-			Element signatureEl = DSSXMLUtils.getElement(counterSigEl, xPathQueryHolder.XPATH__SIGNATURE);
+			final Element counterSignatureElement = (Element) counterSignatures.item(ii);
+			final Element signatureElement = DSSXMLUtils.getElement(counterSignatureElement, xPathQueryHolder.XPATH__SIGNATURE);
 
 			// Verify that the element is a proper signature by trying to build a XAdESSignature out of it
-			XAdESSignature xCounterSig = new XAdESSignature(signatureEl, xPathQueryHolders, certPool);
-
-			if (isCounterSignature(xCounterSig)) {
-				xadesList.add(xCounterSig);
+			final XAdESSignature xadesCounterSignature = new XAdESSignature(signatureElement, xPathQueryHolders, certPool);
+			if (isCounterSignature(xadesCounterSignature)) {
+				xadesCounterSignature.setMasterSignature(this);
+				xadesList.add(xadesCounterSignature);
 			}
 		}
 		return xadesList;
@@ -1384,35 +1392,21 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	 * MUST be the base-64 encoded digest of the complete (and canonicalized) ds:SignatureValue element (i.e.
 	 * including the starting and closing tags) of the embedding and countersigned XAdES signature.
 	 *
-	 * @param xCounterSig
+	 * @param xadesCounterSignature
 	 * @return
 	 */
-	private boolean isCounterSignature(XAdESSignature xCounterSig) {
+	private boolean isCounterSignature(final XAdESSignature xadesCounterSignature) {
 
-		List<Element> signatureReferences = xCounterSig.getSignatureReferences();
-		if (signatureReferences.size() < 1) {
-			return false;
-		}
-
-		Element countersignedSignatureReference = null;
+		final List<Element> signatureReferences = xadesCounterSignature.getSignatureReferences();
 		//gets Element with Type="http://uri.etsi.org/01903#CountersignedSignature"
-		for (Element reference : signatureReferences) {
-			if (xPathQueryHolder.XADES_COUNTERSIGNED_SIGNATURE.equals(reference.getAttribute("Type"))) {
-				countersignedSignatureReference = reference;
+		for (final Element reference : signatureReferences) {
+
+			final String type = reference.getAttribute("Type");
+			if (xPathQueryHolder.XADES_COUNTERSIGNED_SIGNATURE.equals(type)) {
+				return true;
 			}
 		}
-
-		if (countersignedSignatureReference == null) {
-			return false;
-		}
-
-		//checks whether the countersignature has a DigestValue element
-		NodeList subNodes = countersignedSignatureReference.getElementsByTagName(xPathQueryHolder.XPATH__DIGEST_VALUE);
-		if (subNodes.getLength() > 1 || subNodes.getLength() < 1) {
-			return false;
-		}
-
-		return true;
+		return false;
 	}
 
 	@Override

@@ -469,13 +469,13 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		for (final DSSReference reference : references) {
 
 			final String dataObjectFormatObjectReference = "#" + reference.getId();
-			MimeType dataObjectFormatMimeType = getReferenceMimeType(reference);
 
 			final Element dataObjectFormatDom = DSSXMLUtils.addElement(documentDom, signedDataObjectPropertiesDom, XAdESNamespaces.XAdES, XADES_DATA_OBJECT_FORMAT);
 			dataObjectFormatDom.setAttribute("ObjectReference", dataObjectFormatObjectReference);
 
 			final Element mimeTypeDom = DSSXMLUtils.addElement(documentDom, dataObjectFormatDom, XAdESNamespaces.XAdES, XADES_MIME_TYPE);
-			DSSXMLUtils.setTextNode(documentDom, mimeTypeDom, dataObjectFormatMimeType.getCode());
+			MimeType dataObjectFormatMimeType = getReferenceMimeType(reference);
+			DSSXMLUtils.setTextNode(documentDom, mimeTypeDom, dataObjectFormatMimeType.getMimeTypeString());
 		}
 
 		incorporateContentTimestamps();

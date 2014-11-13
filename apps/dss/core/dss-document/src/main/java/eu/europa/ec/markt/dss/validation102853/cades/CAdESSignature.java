@@ -268,25 +268,27 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 		return certSource;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public OfflineCRLSource getCRLSource() {
 
-		CAdESCRLSource crlSource = null;
-		try {
-			crlSource = new CAdESCRLSource(cmsSignedData, signerInformation);
-		} catch (Exception e) {
-			// When error in computing or in format the algorithm: just continues (will try to get online information)
-			LOG.warn("When error in computing or in format the algorithm just continue...", e);
+		if (offlineCRLSource == null) {
+			try {
+				offlineCRLSource = new CAdESCRLSource(cmsSignedData, signerInformation);
+			} catch (Exception e) {
+				// When error in computing or in format of the algorithm: just continues (will try to get online information)
+				LOG.warn("Error in computing or in format of the algorithm: just continue...", e);
+			}
 		}
-		return crlSource;
+		return offlineCRLSource;
 	}
 
 	@Override
 	public OfflineOCSPSource getOCSPSource() {
 
-		final CAdESOCSPSource cadesOCSPSource = new CAdESOCSPSource(cmsSignedData, signerInformation);
-		return cadesOCSPSource;
+		if (offlineOCSPSource == null) {
+			offlineOCSPSource = new CAdESOCSPSource(cmsSignedData, signerInformation);
+		}
+		return offlineOCSPSource;
 	}
 
 	/**
@@ -1180,15 +1182,15 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 	@Override
 	public List<AdvancedSignature> getCounterSignatures() {
 
-		final List<AdvancedSignature> list = new ArrayList<AdvancedSignature>();
+		final List<AdvancedSignature> cadesList = new ArrayList<AdvancedSignature>();
+		for (final Object signer : signerInformation.getCounterSignatures().getSigners()) {
 
-		for (Object o : this.signerInformation.getCounterSignatures().getSigners()) {
-			SignerInformation signerInformation = (SignerInformation) o;
-			CAdESSignature info = new CAdESSignature(this.cmsSignedData, signerInformation, certPool);
-			list.add(info);
+			final SignerInformation signerInformation = (SignerInformation) signer;
+			final CAdESSignature cadesSignature = new CAdESSignature(cmsSignedData, signerInformation, certPool);
+			cadesSignature.setMasterSignature(this);
+			cadesList.add(cadesSignature);
 		}
-
-		return list;
+		return cadesList;
 	}
 
 	@Override
