@@ -20,16 +20,16 @@
 
 package eu.europa.ec.markt.dss.validation102853.xades;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.DSSXMLUtils;
+import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.DSSXMLUtils;
-import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Retrieves OCSP values from an XAdES (>XL) signature.
@@ -37,7 +37,7 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
  * @version $Revision$ - $Date$
  */
 
-public class XAdESOCSPSource extends OfflineOCSPSource {
+public class XAdESOCSPSource extends OfflineOCSPSource implements Serializable {
 
     private final Element signatureElement;
 

@@ -20,39 +20,7 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.security.auth.x500.X500Principal;
-
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.qualified.ETSIQCObjectIdentifiers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-
-import eu.europa.ec.markt.dss.CertificateIdentifier;
-import eu.europa.ec.markt.dss.DSSASN1Utils;
-import eu.europa.ec.markt.dss.DSSPKUtils;
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.DSSXMLUtils;
-import eu.europa.ec.markt.dss.DigestAlgorithm;
-import eu.europa.ec.markt.dss.EncryptionAlgorithm;
-import eu.europa.ec.markt.dss.OID;
-import eu.europa.ec.markt.dss.SignatureAlgorithm;
+import eu.europa.ec.markt.dss.*;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.exception.DSSUnsupportedOperationException;
@@ -60,12 +28,7 @@ import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.MimeType;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
 import eu.europa.ec.markt.dss.validation102853.asic.ASiCContainerValidator;
-import eu.europa.ec.markt.dss.validation102853.bean.CandidatesForSigningCertificate;
-import eu.europa.ec.markt.dss.validation102853.bean.CertifiedRole;
-import eu.europa.ec.markt.dss.validation102853.bean.CommitmentType;
-import eu.europa.ec.markt.dss.validation102853.bean.SignatureCryptographicVerification;
-import eu.europa.ec.markt.dss.validation102853.bean.SignatureProductionPlace;
-import eu.europa.ec.markt.dss.validation102853.bean.SigningCertificateValidity;
+import eu.europa.ec.markt.dss.validation102853.bean.*;
 import eu.europa.ec.markt.dss.validation102853.cades.CAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.cades.CMSDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
@@ -74,33 +37,7 @@ import eu.europa.ec.markt.dss.validation102853.condition.PolicyIdCondition;
 import eu.europa.ec.markt.dss.validation102853.condition.QcStatementCondition;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.ObjectFactory;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlBasicSignatureType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertificate;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertificateChainType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertifiedRolesType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlChainCertificate;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlClaimedRoles;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCommitmentTypeIndication;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlDigestAlgAndValueType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlDistinguishedName;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlInfoType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlMessage;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlPolicy;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlQCStatement;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlQualifiers;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlRevocationType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignature;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignatureProductionPlace;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignatureScopeType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignatureScopes;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignedObjectsType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignedSignature;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSigningCertificateType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlTimestampType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlTimestamps;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlTrustedServiceProviderType;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlUsedCertificates;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.*;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.pades.PAdESSignature;
@@ -113,6 +50,23 @@ import eu.europa.ec.markt.dss.validation102853.scope.SignatureScope;
 import eu.europa.ec.markt.dss.validation102853.scope.SignatureScopeFinder;
 import eu.europa.ec.markt.dss.validation102853.xades.XAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.qualified.ETSIQCObjectIdentifiers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+
+import javax.security.auth.x500.X500Principal;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -226,7 +180,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			// TODO (29/08/2014): DSS-356
 			return new PDFDocumentValidator(dssDocument);
 		} else if (preamble[0] == 'P' && preamble[1] == 'K') {
-			if (dssDocument.getMimeType() != MimeType.ASICE) {
+			if (!dssDocument.getMimeType().equals(MimeType.ASICE)) {
 				return null;
 			}
 			return ASiCContainerValidator.getInstanceForAsics(dssDocument);

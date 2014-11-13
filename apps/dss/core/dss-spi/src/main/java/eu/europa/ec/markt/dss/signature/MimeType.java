@@ -30,12 +30,13 @@
  */
 package eu.europa.ec.markt.dss.signature;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
+
+import java.io.File;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class allows to handle different mime types. It also allows to add (define) new mime-type.
@@ -45,7 +46,7 @@ import eu.europa.ec.markt.dss.exception.DSSException;
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision$ - $Date$
  */
-public class MimeType {
+public class MimeType implements Serializable {
 
 	private static Map<String, MimeType> mimeTypes = new HashMap<String, MimeType>();
 

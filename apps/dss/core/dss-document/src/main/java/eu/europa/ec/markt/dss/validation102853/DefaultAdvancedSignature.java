@@ -20,15 +20,6 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
-import java.security.cert.X509CRL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.bouncycastle.cert.ocsp.BasicOCSPResp;
-
 import eu.europa.ec.markt.dss.DSSRevocationUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
@@ -41,6 +32,11 @@ import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
 import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+
+import java.io.Serializable;
+import java.security.cert.X509CRL;
+import java.util.*;
 
 /**
  * TODO <p/> <p/> DISCLAIMER: Project owner DG-MARKT.
