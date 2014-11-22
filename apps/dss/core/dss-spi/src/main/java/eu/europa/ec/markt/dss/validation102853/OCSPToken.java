@@ -71,7 +71,7 @@ public class OCSPToken extends RevocationToken {
 	 */
 	private transient final BasicOCSPResp basicOCSPResp;
 
-	private final SingleResp singleResp;
+	private transient final SingleResp singleResp;
 
 	/**
 	 * In case of online source this is the source URI.
