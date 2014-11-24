@@ -60,7 +60,6 @@ import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.EncryptionAlgorithm;
 import eu.europa.ec.markt.dss.SignatureAlgorithm;
-import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNotETSICompliantException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
@@ -926,11 +925,11 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 
 		//TODO: check whether a warning would be more appropriate
 		if (!checkTimestampTokenIncludes(timestampToken)) {
-			throw new DSSException("Exception: the Include's referencedData attribute is either not present or set to false");
+			throw new DSSException("The Included referencedData attribute is either not present or set to false!");
 		}
-
-		String canonicalizationMethod = timestampToken.getCanonicalizationMethod();
-
+		if (references.size() == 0) {
+			throw new DSSException("The method 'checkSignatureIntegrity' must be invoked first!");
+		}
 		//get first include element
 		//check coherence of the value of the not-fragment part of the URI within its URI attribute according to the rules stated in 7.1.4.3.1
 		//de-reference the URI according to the rules in 7.1.4.3.1
@@ -939,10 +938,6 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 		//concatenate the resulting bytes in an octet stream
 		//repeat for all subsequent include elements, in order of appearance, within the time-stamp container
 		//return digest of resulting byte stream using the algorithm indicated in the time-stamp token
-
-		if (canonicalizationMethod == null) {
-			canonicalizationMethod = DEFAULT_TIMESTAMP_CREATION_CANONICALIZATION_METHOD;
-		}
 
 		//get include elements from signature
 		List<TimestampInclude> includes = timestampToken.getTimestampIncludes();
@@ -956,10 +951,8 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				String id = include.getURI();
 
 				if (reference.getId().equals(id)) {
-					//byte[] canonicalizedElement = DSSXMLUtils.canonicalizeSubtree(canonicalizationMethod, reference);
 					try {
 						final byte[] referencedBytes = reference.getReferencedBytes();
-						//					byte[] canonicalizedElement = DSSXMLUtils.canonicalizeSubtree(canonicalizationMethod, referenceElement);
 						outputStream.write(referencedBytes);
 					} catch (IOException e) {
 						throw new DSSException(e);
@@ -972,15 +965,13 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			}
 		}
 		byte[] octetStream = outputStream.toByteArray();
-
 		return octetStream;
 	}
 
 	/**
 	 * See ETSI TS 101 903 v1.4.1, clause G.2.2.16.1.1
 	 * <p/>
-	 * Retrieves the data from timestamptoken of type AllDataObjectsTimestampData
-	 * <p/>
+	 * Retrieves the data from {@code TimeStampToken} of type AllDataObjectsTimestampData
 	 *
 	 * @param timestampToken
 	 * @return a {@code byte} array containing the concatenated data from all reference elements of type differing from SignedProperties
@@ -989,26 +980,21 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 
 		//TODO: check whether a warning would be more appropriate
 		if (!checkTimestampTokenIncludes(timestampToken)) {
-			throw new DSSException("Exception: the Included referencedData attribute is either not present or set to false");
+			throw new DSSException("The Included referencedData attribute is either not present or set to false!");
 		}
-		final String canonicalizationMethod = getCanonicalizationMethod(timestampToken);
-
 		if (references.size() == 0) {
 			throw new DSSException("The method 'checkSignatureIntegrity' must be invoked first!");
 		}
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		for (final Reference reference : references) {
 
-			//Take, the first ds:Reference element within ds:SignedInfo if and only if the Type attribute does not
-			//have the value "http://uri.etsi.org/01903#SignedProperties".
+			// Take, the first ds:Reference element within ds:SignedInfo if and only if the Type attribute does not
+			// have the value "http://uri.etsi.org/01903#SignedProperties".
 			if (!xPathQueryHolder.XADES_SIGNED_PROPERTIES.equals(reference.getType())) {
 
-				//				//if reference element is a nodeset, canonicalize it using the algorithm mentioned in canonicalizationMethod
 				try {
 
 					final byte[] referencedBytes = reference.getReferencedBytes();
-					//					byte[] canonicalizedElement = DSSXMLUtils.canonicalizeSubtree(canonicalizationMethod, referenceElement);
 					outputStream.write(referencedBytes);
 				} catch (IOException e) {
 					throw new DSSException(e);
@@ -1019,15 +1005,14 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				}
 			}
 		}
-
-		//compute digest of resulting octet stream using algorithm indicated in the time-stamp token
-		//-> digest is computed in TimestampToken verification/match
-		//return the computed digest
-		byte[] timestampedBytes = outputStream.toByteArray();
+		// compute digest of resulting octet stream using algorithm indicated in the time-stamp token
+		// -> digest is computed in TimestampToken verification/match
+		// return the computed digest
+		byte[] toTimestampBytes = outputStream.toByteArray();
 		if (LOG.isTraceEnabled()) {
-			LOG.trace(new String(timestampedBytes));
+			LOG.trace("AllDataObjectsTimestampData bytes: " + new String(toTimestampBytes));
 		}
-		return timestampedBytes;
+		return toTimestampBytes;
 	}
 
 	@Override
@@ -1057,7 +1042,6 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 						final TimestampReference signingCertReference = createCertificateTimestampReference(element);
 						references.add(signingCertReference);
 					}
-
 					timestampToken.setTimestampedReferences(references);
 					signatureTimestamps.add(timestampToken);
 				}
@@ -1074,9 +1058,10 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	 * @param timestampToken
 	 * @retun
 	 */
-	public boolean checkTimestampTokenIncludes(TimestampToken timestampToken) {
-		List<TimestampInclude> timestampIncludes = timestampToken.getTimestampIncludes();
-		for (TimestampInclude timestampInclude : timestampIncludes) {
+	public boolean checkTimestampTokenIncludes(final TimestampToken timestampToken) {
+
+		final List<TimestampInclude> timestampIncludes = timestampToken.getTimestampIncludes();
+		for (final TimestampInclude timestampInclude : timestampIncludes) {
 			if (!timestampInclude.isReferencedData()) {
 				return false;
 			}
@@ -1699,8 +1684,9 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				if (localName == null) {
 					continue;
 				}
+				canonicalizedValue = null;
 				// System.out.println("###: " + localName);
-				// In the SD-DSS implementation when validating the signature the framework will not add missing data. To do so you the signature must be extended.
+				// In the SD-DSS implementation when validating the signature the framework will not add missing data. To do so the signature must be extended.
 				// if (localName.equals("CertificateValues")) {
 
 				/**
@@ -1762,22 +1748,16 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 					 * This is the work around for the name space problem: The issue was reported on: https://issues.apache.org/jira/browse/SANTUARIO-139 and considered as close.
 					 * But for me (Bob) it still does not work!
 					 */
+					if (timestampToken == null) { // Creation of the timestamp
 
-					final Document document = DSSXMLUtils.buildDOM();
-					final Element rootElement = document.createElementNS(XAdESNamespaces.XAdES141, "xades141:toto");
-					document.appendChild(rootElement);
-
-					final Node node1 = node.cloneNode(true);
-					document.adoptNode(node1);
-					rootElement.appendChild(node1);
-					node = node1;
-
-					if (LOG.isTraceEnabled()) {
-						DSSXMLUtils.printDocument(node, System.out);
+						final byte[] bytesToCanonicalize = DSSXMLUtils.serializeNode(node);
+						canonicalizedValue = DSSXMLUtils.canonicalize(canonicalizationMethod, bytesToCanonicalize);
 					}
 				}
 
-				canonicalizedValue = DSSXMLUtils.canonicalizeSubtree(canonicalizationMethod, node);
+				if (canonicalizedValue == null) {
+					canonicalizedValue = DSSXMLUtils.canonicalizeSubtree(canonicalizationMethod, node);
+				}
 				if (LOG.isTraceEnabled()) {
 					LOG.trace(localName + ": Canonicalization: " + canonicalizationMethod);
 					LOG.trace(new String(canonicalizedValue) + "\n");
@@ -1816,7 +1796,6 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			final byte[] bytes = buffer.toByteArray();
 			return bytes;
 		} catch (IOException e) {
-
 			throw new DSSException("Error when computing the archive data", e);
 		}
 	}
