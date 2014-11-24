@@ -280,11 +280,19 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 					addEntryElement(entryName, detachedContents, asicsInputStream);
 				} else {
 
-					LOG.error("unknown entry: " + entryName);
 					addEntryElement(entryName, detachedContents, asicsInputStream);
 				}
 			}
 			asicMimeType = determinateAsicMimeType(asicContainer.getMimeType(), asicEntryMimeType);
+			if (MimeType.ASICS == asicEntryMimeType) {
+
+				for (final DSSDocument detachedContent : detachedContents) {
+					if ("mimetype".equals(detachedContent.getName())) {
+						detachedContents.remove(detachedContent);
+						break;
+					}
+				}
+			}
 		} catch (Exception e) {
 			if (e instanceof DSSException) {
 				throw (DSSException) e;
