@@ -22,8 +22,11 @@ public enum MessageTag {
 	ADEST_ROBVPIIC("Is the result of the Basic Validation Process conclusive?"),
 	ADEST_ROTVPIIC("Is the result of the timestamps validation process conclusive?"),
 	ADEST_ROTVPIIC_ANS("The result of the timestamps validation process is not conclusive!"),
+  ADEST_RATSD("Is the difference between the revocation time and the signature time stamp OK?"),
+  ADEST_RATSD_ANS("The difference between the revocation time and the siganture time stamp is too large"),
 
-	BBB_CV_IRDOF("Is the reference data object(s) found?"),
+
+  BBB_CV_IRDOF("Is the reference data object(s) found?"),
 	BBB_CV_IRDOF_ANS("The reference data object(s) not found!"),
 	BBB_CV_IRDOI("Is the reference data object(s) intact?"),
 	BBB_CV_IRDOI_ANS("The reference data object(s) is not intact!"),

@@ -55,6 +55,9 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 */
 	public abstract Long getMaxRevocationFreshness();
 
+
+  public abstract Long getRevocationAndTimestampDeltaInMilliseconds();
+
 	/**
 	 * This function returns the algorithm expiration date extracted from the 'constraint.xml' file. If the TAG AlgoExpirationDate is not present within the
 	 * constraints {@code null} is returned.
