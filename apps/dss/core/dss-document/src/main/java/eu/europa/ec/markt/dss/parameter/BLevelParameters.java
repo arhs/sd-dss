@@ -253,7 +253,7 @@ public class BLevelParameters implements Serializable {
     }
   }
 
-  public static class Policy {
+  public static class Policy implements Serializable {
 
     private String id;
 
