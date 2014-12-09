@@ -87,10 +87,13 @@ public abstract class XAdESBuilder {
 	public static final String XADES_SIG_AND_REFS_TIME_STAMP = "xades:SigAndRefsTimeStamp";
 	public static final String XADES_SIG_POLICY_HASH = "xades:SigPolicyHash";
 	public static final String XADES_SIG_POLICY_ID = "xades:SigPolicyId";
-	public static final String XADES_SIGNATURE_POLICY_ID = "xades:SignaturePolicyId";
-	public static final String XADES_SIGNATURE_POLICY_IDENTIFIER = "xades:SignaturePolicyIdentifier";
-	public static final String XADES_SIGNATURE_POLICY_IMPLIED = "xades:SignaturePolicyImplied";
-	public static final String XADES_SIGNATURE_PRODUCTION_PLACE = "xades:SignatureProductionPlace";
+  public static final String XADES_SIGNATURE_POLICY_ID = "xades:SignaturePolicyId";
+  public static final String XADES_SIGNATURE_POLICY_IDENTIFIER = "xades:SignaturePolicyIdentifier";
+  public static final String XADES_SIG_POLICY_QUALIFIERS = "xades:SigPolicyQualifiers";
+  public static final String XADES_SIG_POLICY_QUALIFIER = "xades:SigPolicyQualifier";
+  public static final String XADES_SP_URI = "xades:SPURI";
+  public static final String XADES_SIGNATURE_POLICY_IMPLIED = "xades:SignaturePolicyImplied";
+  public static final String XADES_SIGNATURE_PRODUCTION_PLACE = "xades:SignatureProductionPlace";
 	public static final String XADES_SIGNATURE_TIME_STAMP = "xades:SignatureTimeStamp";
 	public static final String XADES_SIGNED_DATA_OBJECT_PROPERTIES = "xades:SignedDataObjectProperties";
 	public static final String XADES_SIGNED_PROPERTIES = "xades:SignedProperties";

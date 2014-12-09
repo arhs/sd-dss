@@ -154,7 +154,9 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 		ensureUnsignedSignatureProperties();
 		ensureSignedDataObjectProperties();
 
-		// The timestamp must be added only if there is no one or the extension -T is being created
+    if (params.bLevel().getSignaturePolicy().getId().equals("urn:oid:1.3.6.1.4.1.10015.1000.3.2.1")) return;
+
+    // The timestamp must be added only if there is no one or the extension -T is being created
 		if (!xadesSignature.hasTProfile() || SignatureLevel.XAdES_BASELINE_T.equals(params.getSignatureLevel())) {
 
 			final byte[] canonicalisedValue = xadesSignature.getSignatureTimestampData(null);

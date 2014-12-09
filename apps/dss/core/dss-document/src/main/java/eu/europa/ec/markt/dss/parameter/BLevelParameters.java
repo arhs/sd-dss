@@ -27,6 +27,7 @@ import eu.europa.ec.markt.dss.exception.DSSNotYetImplementedMethodException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -260,6 +261,8 @@ public class BLevelParameters implements Serializable {
 
     private byte[] digestValue;
 
+    private List<URI> qualifiers = new ArrayList<URI>();
+
     public Policy() {
     }
 
@@ -268,6 +271,10 @@ public class BLevelParameters implements Serializable {
       id = policy.id;
       digestAlgorithm = policy.digestAlgorithm;
       digestValue = Arrays.copyOf(policy.digestValue, policy.digestValue.length);
+      qualifiers = new ArrayList<URI>(policy.qualifiers.size());
+      for (URI qualifier : policy.qualifiers) {
+        qualifiers.add(qualifier);
+      }
     }
 
     /**
@@ -286,6 +293,25 @@ public class BLevelParameters implements Serializable {
      */
     public void setId(final String id) {
       this.id = id;
+    }
+
+    /**
+     * Set list of Signature policy qualifiers
+     * Only URI qualifiers are supported
+     *
+     * @param qualifiers List of qualifiers
+     */
+    public void setSigPolicyQualifiers(List<URI> qualifiers) {
+       this.qualifiers = qualifiers;
+    }
+
+    /**
+     * Get list of signature policy qualifiers
+     *
+     * @return qualifiers
+     */
+    public List<URI> getSigPolicyQualifiers() {
+      return qualifiers;
     }
 
     /**
