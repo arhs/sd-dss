@@ -50,10 +50,12 @@ import eu.europa.ec.markt.dss.validation102853.scope.SignatureScope;
 import eu.europa.ec.markt.dss.validation102853.scope.SignatureScopeFinder;
 import eu.europa.ec.markt.dss.validation102853.xades.XAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Sequence;
+import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.qualified.ETSIQCObjectIdentifiers;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -67,6 +69,8 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static eu.europa.ec.markt.dss.DSSUtils.digest;
 
 
 /**
@@ -1197,6 +1201,32 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			xmlSignature.setParentId(masterSignature.getId());
 		}
 
+    BasicOCSPResp latestOcspResponse = getLatestOcspResponse(signature.getOCSPSource().getContainedOCSPResponses());
+
+    Extension extension = latestOcspResponse.getExtension(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1.2"));
+    xmlSignature.setOcspNonce("none");
+    if (extension != null) {
+      try {
+        byte[] octets = extension.getExtnValue().getOctets();
+        ASN1Encodable oid = ASN1Sequence.getInstance(octets).getObjectAt(0);
+        String oidString = ((DLSequence) oid).getObjects().nextElement().toString();
+        DigestAlgorithm usedDigestAlgorithm = DigestAlgorithm.forOID(oidString);
+
+        byte[] foundHash = ((DEROctetString) ASN1Sequence.getInstance(octets).getObjectAt(1)).getOctets();
+
+        byte[] signatureValue = Base64.decodeBase64(((XAdESSignature) signature).getSignatureValue().getFirstChild().
+            getNodeValue().getBytes());
+
+        byte[] digest = digest(usedDigestAlgorithm, signatureValue);
+
+        xmlSignature.setOcspNonce(Boolean.toString(Arrays.equals(foundHash, digest)));
+      } catch (Exception e) {
+        LOG.error(e.getMessage());
+        addErrorMessage(xmlSignature, e);
+        xmlSignature.setOcspNonce("false");
+      }
+    }
+
 		dealSignatureCryptographicIntegrity(signature, xmlSignature);
 		xmlSignature.setId(signature.getId());
 		xmlSignature.setDateTime(DSSXMLUtils.createXMLGregorianCalendar(signature.getSigningTime()));
@@ -1240,7 +1270,21 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		return signingCertificateToken;
 	}
 
-	private void dealWithSignatureProductionPlace(AdvancedSignature signature, XmlSignature xmlSignature) {
+  private BasicOCSPResp getLatestOcspResponse(List<BasicOCSPResp> ocspResponses) {
+    BasicOCSPResp basicOCSPResp = ocspResponses.get(0);
+    Date latestDate = basicOCSPResp.getProducedAt();
+
+    for (int i = 1; i < ocspResponses.size(); i++) {
+      BasicOCSPResp ocspResponse = ocspResponses.get(i);
+      if (ocspResponse.getProducedAt().after(latestDate)) {
+        latestDate = ocspResponse.getProducedAt();
+        basicOCSPResp = ocspResponse;
+      }
+    }
+    return basicOCSPResp;
+  }
+
+  private void dealWithSignatureProductionPlace(AdvancedSignature signature, XmlSignature xmlSignature) {
 		final SignatureProductionPlace signatureProductionPlace = signature.getSignatureProductionPlace();
 		if (signatureProductionPlace != null) {
 
