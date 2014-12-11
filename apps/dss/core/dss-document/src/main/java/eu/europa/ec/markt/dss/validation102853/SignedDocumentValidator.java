@@ -543,7 +543,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 			final CertificateToken signingToken = dealSignature(signature, xmlSignature);
 
-			dealPolicy(signature, xmlSignature);
+      dealPolicy(signature, xmlSignature);
 
 			dealCertificateChain(xmlSignature, signingToken);
 
@@ -1201,31 +1201,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			xmlSignature.setParentId(masterSignature.getId());
 		}
 
-    BasicOCSPResp latestOcspResponse = getLatestOcspResponse(signature.getOCSPSource().getContainedOCSPResponses());
-
-    Extension extension = latestOcspResponse.getExtension(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1.2"));
-    xmlSignature.setOcspNonce("none");
-    if (extension != null) {
-      try {
-        byte[] octets = extension.getExtnValue().getOctets();
-        ASN1Encodable oid = ASN1Sequence.getInstance(octets).getObjectAt(0);
-        String oidString = ((DLSequence) oid).getObjects().nextElement().toString();
-        DigestAlgorithm usedDigestAlgorithm = DigestAlgorithm.forOID(oidString);
-
-        byte[] foundHash = ((DEROctetString) ASN1Sequence.getInstance(octets).getObjectAt(1)).getOctets();
-
-        byte[] signatureValue = Base64.decodeBase64(((XAdESSignature) signature).getSignatureValue().getFirstChild().
-            getNodeValue().getBytes());
-
-        byte[] digest = digest(usedDigestAlgorithm, signatureValue);
-
-        xmlSignature.setOcspNonce(Boolean.toString(Arrays.equals(foundHash, digest)));
-      } catch (Exception e) {
-        LOG.error(e.getMessage());
-        addErrorMessage(xmlSignature, e);
-        xmlSignature.setOcspNonce("false");
-      }
-    }
+    dealWithNonceTM(signature, xmlSignature);
 
 		dealSignatureCryptographicIntegrity(signature, xmlSignature);
 		xmlSignature.setId(signature.getId());
@@ -1269,6 +1245,38 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 		return signingCertificateToken;
 	}
+
+  private void dealWithNonceTM(AdvancedSignature signature, XmlSignature xmlSignature) {
+    xmlSignature.setOcspNonce("none");
+
+    if (signature.getPolicyId() == null)
+      return;
+
+    BasicOCSPResp latestOcspResponse = getLatestOcspResponse(signature.getOCSPSource().getContainedOCSPResponses());
+    Extension extension = latestOcspResponse.getExtension(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1.2"));
+
+    if (extension != null) {
+      try {
+        byte[] octets = extension.getExtnValue().getOctets();
+        ASN1Encodable oid = ASN1Sequence.getInstance(octets).getObjectAt(0);
+        String oidString = ((DLSequence) oid).getObjects().nextElement().toString();
+        DigestAlgorithm usedDigestAlgorithm = DigestAlgorithm.forOID(oidString);
+
+        byte[] foundHash = ((DEROctetString) ASN1Sequence.getInstance(octets).getObjectAt(1)).getOctets();
+
+        byte[] signatureValue = Base64.decodeBase64(((XAdESSignature) signature).getSignatureValue().getFirstChild().
+            getNodeValue().getBytes());
+
+        byte[] digest = digest(usedDigestAlgorithm, signatureValue);
+
+        xmlSignature.setOcspNonce(Boolean.toString(Arrays.equals(foundHash, digest)));
+      } catch (Exception e) {
+        LOG.error(e.getMessage());
+        addErrorMessage(xmlSignature, e);
+        xmlSignature.setOcspNonce("false");
+      }
+    }
+  }
 
   private BasicOCSPResp getLatestOcspResponse(List<BasicOCSPResp> ocspResponses) {
     BasicOCSPResp basicOCSPResp = ocspResponses.get(0);
