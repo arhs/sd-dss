@@ -270,6 +270,9 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
      *
      * --> The DSS framework does not handle the time-marks.
      */
+    if (!checkNonce(signatureConclusion)) {
+      return signatureConclusion;
+    }
 
     // This is the list of acceptable timestamps
     final List<String> rightTimestamps = new ArrayList<String>();
@@ -403,6 +406,18 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
     constraint.create(timestampXmlNode, ADEST_RATSD);
     constraint.setValue(delta == null || delta <= deltaInMilliseconds);
     constraint.setIndications(INVALID, null, ADEST_RATSD_ANS);
+    constraint.setConclusionReceiver(conclusion);
+
+    return constraint.check();
+  }
+
+  private boolean checkNonce(Conclusion conclusion) {
+    final Constraint constraint = new Constraint("FAIL");
+    constraint.setExpectedValue("true");
+    constraint.create(signatureXmlNode, ADEST_NONCE);
+    String value = signatureXmlDom.getElements("./OcspNonce").get(0).getText();
+    constraint.setValue("none".equals(value) || "true".equals(value));
+    constraint.setIndications(INVALID, null, ADEST_NONCE_ANS);
     constraint.setConclusionReceiver(conclusion);
 
     return constraint.check();

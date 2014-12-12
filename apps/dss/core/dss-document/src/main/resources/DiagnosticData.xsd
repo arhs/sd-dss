@@ -10,6 +10,7 @@
 					<xs:complexType>
 						<xs:sequence>
 							<xs:element type="xs:string" name="ParentId" minOccurs="0"/>
+							<xs:element type="xs:string" name="OcspNonce" minOccurs="0"/>
 							<xs:element type="xs:string" name="ErrorMessage" minOccurs="0"/>
 							<xs:element type="xs:dateTime" name="DateTime"/>
 							<xs:element type="xs:string" name="SignatureFormat"/>

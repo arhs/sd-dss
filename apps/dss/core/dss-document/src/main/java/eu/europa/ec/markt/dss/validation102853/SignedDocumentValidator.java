@@ -1253,32 +1253,45 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
       return;
 
     BasicOCSPResp latestOcspResponse = getLatestOcspResponse(signature.getOCSPSource().getContainedOCSPResponses());
+    if (latestOcspResponse == null) {
+      LOG.debug("No OCSP response found in signature: " + signature.getId());
+      xmlSignature.setOcspNonce("false");
+      return;
+    }
+
     Extension extension = latestOcspResponse.getExtension(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1.2"));
 
-    if (extension != null) {
-      try {
-        byte[] octets = extension.getExtnValue().getOctets();
-        ASN1Encodable oid = ASN1Sequence.getInstance(octets).getObjectAt(0);
-        String oidString = ((DLSequence) oid).getObjects().nextElement().toString();
-        DigestAlgorithm usedDigestAlgorithm = DigestAlgorithm.forOID(oidString);
+    if (extension == null) {
+      LOG.debug("No valid OCSP extension found in signature: " + signature.getId());
+      xmlSignature.setOcspNonce("false");
+      return;
+    }
 
-        byte[] foundHash = ((DEROctetString) ASN1Sequence.getInstance(octets).getObjectAt(1)).getOctets();
+    try {
+      byte[] octets = extension.getExtnValue().getOctets();
+      ASN1Encodable oid = ASN1Sequence.getInstance(octets).getObjectAt(0);
+      String oidString = ((DLSequence) oid).getObjects().nextElement().toString();
+      DigestAlgorithm usedDigestAlgorithm = DigestAlgorithm.forOID(oidString);
 
-        byte[] signatureValue = Base64.decodeBase64(((XAdESSignature) signature).getSignatureValue().getFirstChild().
-            getNodeValue().getBytes());
+      byte[] foundHash = ((DEROctetString) ASN1Sequence.getInstance(octets).getObjectAt(1)).getOctets();
 
-        byte[] digest = digest(usedDigestAlgorithm, signatureValue);
+      byte[] signatureValue = Base64.decodeBase64(((XAdESSignature) signature).getSignatureValue().getFirstChild().
+          getNodeValue().getBytes());
 
-        xmlSignature.setOcspNonce(Boolean.toString(Arrays.equals(foundHash, digest)));
-      } catch (Exception e) {
-        LOG.error(e.getMessage());
-        addErrorMessage(xmlSignature, e);
-        xmlSignature.setOcspNonce("false");
-      }
+      byte[] digest = digest(usedDigestAlgorithm, signatureValue);
+
+      xmlSignature.setOcspNonce(Boolean.toString(Arrays.equals(foundHash, digest)));
+    } catch (Exception e) {
+      LOG.error(e.getMessage());
+      addErrorMessage(xmlSignature, e);
+      xmlSignature.setOcspNonce("false");
     }
   }
 
   private BasicOCSPResp getLatestOcspResponse(List<BasicOCSPResp> ocspResponses) {
+    if (ocspResponses.size() == 0)
+      return null;
+
     BasicOCSPResp basicOCSPResp = ocspResponses.get(0);
     Date latestDate = basicOCSPResp.getProducedAt();
 
