@@ -16,11 +16,9 @@
  */
 package eu.europa.ec.markt.dss.validation102853.xades;
 
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.List;
-
+import eu.europa.ec.markt.dss.DSSXMLUtils;
+import eu.europa.ec.markt.dss.signature.DSSDocument;
+import eu.europa.ec.markt.dss.signature.MimeType;
 import org.apache.xml.security.Init;
 import org.apache.xml.security.signature.XMLSignatureInput;
 import org.apache.xml.security.utils.resolver.ResourceResolverContext;
@@ -30,9 +28,12 @@ import org.apache.xml.utils.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Node;
 
-import eu.europa.ec.markt.dss.signature.DSSDocument;
-import eu.europa.ec.markt.dss.signature.MimeType;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.List;
 
 /**
  * This class helps us home users to resolve http URIs without a network connection
@@ -47,11 +48,19 @@ public class OfflineResolver extends ResourceResolverSpi {
 	private static final Logger LOG = LoggerFactory.getLogger(OfflineResolver.class);
 
 	private final List<DSSDocument> documents;
+  private Node signature;
 
-	static {
+  static {
 
 		Init.init();
 	}
+
+	public OfflineResolver(final List<DSSDocument> documents, Node signatureElement) {
+
+
+		this.documents = documents;
+    signature = signatureElement;
+  }
 
 	public OfflineResolver(final List<DSSDocument> documents) {
 
@@ -124,12 +133,29 @@ public class OfflineResolver extends ResourceResolverSpi {
 			//			final String string = new String(bytes);
 			//			inputStream = DSSUtils.toInputStream(bytes);
 			final XMLSignatureInput result = new XMLSignatureInput(inputStream);
-			result.setSourceURI(documentUri);
-			final MimeType mimeType = document.getMimeType();
-			if (mimeType != null) {
-				result.setMIMEType(mimeType.getMimeTypeString());
-			}
-			return result;
+
+      result.setSourceURI(documentUri);
+      final MimeType mimeType = document.getMimeType();
+      if (mimeType != null) {
+        result.setMIMEType(mimeType.getMimeTypeString());
+      }
+
+      if (signature != null) {
+        try {
+          Node node = DSSXMLUtils.getNode(signature, "./ds:SignedInfo/ds:Reference[@URI=\"" + documentUri + "\"]");
+          if (node != null) {
+            String referenceId = node.getAttributes().getNamedItem("Id").getNodeValue();
+            String mimeTypeString = DSSXMLUtils.getValue(signature,
+                "./ds:Object/xades:QualifyingProperties/xades:SignedProperties/" +
+                    "xades:SignedDataObjectProperties/xades:DataObjectFormat" +
+                    "[@ObjectReference=\"#" + referenceId + "\"]/xades:MimeType");
+            result.setMIMEType(mimeTypeString);
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+      return result;
 		} else {
 
 			Object exArgs[] = {"The uriNodeValue " + documentUri + " is not configured for offline work"};
