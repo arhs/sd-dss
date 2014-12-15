@@ -379,13 +379,13 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 
 		incorporateSignedDataObjectProperties();
 
-		incorporateSignerRole();
+		incorporatePolicy();
 
 		incorporateSignatureProductionPlace();
 
-		incorporateCommitmentTypeIndications();
+		incorporateSignerRole();
 
-		incorporatePolicy();
+		incorporateCommitmentTypeIndications();
 	}
 
 	private void incorporatePolicy() {
