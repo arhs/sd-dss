@@ -251,7 +251,6 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
    * @return the {@code Conclusion} which indicates the result of the process
    */
   private Conclusion process() {
-
     final Conclusion signatureConclusion = new Conclusion();
 
     bvpConclusion = basicValidationData.getElement("/" + BASIC_VALIDATION_DATA + "/Signature[@Id='%s']/Conclusion",

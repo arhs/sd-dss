@@ -20,6 +20,15 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
+import java.io.Serializable;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import eu.europa.ec.markt.dss.CertificateIdentifier;
 import eu.europa.ec.markt.dss.exception.DSSException;
@@ -30,9 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.x500.X500Principal;
-import java.io.Serializable;
-import java.security.cert.X509Certificate;
-import java.util.*;
 
 /**
  * This class hosts the set of certificates which is used during the validation process. A certificate can be found in
@@ -114,9 +120,10 @@ public class CertificatePool implements Serializable {
 
 			throw new DSSException("The certificate source type must be set.");
 		}
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("Certificate to add: " + certificateToAdd.getIssuerX500Principal().toString() + "|" + certificateToAdd.getSerialNumber());
-		}
+		// TRACE ++
+		//		if (LOG.isTraceEnabled()) {
+		//			LOG.trace("Certificate to add: " + certificateToAdd.getIssuerX500Principal().toString() + "|" + certificateToAdd.getSerialNumber());
+		//		}
 		final int id = CertificateIdentifier.getId(certificateToAdd);
 		synchronized (certById) {
 

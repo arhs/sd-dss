@@ -71,13 +71,18 @@ public class SignatureParameters implements Serializable {
 	private boolean signWithExpiredCertificate = false;
 
 	/**
-	 * This field contains the chain of certificates. It includes the signing certificate.
+	 * This field contains the {@code List} of chain of certificates. It includes the signing certificate.
 	 */
-	private List<X509Certificate> certificateChain = new ArrayList<X509Certificate>();
+	private List<ChainCertificate> certificateChain = new ArrayList<ChainCertificate>();
 
 	ProfileParameters context;
 	private SignatureLevel signatureLevel;
 	private SignaturePackaging signaturePackaging;
+
+	/**
+	 * XAdES: ds:CanonicalizationMethod indicate the canonicalization algorithm: Algorithm="...".
+	 */
+	private String signedInfoCanonicalizationMethod;
 
 	/**
 	 * XAdES: The ds:SignatureMethod indicates the algorithms used to sign ds:SignedInfo.
@@ -147,11 +152,7 @@ public class SignatureParameters implements Serializable {
 		}
 		bLevelParams = new BLevelParameters(source.bLevelParams);
 		aSiCParams = new ASiCParameters(source.aSiCParams);
-
-		if (certificateChain != null) {
-
-			certificateChain = new ArrayList<X509Certificate>(source.certificateChain);
-		}
+		certificateChain = new ArrayList<ChainCertificate>(source.certificateChain);
 		contactInfo = source.contactInfo;
 		deterministicId = source.getDeterministicId();
 		digestAlgorithm = source.digestAlgorithm;
@@ -159,13 +160,13 @@ public class SignatureParameters implements Serializable {
 		detachedContent = source.detachedContent;
 		privateKeyEntry = source.privateKeyEntry;
 		reason = source.reason;
+		signedInfoCanonicalizationMethod = source.signedInfoCanonicalizationMethod;
 		signatureAlgorithm = source.signatureAlgorithm;
 		signaturePackaging = source.signaturePackaging;
 		signatureLevel = source.signatureLevel;
 		signingToken = source.signingToken;
 		signingCertificate = source.signingCertificate;
 		signWithExpiredCertificate = source.signWithExpiredCertificate;
-		signingToken = source.signingToken;
 		contentTimestamps = source.getContentTimestamps();
 		toCounterSignSignatureId = source.getToCounterSignSignatureId();
 		signatureTimestampParameters = source.signatureTimestampParameters;
@@ -320,9 +321,10 @@ public class SignatureParameters implements Serializable {
 	public void setSigningCertificate(final X509Certificate signingCertificate) {
 
 		this.signingCertificate = signingCertificate;
-		if (!this.certificateChain.contains(signingCertificate)) {
+		final ChainCertificate chainCertificate = new ChainCertificate(signingCertificate, true);
+		if (!this.certificateChain.contains(chainCertificate)) {
 
-			this.certificateChain.add(0, signingCertificate);
+			this.certificateChain.add(0, chainCertificate);
 		}
 	}
 
@@ -349,7 +351,7 @@ public class SignatureParameters implements Serializable {
 	 *
 	 * @return the value
 	 */
-	public List<X509Certificate> getCertificateChain() {
+	public List<ChainCertificate> getCertificateChain() {
 		return certificateChain;
 	}
 
@@ -365,10 +367,15 @@ public class SignatureParameters implements Serializable {
 	/**
 	 * Set the certificate chain
 	 *
-	 * @param certificateChain the value
+	 * @param certificateChain the {@code List} of {@code ChainCertificate}s
 	 */
-	public void setCertificateChain(final List<X509Certificate> certificateChain) {
-		this.certificateChain = certificateChain;
+	public void setCertificateChain(final List<ChainCertificate> certificateChain) {
+
+		if (certificateChain != null) {
+			this.certificateChain = certificateChain;
+		} else {
+			this.certificateChain.clear();
+		}
 	}
 
 	/**
@@ -378,12 +385,16 @@ public class SignatureParameters implements Serializable {
 	 */
 	public void setCertificateChain(final X509Certificate... certificateChainArray) {
 
+		if (certificateChainArray == null || certificateChainArray.length == 0) {
+			certificateChain.clear();
+		}
 		for (final X509Certificate certificate : certificateChainArray) {
 
 			if (certificate != null) {
 
-				if (!certificateChain.contains(certificate)) {
-					certificateChain.add(certificate);
+				final ChainCertificate chainCertificate = new ChainCertificate(certificate, false);
+				if (!certificateChain.contains(chainCertificate)) {
+					certificateChain.add(chainCertificate);
 				}
 			}
 		}
@@ -477,6 +488,23 @@ public class SignatureParameters implements Serializable {
 	 */
 	public void setSignaturePackaging(final SignaturePackaging signaturePackaging) {
 		this.signaturePackaging = signaturePackaging;
+	}
+
+
+	/**
+	 * @return the canonicalization algorithm to be used when dealing with SignedInfo.
+	 */
+	public String getSignedInfoCanonicalizationMethod() {
+		return signedInfoCanonicalizationMethod;
+	}
+
+	/**
+	 * Set the canonicalization algorithm to be used when dealing with SignedInfo.
+	 *
+	 * @param signedInfoCanonicalizationMethod the canonicalization algorithm to be used when dealing with SignedInfo.
+	 */
+	public void setSignedInfoCanonicalizationMethod(final String signedInfoCanonicalizationMethod) {
+		this.signedInfoCanonicalizationMethod = signedInfoCanonicalizationMethod;
 	}
 
 	/**
@@ -641,7 +669,7 @@ public class SignatureParameters implements Serializable {
 			  ", privateKeyEntry=" + privateKeyEntry +
 			  ", signingCertificate=" + signingCertificate +
 			  ", signWithExpiredCertificate=" + signWithExpiredCertificate +
-			  ", certificateChain=" + certificateChain +
+			  ", certificateChain_=" + certificateChain +
 			  ", context=" + context +
 			  ", signatureLevel=" + signatureLevel +
 			  ", signaturePackaging=" + signaturePackaging +

@@ -1,8 +1,7 @@
 /*
  * DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT),
- * B-1049 Bruxelles/Brussel
+ * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
  *
  * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
  *
@@ -21,142 +20,126 @@
 
 package eu.europa.ec.markt.dss.signature.xades;
 
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.xades.XAdESSignature;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 public abstract class ExtensionBuilder extends XAdESBuilder {
 
-  /**
-   * Reference to the object in charge of certificates validation
-   */
-  protected CertificateVerifier certificateVerifier;
+	/*
+	 * This object allows to access DOM signature representation using XPATH
+	 */
+	protected XAdESSignature xadesSignature;
 
-  /*
-   * This object allows to access DOM signature representation using XPATH
-   */
-  protected XAdESSignature xadesSignature;
+	/**
+	 * This field represents the current signature being extended.
+	 */
+	protected Element currentSignatureDom;
 
-  /**
-   * This field represents the current signature being extended.
-   */
-  protected Element currentSignatureDom;
+	/**
+	 * This field represents the signature qualifying properties
+	 */
+	protected Element qualifyingPropertiesDom;
 
-  /**
-   * This field represents the signature qualifying properties
-   */
-  protected Element qualifyingPropertiesDom;
+	/**
+	 * This field represents the unsigned properties
+	 */
+	protected Element unsignedPropertiesDom;
 
-  /**
-   * This field represents the unsigned properties
-   */
-  protected Element unsignedPropertiesDom;
+	/**
+	 * This field contains unsigned signature properties
+	 */
+	protected Element unsignedSignaturePropertiesDom;
 
-  /**
-   * This field contains unsigned signature properties
-   */
-  protected Element unsignedSignaturePropertiesDom;
+	/**
+	 * This field represents the signed properties
+	 */
+	protected Element signedPropertiesDom;
 
-  /**
-   * This field represents the signed properties
-   */
-  protected Element signedPropertiesDom;
+	/**
+	 * This field contains signed data object properties
+	 */
+	protected Element signedDataObjectPropertiesDom;
 
-  /**
-   * This field contains signed data object properties
-   */
-  protected Element signedDataObjectPropertiesDom;
+	protected ExtensionBuilder(final CertificateVerifier certificateVerifier) {
+		super(certificateVerifier);
+	}
 
-  protected ExtensionBuilder(CertificateVerifier certificateVerifier) {
+	/**
+	 * Returns or creates (if it does not exist) the UnsignedPropertiesType DOM object.
+	 *
+	 * @return
+	 * @throws DSSException
+	 */
+	protected void ensureUnsignedProperties() throws DSSException {
 
-    this.certificateVerifier = certificateVerifier;
-  }
+		final NodeList qualifyingPropertiesNodeList = currentSignatureDom.getElementsByTagNameNS(XAdESNamespaces.XAdES, "QualifyingProperties");
+		if (qualifyingPropertiesNodeList.getLength() != 1) {
 
-  /**
-   * Returns or creates (if it does not exist) the UnsignedPropertiesType DOM object.
-   *
-   * @return
-   * @throws DSSException
-   */
-  protected void ensureUnsignedProperties() throws DSSException {
+			throw new DSSException("The signature does not contain QualifyingProperties element (or contains more than one)! Extension is not possible.");
+		}
 
-    final NodeList qualifyingPropertiesNodeList = currentSignatureDom.getElementsByTagNameNS(XAdESNamespaces.XAdES,
-        "QualifyingProperties");
-    if (qualifyingPropertiesNodeList.getLength() != 1) {
+		qualifyingPropertiesDom = (Element) qualifyingPropertiesNodeList.item(0);
 
-      throw new DSSException("The signature does not contain QualifyingProperties element (or contains more than one)" +
-          "! Extension is not possible.");
-    }
+		final NodeList unsignedPropertiesNodeList = currentSignatureDom.getElementsByTagNameNS(XAdESNamespaces.XAdES, "UnsignedProperties");
+		final int length = unsignedPropertiesNodeList.getLength();
+		if (length == 1) {
 
-    qualifyingPropertiesDom = (Element) qualifyingPropertiesNodeList.item(0);
+			unsignedPropertiesDom = (Element) qualifyingPropertiesNodeList.item(0);
+		} else if (length == 0) {
 
-    final NodeList unsignedPropertiesNodeList = currentSignatureDom.getElementsByTagNameNS(XAdESNamespaces.XAdES,
-        "UnsignedProperties");
-    final int length = unsignedPropertiesNodeList.getLength();
-    if (length == 1) {
+			unsignedPropertiesDom = DSSXMLUtils.addElement(documentDom, qualifyingPropertiesDom, XAdESNamespaces.XAdES, "xades:UnsignedProperties");
+		} else {
 
-      unsignedPropertiesDom = (Element) qualifyingPropertiesNodeList.item(0);
-    } else if (length == 0) {
+			throw new DSSException("The signature contains more then one UnsignedProperties element! Extension is not possible.");
+		}
+	}
 
-      unsignedPropertiesDom = DSSXMLUtils.addElement(documentDom, qualifyingPropertiesDom, XAdESNamespaces.XAdES,
-          "xades:UnsignedProperties");
-    } else {
+	/**
+	 * Returns or creates (if it does not exist) the UnsignedSignaturePropertiesType DOM object.
+	 *
+	 * @return
+	 * @throws DSSException
+	 */
+	protected void ensureUnsignedSignatureProperties() throws DSSException {
 
-      throw new DSSException("The signature contains more then one UnsignedProperties element! Extension is not " +
-          "possible.");
-    }
-  }
+		final NodeList unsignedSignaturePropertiesNodeList = currentSignatureDom.getElementsByTagNameNS(XAdESNamespaces.XAdES, "UnsignedSignatureProperties");
+		final int length = unsignedSignaturePropertiesNodeList.getLength();
+		if (length == 1) {
 
-  /**
-   * Returns or creates (if it does not exist) the UnsignedSignaturePropertiesType DOM object.
-   *
-   * @return
-   * @throws DSSException
-   */
-  protected void ensureUnsignedSignatureProperties() throws DSSException {
+			unsignedSignaturePropertiesDom = (Element) unsignedSignaturePropertiesNodeList.item(0);
+		} else if (length == 0) {
 
-    final NodeList unsignedSignaturePropertiesNodeList = currentSignatureDom.getElementsByTagNameNS(XAdESNamespaces
-        .XAdES, "UnsignedSignatureProperties");
-    final int length = unsignedSignaturePropertiesNodeList.getLength();
-    if (length == 1) {
+			unsignedSignaturePropertiesDom = DSSXMLUtils.addElement(documentDom, unsignedPropertiesDom, XAdESNamespaces.XAdES, "xades:UnsignedSignatureProperties");
+		} else {
 
-      unsignedSignaturePropertiesDom = (Element) unsignedSignaturePropertiesNodeList.item(0);
-    } else if (length == 0) {
+			throw new DSSException("The signature contains more then one UnsignedSignatureProperties element! Extension is not possible.");
+		}
+	}
 
-      unsignedSignaturePropertiesDom = DSSXMLUtils.addElement(documentDom, unsignedPropertiesDom,
-          XAdESNamespaces.XAdES, "xades:UnsignedSignatureProperties");
-    } else {
+	/**
+	 * Returns or create (if it does not exist) the SignedDataObjectProperties DOM object.
+	 *
+	 * @throws DSSException
+	 */
+	protected void ensureSignedDataObjectProperties() throws DSSException {
 
-      throw new DSSException("The signature contains more then one UnsignedSignatureProperties element! Extension is " +
-          "not possible.");
-    }
-  }
+		final NodeList signedDataObjectPropertiesNodeList = currentSignatureDom.getElementsByTagNameNS(XAdESNamespaces.XAdES, "SignedDataObjectProperties");
+		final int length = signedDataObjectPropertiesNodeList.getLength();
+		if (length == 1) {
 
-  /**
-   * Returns or create (if it does not exist) the SignedDataObjectProperties DOM object.
-   *
-   * @throws DSSException
-   */
-  protected void ensureSignedDataObjectProperties() throws DSSException {
+			signedDataObjectPropertiesDom = (Element) signedDataObjectPropertiesNodeList.item(0);
+		} else if (length == 0) {
 
-    final NodeList signedDataObjectPropertiesNodeList = currentSignatureDom.getElementsByTagNameNS(XAdESNamespaces
-        .XAdES, "SignedDataObjectProperties");
-    final int length = signedDataObjectPropertiesNodeList.getLength();
-    if (length == 1) {
+			signedDataObjectPropertiesDom = DSSXMLUtils.addElement(documentDom, signedPropertiesDom, XAdESNamespaces.XAdES, "xades:SignedDataObjectProperties");
+		} else {
 
-      signedDataObjectPropertiesDom = (Element) signedDataObjectPropertiesNodeList.item(0);
-    } else if (length == 0) {
-
-      signedDataObjectPropertiesDom = DSSXMLUtils.addElement(documentDom, signedPropertiesDom, XAdESNamespaces.XAdES,
-          "xades:SignedDataObjectProperties");
-    } else {
-
-      throw new DSSException("The signature contains more than one SignedDataObjectProperties element! Extension is " +
-          "not possible.");
-    }
-  }
+			throw new DSSException("The signature contains more than one SignedDataObjectProperties element! Extension is not possible.");
+		}
+	}
 }

@@ -278,6 +278,8 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 				} else if (entryName.indexOf("/") == -1) {
 
 					addEntryElement(entryName, detachedContents, asicsInputStream);
+				} else if (entryName.endsWith("/")) { // Folder
+					continue;
 				} else {
 
 					addEntryElement(entryName, detachedContents, asicsInputStream);

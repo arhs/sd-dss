@@ -28,7 +28,11 @@ import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.MimeType;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
 import eu.europa.ec.markt.dss.validation102853.asic.ASiCContainerValidator;
-import eu.europa.ec.markt.dss.validation102853.bean.*;
+import eu.europa.ec.markt.dss.validation102853.bean.CandidatesForSigningCertificate;
+import eu.europa.ec.markt.dss.validation102853.bean.CertifiedRole;
+import eu.europa.ec.markt.dss.validation102853.bean.CommitmentType;
+import eu.europa.ec.markt.dss.validation102853.bean.SignatureCryptographicVerification;
+import eu.europa.ec.markt.dss.validation102853.bean.SignatureProductionPlace;
 import eu.europa.ec.markt.dss.validation102853.cades.CAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.cades.CMSDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
@@ -37,7 +41,33 @@ import eu.europa.ec.markt.dss.validation102853.condition.PolicyIdCondition;
 import eu.europa.ec.markt.dss.validation102853.condition.QcStatementCondition;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
-import eu.europa.ec.markt.dss.validation102853.data.diagnostic.*;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.ObjectFactory;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlBasicSignatureType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertificate;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertificateChainType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertifiedRolesType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlChainCertificate;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlClaimedRoles;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCommitmentTypeIndication;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlDigestAlgAndValueType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlDistinguishedName;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlInfoType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlMessage;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlPolicy;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlQCStatement;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlQualifiers;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlRevocationType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignature;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignatureProductionPlace;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignatureScopeType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignatureScopes;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignedObjectsType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignedSignature;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSigningCertificateType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlTimestampType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlTimestamps;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlTrustedServiceProviderType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlUsedCertificates;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.pades.PAdESSignature;
@@ -165,6 +195,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 		final String dssDocumentName = dssDocument.getName();
 		if (dssDocumentName != null && MimeType.XML.equals(MimeType.fromFileName(dssDocumentName))) {
+
 			return new XMLDocumentValidator(dssDocument);
 		}
 
@@ -359,19 +390,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		if (LOG.isInfoEnabled()) {
 			date1 = new Date();
 		}
-		final eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData jaxbDiagnosticData = generateDiagnosticData();
-
-		final Document diagnosticDataDom = ValidationResourceManager.convert(jaxbDiagnosticData);
-		Date date2 = null;
-		if (LOG.isInfoEnabled()) {
-
-			date2 = new Date();
-			final long dateDiff = DSSUtils.getDateDiff(date1, date2, TimeUnit.MILLISECONDS);
-			LOG.info("diff 1: " + dateDiff + " ms.");
-		}
-
 		final ProcessExecutor executor = provideProcessExecutorInstance();
-		executor.setDiagnosticDataDom(diagnosticDataDom);
 		executor.setValidationPolicy(validationPolicy);
 		if (countersignatureValidationPolicy == null) {
 
@@ -380,12 +399,23 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		}
 		executor.setCountersignatureValidationPolicy(countersignatureValidationPolicy);
 
+		final eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData jaxbDiagnosticData = generateDiagnosticData();
+
+		final Document diagnosticDataDom = ValidationResourceManager.convert(jaxbDiagnosticData);
+		executor.setDiagnosticDataDom(diagnosticDataDom);
+		Date date2 = null;
+		if (LOG.isTraceEnabled()) {
+
+			date2 = new Date();
+			final long dateDiff = DSSUtils.getDateDiff(date1, date2, TimeUnit.MILLISECONDS);
+			LOG.trace("diff 1: " + dateDiff + " ms.");
+		}
 		final Reports reports = executor.execute();
-		if (LOG.isInfoEnabled()) {
+		if (LOG.isTraceEnabled()) {
 
 			Date date3 = new Date();
 			final long dateDiff = DSSUtils.getDateDiff(date2, date3, TimeUnit.MILLISECONDS);
-			LOG.info("diff 2: " + dateDiff + " ms.");
+			LOG.trace("diff 2: " + dateDiff + " ms.");
 		}
 		return reports;
 	}
@@ -543,7 +573,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 			final CertificateToken signingToken = dealSignature(signature, xmlSignature);
 
-      dealPolicy(signature, xmlSignature);
+			dealPolicy(signature, xmlSignature);
 
 			dealCertificateChain(xmlSignature, signingToken);
 
@@ -841,7 +871,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		xmlCert.setPublicKeySize(DSSPKUtils.getPublicKeySize(publicKey));
 		xmlCert.setPublicKeyEncryptionAlgo(DSSPKUtils.getPublicKeyEncryptionAlgo(publicKey));
 
-		xmlCert.setKeyUsage(certToken.getKeyUsage());
+		xmlForKeyUsageBits(certToken, xmlCert);
 
 		if (certToken.isOCSPSigning()) {
 
@@ -881,6 +911,20 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		xmlCert.setTrusted(certToken.isTrusted());
 
 		return xmlCert;
+	}
+
+	private void xmlForKeyUsageBits(CertificateToken certToken, XmlCertificate xmlCert) {
+
+		final List<String> keyUsageBits = certToken.getKeyUsageBits();
+		if (DSSUtils.isEmpty(keyUsageBits)) {
+			return;
+		}
+		final XmlKeyUsageBits xmlKeyUsageBits = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlKeyUsageBits();
+		final List<String> xmlKeyUsageBitItems = xmlKeyUsageBits.getKeyUsage();
+		for (final String keyUsageBit : keyUsageBits) {
+			xmlKeyUsageBitItems.add(keyUsageBit);
+		}
+		xmlCert.setKeyUsageBits(xmlKeyUsageBits);
 	}
 
 	private XmlDistinguishedName xmlForDistinguishedName(final String x500PrincipalFormat, final X500Principal X500PrincipalName) {
@@ -1204,6 +1248,8 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
     dealWithNonceTM(signature, xmlSignature);
 
 		dealSignatureCryptographicIntegrity(signature, xmlSignature);
+		performStructuralValidation(signature, xmlSignature);
+		performSignatureCryptographicValidation(signature, xmlSignature);
 		xmlSignature.setId(signature.getId());
 		xmlSignature.setDateTime(DSSXMLUtils.createXMLGregorianCalendar(signature.getSigningTime()));
 		final SignatureLevel dataFoundUpToLevel = signature.getDataFoundUpToLevel();
@@ -1227,14 +1273,14 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 		dealWithCertifiedRole(signature, xmlSignature);
 
-		final SigningCertificateValidity signingCertificateValidity = dealSigningCertificate(signature, xmlSignature);
+		final CertificateValidity certificateValidity = dealSigningCertificate(signature, xmlSignature);
 
 		final XmlBasicSignatureType xmlBasicSignature = getXmlBasicSignatureType(xmlSignature);
 		final EncryptionAlgorithm encryptionAlgorithm = signature.getEncryptionAlgorithm();
 		final String encryptionAlgorithmString = encryptionAlgorithm == null ? "?" : encryptionAlgorithm.getName();
 		xmlBasicSignature.setEncryptionAlgoUsedToSignThisToken(encryptionAlgorithmString);
 		// signingCertificateValidity can be null in case of a non AdES signature.
-		final CertificateToken signingCertificateToken = signingCertificateValidity == null ? null : signingCertificateValidity.getCertificateToken();
+		final CertificateToken signingCertificateToken = certificateValidity == null ? null : certificateValidity.getCertificateToken();
 		final int keyLength = signingCertificateToken == null ? 0 : signingCertificateToken.getPublicKeyLength();
 		xmlBasicSignature.setKeyLengthUsedToSignThisToken(String.valueOf(keyLength));
 		final DigestAlgorithm digestAlgorithm = signature.getDigestAlgorithm();
@@ -1244,6 +1290,24 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		dealSignatureScope(xmlSignature, signature);
 
 		return signingCertificateToken;
+	}
+
+	private void performStructuralValidation(final AdvancedSignature signature, final XmlSignature xmlSignature) {
+
+		final ValidationPolicy validationPolicy = processExecutor.getValidationPolicy();
+		if (validationPolicy == null || validationPolicy.getStructuralValidationConstraint() == null) {
+			return;
+		}
+		final String structureValid = signature.validateStructure();
+		if (structureValid != null) {
+
+			final XmlStructuralValidationType xmlStructuralValidationType = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlStructuralValidationType();
+			xmlStructuralValidationType.setValid(DSSUtils.EMPTY.equals(structureValid));
+			if (!DSSUtils.EMPTY.equals(structureValid)) {
+				xmlStructuralValidationType.setMessage(structureValid);
+			}
+			xmlSignature.setStructuralValidation(xmlStructuralValidationType);
+		}
 	}
 
   private void dealWithNonceTM(AdvancedSignature signature, XmlSignature xmlSignature) {
@@ -1415,7 +1479,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	 * @param signature    Signature to be validated (can be XAdES, CAdES, PAdES).
 	 * @param xmlSignature The JAXB object containing all diagnostic data pertaining to the signature
 	 */
-	private void dealSignatureCryptographicIntegrity(final AdvancedSignature signature, final XmlSignature xmlSignature) {
+	private void performSignatureCryptographicValidation(final AdvancedSignature signature, final XmlSignature xmlSignature) {
 
 		final SignatureCryptographicVerification scv = signature.checkSignatureIntegrity();
 		final XmlBasicSignatureType xmlBasicSignature = getXmlBasicSignatureType(xmlSignature);
@@ -1438,28 +1502,28 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	 * @param xmlSignature The JAXB object containing all diagnostic data pertaining to the signature
 	 * @return
 	 */
-	private SigningCertificateValidity dealSigningCertificate(final AdvancedSignature signature, final XmlSignature xmlSignature) {
+	private CertificateValidity dealSigningCertificate(final AdvancedSignature signature, final XmlSignature xmlSignature) {
 
 		final XmlSigningCertificateType xmlSignCertType = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlSigningCertificateType();
 		signature.checkSigningCertificate();
 		final CandidatesForSigningCertificate candidatesForSigningCertificate = signature.getCandidatesForSigningCertificate();
-		final SigningCertificateValidity theSigningCertificateValidity = candidatesForSigningCertificate.getTheSigningCertificateValidity();
-		if (theSigningCertificateValidity != null) {
+		final CertificateValidity theCertificateValidity = candidatesForSigningCertificate.getTheCertificateValidity();
+		if (theCertificateValidity != null) {
 
-			final CertificateToken signingCertificateToken = theSigningCertificateValidity.getCertificateToken();
+			final CertificateToken signingCertificateToken = theCertificateValidity.getCertificateToken();
 			if (signingCertificateToken != null) {
 
 				xmlSignCertType.setId(signingCertificateToken.getDSSId());
 			}
-			xmlSignCertType.setAttributePresent(theSigningCertificateValidity.isAttributePresent());
-			xmlSignCertType.setDigestValuePresent(theSigningCertificateValidity.isDigestPresent());
-			xmlSignCertType.setDigestValueMatch(theSigningCertificateValidity.isDigestEqual());
-			final boolean issuerSerialMatch = theSigningCertificateValidity.isSerialNumberEqual() && theSigningCertificateValidity.isDistinguishedNameEqual();
+			xmlSignCertType.setAttributePresent(theCertificateValidity.isAttributePresent());
+			xmlSignCertType.setDigestValuePresent(theCertificateValidity.isDigestPresent());
+			xmlSignCertType.setDigestValueMatch(theCertificateValidity.isDigestEqual());
+			final boolean issuerSerialMatch = theCertificateValidity.isSerialNumberEqual() && theCertificateValidity.isDistinguishedNameEqual();
 			xmlSignCertType.setIssuerSerialMatch(issuerSerialMatch);
-			xmlSignCertType.setSigned(theSigningCertificateValidity.getSigned());
+			xmlSignCertType.setSigned(theCertificateValidity.getSigned());
 			xmlSignature.setSigningCertificate(xmlSignCertType);
 		}
-		return theSigningCertificateValidity;
+		return theCertificateValidity;
 	}
 
 	/**
