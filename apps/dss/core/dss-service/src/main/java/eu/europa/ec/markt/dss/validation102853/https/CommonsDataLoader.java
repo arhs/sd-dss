@@ -20,27 +20,11 @@
 
 package eu.europa.ec.markt.dss.validation102853.https;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.Context;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-
+import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.manager.ProxyPreferenceManager;
+import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
+import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -72,11 +56,25 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.manager.ProxyPreferenceManager;
-import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
-import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
+import javax.naming.Context;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of DataLoader for any protocol.<p/>

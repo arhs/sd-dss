@@ -20,29 +20,6 @@
 
 package eu.europa.ec.markt.dss.validation102853.tsl;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
-import java.security.Security;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.security.auth.x500.X500Principal;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
@@ -51,11 +28,7 @@ import eu.europa.ec.markt.dss.exception.DSSNotETSICompliantException;
 import eu.europa.ec.markt.dss.exception.DSSNullReturnedException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.InMemoryDocument;
-import eu.europa.ec.markt.dss.validation102853.AdvancedSignature;
-import eu.europa.ec.markt.dss.validation102853.CertificateToken;
-import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
-import eu.europa.ec.markt.dss.validation102853.CommonCertificateVerifier;
-import eu.europa.ec.markt.dss.validation102853.CommonTrustedCertificateSource;
+import eu.europa.ec.markt.dss.validation102853.*;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.https.CommonsDataLoader;
@@ -65,6 +38,17 @@ import eu.europa.ec.markt.dss.validation102853.report.SimpleReport;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+
+import javax.security.auth.x500.X500Principal;
+import java.io.*;
+import java.net.URL;
+import java.security.Security;
+import java.security.cert.X509Certificate;
+import java.util.*;
 
 /**
  * This class allows to extract all the trust anchors defined by the trusted lists. The LOTL is used as the entry point of the process.

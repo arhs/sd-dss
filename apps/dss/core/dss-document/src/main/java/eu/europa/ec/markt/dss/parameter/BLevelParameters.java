@@ -27,7 +27,6 @@ import eu.europa.ec.markt.dss.exception.DSSNullException;
 
 import java.io.Serializable;
 import java.net.URI;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -202,7 +201,7 @@ public class BLevelParameters implements Serializable {
 	 * postalAdddress [2] PostalAddress OPTIONAL }
 	 * PostalAddress ::= SEQUENCE SIZE(1..6) OF DirectoryString
 	 */
-	public static class SignerLocation {
+  public static class SignerLocation implements Serializable {
 
 		private String country;
 
@@ -342,6 +341,25 @@ public class BLevelParameters implements Serializable {
 			this.id = id;
 		}
 
+    /**
+     * Set list of Signature policy qualifiers
+     * Only URI qualifiers are supported
+     *
+     * @param qualifiers List of qualifiers
+     */
+		public void setSigPolicyQualifiers(List<URI> qualifiers) {
+			this.qualifiers = qualifiers;
+		}
+
+    /**
+     * Get list of signature policy qualifiers
+     *
+     * @return qualifiers
+     */
+		public List<URI> getSigPolicyQualifiers() {
+			return qualifiers;
+		}
+
 		/**
 		 * Return the hash algorithm for the signature policy
 		 *
@@ -379,6 +397,7 @@ public class BLevelParameters implements Serializable {
 		}
 
 	}
+
 	/**
 	 * Set the signing date
 	 *

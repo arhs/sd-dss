@@ -20,20 +20,10 @@
 
 package eu.europa.ec.markt.dss.signature.xades;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import org.bouncycastle.tsp.TimeStampToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
+import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
@@ -51,9 +41,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.security.auth.x500.X500Principal;
-import javax.xml.crypto.dsig.XMLSignature;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 

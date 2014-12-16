@@ -56,14 +56,11 @@ public class OfflineResolver extends ResourceResolverSpi {
 	}
 
 	public OfflineResolver(final List<DSSDocument> documents, Node signatureElement) {
-
-
 		this.documents = documents;
     signature = signatureElement;
   }
 
 	public OfflineResolver(final List<DSSDocument> documents) {
-
 		this.documents = documents;
 	}
 
@@ -152,7 +149,7 @@ public class OfflineResolver extends ResourceResolverSpi {
             result.setMIMEType(mimeTypeString);
           }
         } catch (Exception e) {
-          e.printStackTrace();
+          LOG.warn("Not able to parse references from signature.", e);
         }
       }
       return result;
