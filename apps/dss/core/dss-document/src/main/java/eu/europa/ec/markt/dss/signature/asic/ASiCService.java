@@ -274,7 +274,6 @@ public class ASiCService extends AbstractSignatureService {
 		final boolean asice = isAsice(asicParameters);
 		final boolean cadesForm = isCAdESForm(asicParameters);
 
-
 		final ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
 		ZipOutputStream zipOutputStream = new ZipOutputStream(outBytes);
 		if (asice && signDocument != null) {
@@ -286,15 +285,15 @@ public class ASiCService extends AbstractSignatureService {
 
 			storeMimetype(asicParameters, zipOutputStream);
 		}
+		if (asice && cadesForm) {
+			storeAsicManifest(underlyingParameters, toSignDocument, zipOutputStream);
+		} else if (isAsice(asicParameters) && isXAdESForm(asicParameters)) {
+			storeManifest(toSignDocument, zipOutputStream);
+		}
 		storeSignedFiles(toSignDocument, zipOutputStream);
 
 		storesSignature(asicParameters, signature, zipOutputStream);
 
-		if (asice && cadesForm) {
-			storeAsicManifest(underlyingParameters, toSignDocument, zipOutputStream);
-    } else if (isAsice(asicParameters) && isXAdESForm(asicParameters)) {
-      storeManifest(toSignDocument, zipOutputStream);
-		}
 		DSSUtils.close(zipOutputStream);
 
 		final InMemoryDocument asicContainer = createASiCContainer(asicParameters, outBytes, toSignDocumentName);
