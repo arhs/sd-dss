@@ -108,7 +108,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	private final Map<HttpHost, UsernamePasswordCredentials> authenticationMap = new HashMap<HttpHost, UsernamePasswordCredentials>();
 
-	private HttpClient httpClient;
+	transient private HttpClient httpClient;
 
 	private boolean updated;
 
