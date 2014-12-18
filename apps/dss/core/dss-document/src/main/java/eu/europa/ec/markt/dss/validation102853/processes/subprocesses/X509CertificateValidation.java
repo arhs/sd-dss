@@ -20,70 +20,25 @@
 
 package eu.europa.ec.markt.dss.validation102853.processes.subprocesses;
 
-import java.util.Date;
-import java.util.List;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.TSLConstant;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
-import eu.europa.ec.markt.dss.validation102853.policy.CertificateExpirationConstraint;
-import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
-import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
-import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
-import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
+import eu.europa.ec.markt.dss.validation102853.policy.*;
 import eu.europa.ec.markt.dss.validation102853.processes.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.ForLegalPerson;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.QualifiedCertificate;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.SSCD;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
-import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
-import eu.europa.ec.markt.dss.validation102853.rules.Indication;
-import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
-import eu.europa.ec.markt.dss.validation102853.rules.NodeValue;
-import eu.europa.ec.markt.dss.validation102853.rules.RuleConstant;
-import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
+import eu.europa.ec.markt.dss.validation102853.rules.*;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ACCM;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CCCBB;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CCCBB_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCIITLP;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCIITLP_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCIQC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCIQC_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCISSCD;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCISSCD_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ICSI;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ICSI_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ICTIVRSC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ICTIVRSC_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IICR;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IICR_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRDPFC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRDPFC_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRDTFC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRDTFC_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRIF;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRIF_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCGKU;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCGKU_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCOH;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCOH_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCR;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCR_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_IIDOCWVPOTS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_IIDOCWVPOTS_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_ITACBT;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_ITACBT_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
+import java.util.Date;
+import java.util.List;
+
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.*;
 
 public class X509CertificateValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, RuleConstant, ValidationXPathQueryHolder {
 
@@ -673,17 +628,15 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		if (constraint == null) {
 			return true;
 		}
-
-		final String keyUsage = certificateXmlDom.getValue("./KeyUsage/text()");
-		final String expectedKeyUsage = constraint.getExpectedValue();
-
 		constraint.create(validationDataXmlNode, BBB_XCV_ISCGKU);
-		constraint.setValue(keyUsage.contains(expectedKeyUsage) == true ? expectedKeyUsage : "false");
+		final List<XmlDom> keyUsageBits = certificateXmlDom.getElements("./KeyUsageBits/KeyUsage");
+		final List<String> stringList = XmlDom.convertToStringList(keyUsageBits);
+		constraint.setValue(stringList);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_XCV_ISCGKU_ANS);
 		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		constraint.setConclusionReceiver(conclusion);
 
-		return constraint.check();
+		return constraint.checkInList();
 	}
 
 	/**
