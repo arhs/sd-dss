@@ -444,7 +444,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 			if (httpRequest != null) {
 
 				httpRequest.releaseConnection();
-				EntityUtils.consumeQuietly(httpResponse.getEntity());
+				if (httpResponse != null) EntityUtils.consumeQuietly(httpResponse.getEntity());
 			}
 		}
 	}
