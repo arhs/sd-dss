@@ -261,7 +261,7 @@ public class SimpleReportBuilder {
 	}
 
   /*
-   * Adest errors are not shown by default but the ADEST_RATSD_ANS and ADEST_NONCE_ANS error should be shown.
+   * Adest errors are not shown by default but the ADEST_RATSD, ADEST_NONCE and ADEST_TSSIG errors should be shown.
    * To be reviewed if revocation and timestamp delta verification should be moved.
    */
   private void addAdestErrorsToBasicInfo(ProcessParameters params, XmlNode signatureNode, String signatureId) {
@@ -269,6 +269,7 @@ public class SimpleReportBuilder {
         signatureId);
     addBasicInfo(signatureNode, adesTConclusion.getElements("./Error[@NameId = \"ADEST_RATSD_ANS\"]"));
     addBasicInfo(signatureNode, adesTConclusion.getElements("./Error[@NameId = \"ADEST_NONCE_ANS\"]"));
+    addBasicInfo(signatureNode, adesTConclusion.getElements("./Error[@NameId = \"ADEST_TSSIG_ANS\"]"));
   }
 
   private void addSignatureScope(final XmlNode signatureNode, final XmlDom signatureScopes) {

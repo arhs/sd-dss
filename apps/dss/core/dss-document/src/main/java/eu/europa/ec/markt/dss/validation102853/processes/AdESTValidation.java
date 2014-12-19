@@ -312,9 +312,16 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
         return signatureConclusion;
       }
 
+      if (!checkTimestampSignature(signatureConclusion, timestamp)) {
+        return signatureConclusion;
+      }
+
       if (!checkMessageImprintDataFoundConstraint(timestampConclusion, timestamp)) {
         continue;
       }
+
+
+
       if (!checkMessageImprintDataIntactConstraint(timestampConclusion, timestamp)) {
         continue;
       }
@@ -392,6 +399,17 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
     return signatureConclusion;
   }
 
+  private boolean checkTimestampSignature(Conclusion conclusion, XmlDom timestamp) {
+    final Constraint constraint = new Constraint("FAIL");
+    constraint.setExpectedValue("true");
+    constraint.create(timestampXmlNode, ADEST_TSSIG);
+    constraint.setValue(timestamp.getBoolValue(XP_SIGNATURE_VALID));
+    constraint.setIndications(INVALID, null, ADEST_TSSIG_ANS);
+    constraint.setConclusionReceiver(conclusion);
+
+    return constraint.check();
+  }
+
   private boolean checkRevocationAndTimestampDeltaConstraint(Conclusion conclusion, Date productionTime) {
 
     final Long deltaInMilliseconds = constraintData.getRevocationAndTimestampDeltaInMilliseconds();
@@ -412,6 +430,7 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 
   private boolean checkNonce(Conclusion conclusion) {
     final Constraint constraint = new Constraint("FAIL");
+
     constraint.setExpectedValue("true");
     constraint.create(signatureXmlNode, ADEST_NONCE);
     String value = signatureXmlDom.getElements("./OcspNonce").get(0).getText();
