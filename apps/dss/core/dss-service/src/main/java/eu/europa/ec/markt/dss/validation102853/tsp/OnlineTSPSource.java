@@ -24,6 +24,7 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
+import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.tsp.*;
 import org.slf4j.Logger;
@@ -50,6 +51,7 @@ public class OnlineTSPSource implements TSPSource, Serializable {
     private ASN1ObjectIdentifier policyOid;
 
     private DataLoader dataLoader;
+    private String userAgent;
 
     /**
      * The default constructor for OnlineTSPSource.
@@ -149,6 +151,10 @@ public class OnlineTSPSource implements TSPSource, Serializable {
         }
     }
 
+    public void setUserAgent (String userAgent) {
+        this.userAgent = userAgent;
+    }
+
     /**
      * Get timestamp token - communications layer
      *
@@ -164,6 +170,8 @@ public class OnlineTSPSource implements TSPSource, Serializable {
         tsaConnection.setUseCaches(false);
         tsaConnection.setRequestProperty("Content-Type", "application/timestamp-query");
         tsaConnection.setRequestProperty("Content-Transfer-Encoding", "binary");
+        if (StringUtils.isNotBlank(userAgent))
+          tsaConnection.setRequestProperty("User-Agent", userAgent);
 
         DSSUtils.writeToURLConnection(tsaConnection, requestBytes);
 
