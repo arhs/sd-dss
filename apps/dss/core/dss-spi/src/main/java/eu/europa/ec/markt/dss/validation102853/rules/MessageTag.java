@@ -24,8 +24,8 @@ public enum MessageTag {
 	ADEST_ROTVPIIC_ANS("The result of the timestamps validation process is not conclusive!"),
   ADEST_RATSD("Is the difference between the revocation time and the signature time stamp OK?"),
   ADEST_RATSD_ANS("The difference between the revocation time and the signature time stamp is too large"),
-  ADEST_TSSIG("Is the time stamp signature OK?"),
-  ADEST_TSSIG_ANS("The time stamp signature is not OK!"),
+  ADEST_TSSIG("Is the time stamp signature valid?"),
+  ADEST_TSSIG_ANS("The time stamp signature is not valid!"),
   ADEST_NONCE("Is Nonce valid?"),
   ADEST_NONCE_ANS("Nonce is invalid"),
 
