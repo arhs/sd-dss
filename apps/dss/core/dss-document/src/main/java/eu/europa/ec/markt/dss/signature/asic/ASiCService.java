@@ -426,9 +426,11 @@ public class ASiCService extends AbstractSignatureService {
 
 	private void storeZipComment(final ASiCParameters asicParameters, final ZipOutputStream outZip, final String toSignDocumentName) {
 
-		if (asicParameters.isZipComment() && DSSUtils.isNotEmpty(toSignDocumentName)) {
 
-			outZip.setComment("mimetype=" + getMimeTypeBytes(asicParameters));
+		String zipComment = asicParameters.getZipComment();
+		if ((zipComment != null) && DSSUtils.isNotEmpty(toSignDocumentName)) {
+
+			outZip.setComment(zipComment);
 		}
 	}
 

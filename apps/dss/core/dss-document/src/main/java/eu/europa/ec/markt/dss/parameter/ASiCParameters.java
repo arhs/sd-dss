@@ -19,7 +19,7 @@ public class ASiCParameters implements Serializable {
   /**
    * Indicates if the ZIP comment should be used to store the signed content mime-type.
    */
-  private boolean zipComment = false;
+  private String zipComment;
 
   /**
    * Indicates the mime-type to be set within the mimetype file. If null the stored mime-type is that of the signed
@@ -69,20 +69,20 @@ public class ASiCParameters implements Serializable {
   }
 
   /**
-   * Indicates if the ZIP comment must include the mime-type.
+   * Returns the zip file comment
    *
-   * @return {@code boolean}
+   * @return {@code String} return zip comment
    */
-  public boolean isZipComment() {
+  public String getZipComment() {
     return zipComment;
   }
 
   /**
-   * This method allows to indicate if the zip comment will contain the mime type.
+   * Sets the comment that will be used for the zip file
    *
-   * @param zipComment
+   * @param zipComment comment for zip file
    */
-  public void setZipComment(final boolean zipComment) {
+  public void setZipComment(final String zipComment) {
     this.zipComment = zipComment;
   }
 
