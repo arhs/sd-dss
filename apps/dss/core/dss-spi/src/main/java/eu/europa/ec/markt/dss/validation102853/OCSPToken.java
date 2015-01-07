@@ -179,7 +179,12 @@ public class OCSPToken extends RevocationToken {
 			final RevokedStatus revokedStatus = (RevokedStatus) certStatus;
 			status = false;
 			revocationDate = revokedStatus.getRevocationTime();
-			final int reasonId = revokedStatus.getRevocationReason();
+			int reasonId = 0;
+			try {
+				reasonId = revokedStatus.getRevocationReason();
+			} catch (IllegalStateException e) {
+				LOG.warn(e.getMessage());
+			}
 			final CRLReason crlReason = CRLReason.lookup(reasonId);
 			reason = crlReason.toString();
 		} else if (certStatus instanceof UnknownStatus) {
