@@ -1316,7 +1316,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
       xmlSignature.setOcspNonce(Boolean.toString(Arrays.equals(foundHash, digest)));
     } catch (Exception e) {
       LOG.error(e.getMessage());
-      addErrorMessage(xmlSignature, e);
+      addErrorMessage(xmlSignature, "Invalid nonce format");
       xmlSignature.setOcspNonce("false");
     }
   }
