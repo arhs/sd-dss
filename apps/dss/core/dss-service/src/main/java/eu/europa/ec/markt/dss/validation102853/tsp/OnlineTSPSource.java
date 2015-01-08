@@ -20,24 +20,21 @@
 
 package eu.europa.ec.markt.dss.validation102853.tsp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.net.URLConnection;
-
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.tsp.TSPException;
-import org.bouncycastle.tsp.TimeStampRequest;
-import org.bouncycastle.tsp.TimeStampRequestGenerator;
-import org.bouncycastle.tsp.TimeStampResponse;
-import org.bouncycastle.tsp.TimeStampToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
+import org.apache.commons.lang.StringUtils;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.tsp.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.math.BigInteger;
+import java.net.URLConnection;
 
 /**
  * Class encompassing a RFC 3161 TSA, accessed through HTTP(S) to a given URI
@@ -45,7 +42,7 @@ import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
  * @version $Revision$ - $Date$
  */
 
-public class OnlineTSPSource implements TSPSource {
+public class OnlineTSPSource implements TSPSource, Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(OnlineTSPSource.class);
 
@@ -54,6 +51,7 @@ public class OnlineTSPSource implements TSPSource {
     private ASN1ObjectIdentifier policyOid;
 
     private DataLoader dataLoader;
+    private String userAgent;
 
     /**
      * The default constructor for OnlineTSPSource.
@@ -153,6 +151,10 @@ public class OnlineTSPSource implements TSPSource {
         }
     }
 
+    public void setUserAgent (String userAgent) {
+        this.userAgent = userAgent;
+    }
+
     /**
      * Get timestamp token - communications layer
      *
@@ -168,6 +170,8 @@ public class OnlineTSPSource implements TSPSource {
         tsaConnection.setUseCaches(false);
         tsaConnection.setRequestProperty("Content-Type", "application/timestamp-query");
         tsaConnection.setRequestProperty("Content-Transfer-Encoding", "binary");
+        if (StringUtils.isNotBlank(userAgent))
+          tsaConnection.setRequestProperty("User-Agent", userAgent);
 
         DSSUtils.writeToURLConnection(tsaConnection, requestBytes);
 

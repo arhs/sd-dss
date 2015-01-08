@@ -36,6 +36,8 @@ import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.DSSSignatureUtils;
 import eu.europa.ec.markt.dss.signature.InMemoryDocument;
+import eu.europa.ec.markt.dss.signature.MimeType;
+import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 
 /**
  * This class handles the specifics of the detached XML signature.
@@ -53,16 +55,16 @@ class DetachedSignatureBuilder extends SignatureBuilder {
 	/**
 	 * The default constructor for DetachedSignatureBuilder.<br>
 	 * The detached signature uses by default the exclusive method of canonicalization.
-	 *
-	 * @param params  The set of parameters relating to the structure and process of the creation or extension of the
+	 *  @param params  The set of parameters relating to the structure and process of the creation or extension of the
 	 *                electronic signature.
 	 * @param origDoc The original document to sign.
+	 * @param certificateVerifier
 	 */
-	public DetachedSignatureBuilder(SignatureParameters params, DSSDocument origDoc) {
+	public DetachedSignatureBuilder(final SignatureParameters params, final DSSDocument origDoc, final CertificateVerifier certificateVerifier) {
 
-		super(params, origDoc);
-		signedInfoCanonicalizationMethod = CanonicalizationMethod.EXCLUSIVE;
-		reference2CanonicalizationMethod = CanonicalizationMethod.EXCLUSIVE;
+		super(params, origDoc, certificateVerifier);
+		setSignedInfoCanonicalizationMethod(params, CanonicalizationMethod.EXCLUSIVE);
+		signedPropertiesCanonicalizationMethod = CanonicalizationMethod.EXCLUSIVE;
 	}
 
 	@Override
@@ -95,7 +97,7 @@ class DetachedSignatureBuilder extends SignatureBuilder {
 	 * @throws DSSException
 	 */
 	@Override
-	protected void incorporateReference1() throws DSSException {
+	protected void incorporateReferences() throws DSSException {
 
 		final List<DSSReference> references = params.getReferences();
 		for (final DSSReference reference : references) {
@@ -105,7 +107,7 @@ class DetachedSignatureBuilder extends SignatureBuilder {
 	}
 
 	@Override
-	protected DSSDocument canonicalizeReference(final DSSReference reference) {
+	protected DSSDocument transformReference(final DSSReference reference) {
 
 		return reference.getContents();
 	}
@@ -131,6 +133,8 @@ class DetachedSignatureBuilder extends SignatureBuilder {
 		signatureValueDom.appendChild(signatureValueNode);
 
 		byte[] documentBytes = DSSXMLUtils.transformDomToByteArray(documentDom);
-		return new InMemoryDocument(documentBytes);
+		final InMemoryDocument inMemoryDocument = new InMemoryDocument(documentBytes);
+		inMemoryDocument.setMimeType(MimeType.XML);
+		return inMemoryDocument;
 	}
 }

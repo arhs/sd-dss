@@ -20,68 +20,25 @@
 
 package eu.europa.ec.markt.dss.validation102853.processes.subprocesses;
 
-import java.util.Date;
-import java.util.List;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.TSLConstant;
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.validation102853.policy.CertificateExpirationConstraint;
-import eu.europa.ec.markt.dss.validation102853.policy.EtsiValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
-import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
-import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
+import eu.europa.ec.markt.dss.validation102853.policy.*;
 import eu.europa.ec.markt.dss.validation102853.processes.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.ForLegalPerson;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.QualifiedCertificate;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.SSCD;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
-import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
-import eu.europa.ec.markt.dss.validation102853.rules.Indication;
-import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
-import eu.europa.ec.markt.dss.validation102853.rules.NodeValue;
-import eu.europa.ec.markt.dss.validation102853.rules.RuleConstant;
-import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
+import eu.europa.ec.markt.dss.validation102853.rules.*;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ACCM;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CCCBB;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CCCBB_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCIITLP;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCIITLP_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCIQC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCIQC_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCISSCD;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_CMDCISSCD_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ICSI;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ICSI_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ICTIVRSC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ICTIVRSC_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IICR;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IICR_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRDPFC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRDPFC_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRDTFC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRDTFC_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRIF;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRIF_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCOH;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCOH_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCR;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_ISCR_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_IIDOCWVPOTS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_IIDOCWVPOTS_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_ITACBT;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_ITACBT_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
+import java.util.Date;
+import java.util.List;
+
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.*;
 
 public class X509CertificateValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, RuleConstant, ValidationXPathQueryHolder {
 
@@ -95,9 +52,9 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	private XmlDom diagnosticData;
 
 	/**
-	 * See {@link ProcessParameters#getValidationPolicy()}
+	 * See {@link ProcessParameters#getCurrentValidationPolicy()}
 	 */
-	protected EtsiValidationPolicy constraintData;
+	protected ValidationPolicy constraintData;
 
 	/**
 	 * See {@link ProcessParameters#getCurrentTime()}
@@ -137,7 +94,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	private void prepareParameters(final ProcessParameters params) {
 
 		this.diagnosticData = params.getDiagnosticData();
-		this.constraintData = (EtsiValidationPolicy) params.getValidationPolicy();
+		this.constraintData = params.getCurrentValidationPolicy();
 
 		this.signatureContext = params.getSignatureContext();
 		this.contextElement = params.getContextElement();
@@ -222,7 +179,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		 * provided in the inputs:
 		 */
 
-		final boolean trustedProspectiveCertificateChain = Boolean.valueOf(isTrustedProspectiveCertificateChain(params));
+		final boolean trustedProspectiveCertificateChain = isTrustedProspectiveCertificateChain(params);
 		if (!checkProspectiveCertificateChainConstraint(conclusion, trustedProspectiveCertificateChain)) {
 			return conclusion;
 		}
@@ -240,9 +197,6 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		 * The validation shall include revocation checking for each certificate in the chain:
 		 */
 
-		// boolean signingCertRevocationStatus = true;
-		// boolean intermediateCARevocationStatus = true;
-
 		final List<XmlDom> certificateChainXmlDom = contextElement.getElements("./CertificateChain/ChainCertificate");
 		for (final XmlDom chainCertificateXmlDom : certificateChainXmlDom) {
 
@@ -255,7 +209,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 				continue;
 			}
 
-			String subContext = SIGNING_CERTIFICATE;
+			final String subContext;
 			// The case of other certificates then the signing certificate:
 			if (!signingCertificateId.equals(certificateId)) {
 
@@ -265,7 +219,14 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 				if (!checkCertificateExpirationConstraint(conclusion, contextName, subContext)) {
 					return conclusion;
 				}
+			} else {
+
+				subContext = SIGNING_CERTIFICATE;
+				if (!checkKeyUsageConstraint(conclusion, certificateId, certificateXmlDom)) {
+					return conclusion;
+				}
 			}
+
 
 			if (!checkCertificateSignatureConstraint(conclusion, certificateId, certificateXmlDom, subContext)) {
 				return conclusion;
@@ -287,22 +248,10 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 			//
 			//            }
 
-			// Preparation of information about revocation data and their freshness.
-			boolean revocationFreshnessToBeChecked = constraintData.isRevocationFreshnessToBeChecked();
-			boolean revocationFresh = !revocationFreshnessToBeChecked;
-
 			final XmlDom revocation = certificateXmlDom.getElement("./Revocation");
 			final String revocationIssuingTimeString = getValue(revocation, "./IssuingTime/text()");
-			if (revocationFreshnessToBeChecked && !revocationIssuingTimeString.isEmpty()) {
 
-				final Date revocationIssuingTime = RuleUtils.parseDate(revocationIssuingTimeString);
-				final long revocationDeltaTime = currentTime.getTime() - revocationIssuingTime.getTime();
-
-				if (revocationDeltaTime <= constraintData.getMaxRevocationFreshness()) {
-
-					revocationFresh = true;
-				}
-			}
+			boolean revocationFresh = prepareRevocationFreshnessCheck(revocationIssuingTimeString);
 
 			/**
 			 * a) If the certificate path validation returns a success indication and the revocation information used is
@@ -434,6 +383,30 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		return conclusion;
 	}
 
+	/**
+	 * Preparation of information about revocation data and their freshness.
+	 *
+	 * @param revocationIssuingTimeString
+	 * @return
+	 */
+	private boolean prepareRevocationFreshnessCheck(String revocationIssuingTimeString) {
+
+		boolean revocationFreshnessToBeChecked = constraintData.isRevocationFreshnessToBeChecked();
+		boolean revocationFresh = !revocationFreshnessToBeChecked;
+
+		if (revocationFreshnessToBeChecked && !revocationIssuingTimeString.isEmpty()) {
+
+			final Date revocationIssuingTime = RuleUtils.parseDate(revocationIssuingTimeString);
+			final long revocationDeltaTime = currentTime.getTime() - revocationIssuingTime.getTime();
+
+			if (revocationDeltaTime <= constraintData.getMaxRevocationFreshness()) {
+
+				revocationFresh = true;
+			}
+		}
+		return revocationFresh;
+	}
+
 	private boolean getBoolValue(final XmlDom xmlDom, final String xPath) {
 		return xmlDom == null ? false : xmlDom.getBoolValue(xPath);
 	}
@@ -520,13 +493,13 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	}
 
 	/**
-	 * This method checks if the signature of the given certificate.
+	 * This method checks the signature of the given certificate.
 	 *
 	 * @param conclusion        the conclusion to use to add the result of the check.
 	 * @param certificateId
 	 * @param certificateXmlDom
 	 * @param subContext
-	 * @return
+	 * @return false if the check failed and the process should stop, true otherwise.
 	 */
 	private boolean checkCertificateSignatureConstraint(final Conclusion conclusion, final String certificateId, final XmlDom certificateXmlDom, final String subContext) {
 
@@ -537,13 +510,14 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		constraint.create(validationDataXmlNode, BBB_XCV_ICSI);
 		constraint.setValue(certificateXmlDom.getBoolValue(XP_SIGNATURE_VALID));
 		constraint.setIndications(INDETERMINATE, NO_CERTIFICATE_CHAIN_FOUND, BBB_XCV_ICSI_ANS);
+		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
 	}
 
 	/**
-	 * This method checks if the revocation data is available for the given certificate.
+	 * This method checks the revocation data is available for the given certificate.
 	 *
 	 * @param conclusion        the conclusion to use to add the result of the check.
 	 * @param certificateId
@@ -638,6 +612,31 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
+	}
+
+	/**
+	 * This method checks if the signing certificate has an appropriate key usage.
+	 *
+	 * @param conclusion        the conclusion to use to add the result of the check.
+	 * @param certificateId
+	 * @param certificateXmlDom
+	 * @return
+	 */
+	private boolean checkKeyUsageConstraint(Conclusion conclusion, String certificateId, XmlDom certificateXmlDom) {
+
+		final Constraint constraint = constraintData.getSigningCertificateKeyUsageConstraint(contextName);
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(validationDataXmlNode, BBB_XCV_ISCGKU);
+		final List<XmlDom> keyUsageBits = certificateXmlDom.getElements("./KeyUsageBits/KeyUsage");
+		final List<String> stringList = XmlDom.convertToStringList(keyUsageBits);
+		constraint.setValue(stringList);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_XCV_ISCGKU_ANS);
+		constraint.setAttribute(CERTIFICATE_ID, certificateId);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.checkInList();
 	}
 
 	/**

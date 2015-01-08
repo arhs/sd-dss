@@ -24,19 +24,26 @@ import java.io.IOException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1UTCTime;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
+import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import org.bouncycastle.cert.ocsp.OCSPException;
+import org.bouncycastle.cert.ocsp.OCSPResp;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
@@ -44,10 +51,11 @@ import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
-import eu.europa.ec.markt.dss.validation102853.TimestampReference;
 
 /**
  * Utility class that contains some XML related method.
@@ -56,6 +64,8 @@ import eu.europa.ec.markt.dss.validation102853.TimestampReference;
  */
 
 public final class DSSASN1Utils {
+
+	private static final Logger LOG = LoggerFactory.getLogger(DSSASN1Utils.class);
 
 	/**
 	 * This class is an utility class and cannot be instantiated.
@@ -67,18 +77,30 @@ public final class DSSASN1Utils {
 	/**
 	 * This method returns {@code T extends ASN1Primitive} created from array of bytes. The {@code IOException} is transformed in {@code DSSException}.
 	 *
-	 * @param bytes array of bytes to be transformed to {@code ASN1Sequence}
+	 * @param bytes array of bytes to be transformed to {@code ASN1Primitive}
 	 * @return new {@code T extends ASN1Primitive}
 	 */
 	public static <T extends ASN1Primitive> T toASN1Primitive(final byte[] bytes) throws DSSException {
 
 		try {
-			@SuppressWarnings("unchecked")
-			final T asn1Sequence = (T) ASN1Primitive.fromByteArray(bytes);
-			return asn1Sequence;
+			@SuppressWarnings("unchecked") final T asn1Primitive = (T) ASN1Primitive.fromByteArray(bytes);
+			return asn1Primitive;
 		} catch (IOException e) {
 			throw new DSSException(e);
 		}
+	}
+
+	/**
+	 * This method checks if a given {@code DEROctetString} is null.
+	 *
+	 * @param derOctetString
+	 * @return
+	 */
+	public static boolean isDEROctetStringNull(final DEROctetString derOctetString) {
+
+		final byte[] derOctetStringBytes = derOctetString.getOctets();
+		final ASN1Primitive asn1Null = DSSASN1Utils.toASN1Primitive(derOctetStringBytes);
+		return DERNull.INSTANCE.equals(asn1Null);
 	}
 
 	/**
@@ -275,14 +297,87 @@ public final class DSSASN1Utils {
 	}
 
 	/**
-	 * // TODO-Vin (07/07/2014): TO BE COMPLETED. I think that IT should be in XAdESSignature
-	 * @param timeStampToken
+	 * This method allows to create a {@code BasicOCSPResp} from a {@code DERSequence}.
+	 *
+	 * @param otherRevocationInfoMatch {@code DERSequence} to convert to {@code BasicOCSPResp}
+	 * @return {@code BasicOCSPResp}
+	 */
+	public static BasicOCSPResp getBasicOcspResp(final DERSequence otherRevocationInfoMatch) {
+
+		BasicOCSPResp basicOCSPResp = null;
+		try {
+			final BasicOCSPResponse basicOcspResponse = BasicOCSPResponse.getInstance(otherRevocationInfoMatch);
+			basicOCSPResp = new BasicOCSPResp(basicOcspResponse);
+		} catch (Exception e) {
+			LOG.error("Impossible to create BasicOCSPResp from DERSequence!", e);
+		}
+		return basicOCSPResp;
+	}
+
+	/**
+	 * This method allows to create a {@code OCSPResp} from a {@code DERSequence}.
+	 *
+	 * @param otherRevocationInfoMatch {@code DERSequence} to convert to {@code OCSPResp}
+	 * @return {@code OCSPResp}
+	 */
+	public static OCSPResp getOcspResp(final DERSequence otherRevocationInfoMatch) {
+
+		OCSPResp ocspResp = null;
+		try {
+			final OCSPResponse ocspResponse = OCSPResponse.getInstance(otherRevocationInfoMatch);
+			ocspResp = new OCSPResp(ocspResponse);
+		} catch (Exception e) {
+			LOG.error("Impossible to create OCSPResp from DERSequence!", e);
+		}
+		return ocspResp;
+	}
+
+	/**
+	 * This method returns the {@code BasicOCSPResp} from a {@code OCSPResp}.
+	 *
+	 * @param ocspResp {@code OCSPResp} to analysed
 	 * @return
 	 */
-	public List<TimestampReference> getTimestampReferencesFromTimeStampToken(TimeStampToken timeStampToken) {
-		List<TimestampReference> references = new ArrayList<TimestampReference>();
+	public static BasicOCSPResp getBasicOCSPResp(final OCSPResp ocspResp) {
 
-		//need signatureId, digestAlgo, digestValue, timestampRef category (SIGNATURE/ REFERENCE/ REVOCATION)
-		return references;
+		BasicOCSPResp basicOCSPResp = null;
+		try {
+			final Object responseObject = ocspResp.getResponseObject();
+			if (responseObject instanceof BasicOCSPResp) {
+
+				basicOCSPResp = (BasicOCSPResp) responseObject;
+			} else {
+				LOG.warn("Unknown OCSP response type: {}", responseObject.getClass());
+			}
+		} catch (OCSPException e) {
+			LOG.error("Impossible to process OCSPResp!", e);
+		}
+		return basicOCSPResp;
+	}
+
+	/**
+	 * This method returns the {@code ASN1Sequence} encapsulated in {@code DEROctetString}. The {@code DEROctetString} is represented as {@code byte} array.
+	 *
+	 * @param bytes {@code byte} representation of {@code DEROctetString}
+	 * @return encapsulated {@code ASN1Sequence}
+	 * @throws DSSException in case of a decoding problem
+	 */
+	public static ASN1Sequence getAsn1SequenceFromDerOctetString(byte[] bytes) throws DSSException {
+
+		ASN1InputStream input = null;
+		try {
+
+			input = new ASN1InputStream(bytes);
+			final DEROctetString s = (DEROctetString) input.readObject();
+			final byte[] content = s.getOctets();
+			input.close();
+			input = new ASN1InputStream(content);
+			final ASN1Sequence seq = (ASN1Sequence) input.readObject();
+			return seq;
+		} catch (IOException e) {
+			throw new DSSException("Error when computing certificate's extensions.", e);
+		} finally {
+			DSSUtils.closeQuietly(input);
+		}
 	}
 }

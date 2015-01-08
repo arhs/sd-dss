@@ -9,10 +9,13 @@
 				<xs:element name="Signature" maxOccurs="unbounded" minOccurs="0">
 					<xs:complexType>
 						<xs:sequence>
+							<xs:element type="xs:string" name="ParentId" minOccurs="0"/>
+							<xs:element type="xs:string" name="OcspNonce" minOccurs="0"/>
 							<xs:element type="xs:string" name="ErrorMessage" minOccurs="0"/>
 							<xs:element type="xs:dateTime" name="DateTime"/>
 							<xs:element type="xs:string" name="SignatureFormat"/>
 
+							<xs:element type="StructuralValidationType" name="StructuralValidation"/>
 							<xs:element type="BasicSignatureType" name="BasicSignature"/>
 							<xs:element type="SigningCertificateType" name="SigningCertificate"/>
 							<xs:element type="CertificateChainType" name="CertificateChain"/>
@@ -76,6 +79,7 @@
 							</xs:element>
 						</xs:sequence>
 						<xs:attribute type="xs:string" name="Id" use="required"/>
+						<xs:attribute type="xs:string" name="Type" use="optional"/>
 					</xs:complexType>
 				</xs:element>
 				<xs:element name="UsedCertificates">
@@ -94,6 +98,13 @@
 										<xs:element type="xs:int" name="PublicKeySize"/>
 										<xs:element type="xs:string" name="PublicKeyEncryptionAlgo"/>
 
+										<xs:element name="KeyUsageBits" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element type="xs:string" name="KeyUsage" minOccurs="0" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
 										<xs:element type="xs:boolean" name="IdKpOCSPSigning" minOccurs="0"/>
 										<xs:element type="xs:boolean" name="IdPkixOcspNoCheck" minOccurs="0"/>
 										<xs:element type="xs:boolean" name="ExpiredCertOnCRL" minOccurs="0"/>
@@ -141,6 +152,12 @@
 				<xs:attribute type="xs:string" name="scope" use="required"/>
 			</xs:extension>
 		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="StructuralValidationType">
+		<xs:sequence>
+			<xs:element type="xs:boolean" name="Valid"/>
+			<xs:element type="xs:string" name="Message"/>
+		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="BasicSignatureType">
 		<xs:sequence>

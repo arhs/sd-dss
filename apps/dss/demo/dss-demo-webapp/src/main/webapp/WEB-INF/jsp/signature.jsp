@@ -8,8 +8,7 @@
 </h1>
 <div class="fluid-row center">
     <div class="fluid-column fluid-c12">
-        <script type="text/javascript"
-                src="<spring:url value="/scripts/deployJava.js"/>"></script>
+		<script src="//www.java.com/js/deployJava.js"></script>
         <script type="text/javascript">
             var attributes = {
                 code : 'eu.europa.ec.markt.dss.applet.main.DSSAppletCore.class',
@@ -19,7 +18,7 @@
             };
             var parameters = {
                 service_url : '<c:out value="${prefUrlService.value}"/>',
-                default_policy_url : '<c:out value="${prefDefaultPolicyUrl}"/>',
+                default_policy_url : '<c:out value="${prefDefaultPolicyUrl}"/>'
             };
             var version = '1.6';
 

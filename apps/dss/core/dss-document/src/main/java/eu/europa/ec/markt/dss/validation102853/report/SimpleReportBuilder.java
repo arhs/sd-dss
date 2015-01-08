@@ -19,11 +19,16 @@
  */
 package eu.europa.ec.markt.dss.validation102853.report;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Vector;
-
+import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.TSLConstant;
+import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.validation102853.*;
+import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
+import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
+import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
+import eu.europa.ec.markt.dss.validation102853.rules.*;
+import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
+import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jce.X509Principal;
@@ -31,24 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.TSLConstant;
-import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.validation102853.CertificateQualification;
-import eu.europa.ec.markt.dss.validation102853.RuleUtils;
-import eu.europa.ec.markt.dss.validation102853.SignatureQualification;
-import eu.europa.ec.markt.dss.validation102853.SignatureType;
-import eu.europa.ec.markt.dss.validation102853.TLQualification;
-import eu.europa.ec.markt.dss.validation102853.policy.EtsiValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
-import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.Indication;
-import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
-import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
-import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
-import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Vector;
 
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.LABEL_TINTWS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.LABEL_TINVTWS;
@@ -65,7 +56,7 @@ public class SimpleReportBuilder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SimpleReportBuilder.class);
 
-	private final EtsiValidationPolicy constraintData;
+	private final ValidationPolicy constraintData;
 	private final DiagnosticData diagnosticData;
 
 	private int totalSignatureCount = 0;
@@ -73,7 +64,7 @@ public class SimpleReportBuilder {
 
 	public SimpleReportBuilder(final ValidationPolicy constraintData, final DiagnosticData diagnosticData) {
 
-		this.constraintData = (EtsiValidationPolicy) constraintData;
+		this.constraintData = constraintData;
 		this.diagnosticData = diagnosticData;
 	}
 
@@ -132,13 +123,13 @@ public class SimpleReportBuilder {
 	}
 
 	private void addSignatures(final ProcessParameters params, final XmlNode simpleReport) throws DSSException {
-		final List<XmlDom> signatures = diagnosticData.getElements("/DiagnosticData/Signature");
 
+		final List<XmlDom> signatures = diagnosticData.getElements("/DiagnosticData/Signature");
 		validSignatureCount = 0;
 		totalSignatureCount = 0;
-		for (final XmlDom signature : signatures) {
+		for (final XmlDom signatureXmlDom : signatures) {
 
-			addSignature(params, simpleReport, signature);
+			addSignature(params, simpleReport, signatureXmlDom);
 		}
 	}
 
@@ -162,6 +153,9 @@ public class SimpleReportBuilder {
 
 		final String signatureId = diagnosticSignature.getValue("./@Id");
 		signatureNode.setAttribute(AttributeName.ID, signatureId);
+
+		final String type = diagnosticSignature.getValue("./@Type");
+		addCounterSignature(diagnosticSignature, signatureNode, type);
 		try {
 
 			addSigningTime(diagnosticSignature, signatureNode);
@@ -242,11 +236,14 @@ public class SimpleReportBuilder {
 			//if (!Indication.VALID.equals(ltvIndication)) {
 
 			addBasicInfo(signatureNode, basicValidationErrorList);
+      addAdestErrorsToBasicInfo(params, signatureNode, signatureId);
 			addBasicInfo(signatureNode, basicValidationWarningList);
 			addBasicInfo(signatureNode, infoList);
 			//}
 			addSignatureProfile(signatureNode, signCert);
-			addSignatureScope(signatureNode, diagnosticSignature.getElement("./SignatureScopes"));
+
+			final XmlDom signatureScopes = diagnosticSignature.getElement("./SignatureScopes");
+			addSignatureScope(signatureNode, signatureScopes);
 		} catch (Exception e) {
 
 			notifyException(signatureNode, e);
@@ -254,11 +251,34 @@ public class SimpleReportBuilder {
 		}
 	}
 
-	private void addSignatureScope(XmlNode signatureNode, XmlDom signatureSoopes) {
-		signatureNode.addChild(signatureSoopes);
+	private void addCounterSignature(XmlDom diagnosticSignature, XmlNode signatureNode, String type) {
+		if (AttributeValue.COUNTERSIGNATURE.equals(type)) {
+
+			signatureNode.setAttribute(AttributeName.TYPE, AttributeValue.COUNTERSIGNATURE);
+			final String parentId = diagnosticSignature.getValue("./ParentId/text()");
+			signatureNode.setAttribute(AttributeName.PARENT_ID, parentId);
+		}
 	}
 
-	private void addBasicInfo(XmlNode signatureNode, List<XmlDom> basicValidationErrorList) {
+  /*
+   * Adest errors are not shown by default but the ADEST_RATSD, ADEST_NONCE and ADEST_TSSIG errors should be shown.
+   * To be reviewed if revocation and timestamp delta verification should be moved.
+   */
+  private void addAdestErrorsToBasicInfo(ProcessParameters params, XmlNode signatureNode, String signatureId) {
+    XmlDom adesTConclusion = params.getAdestData().getElement("/AdESTValidationData/Signature[@Id='%s']/Conclusion",
+        signatureId);
+    addBasicInfo(signatureNode, adesTConclusion.getElements("./Error[@NameId = \"ADEST_RATSD_ANS\"]"));
+    addBasicInfo(signatureNode, adesTConclusion.getElements("./Error[@NameId = \"ADEST_NONCE_ANS\"]"));
+    addBasicInfo(signatureNode, adesTConclusion.getElements("./Error[@NameId = \"ADEST_TSSIG_ANS\"]"));
+  }
+
+  private void addSignatureScope(final XmlNode signatureNode, final XmlDom signatureScopes) {
+		if (signatureScopes != null) {
+			signatureNode.addChild(signatureScopes);
+		}
+	}
+
+	private void addBasicInfo(final XmlNode signatureNode, final List<XmlDom> basicValidationErrorList) {
 		for (final XmlDom error : basicValidationErrorList) {
 
 			signatureNode.addChild(error);

@@ -20,8 +20,6 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -43,13 +41,13 @@ import java.util.Map;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.asn1.x509.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.europa.ec.markt.dss.DSSASN1Utils;
 import eu.europa.ec.markt.dss.DSSPKUtils;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
@@ -70,6 +68,16 @@ import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 public class CertificateToken extends Token {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CertificateToken.class);
+
+	public static final String DIGITAL_SIGNATURE = "digitalSignature";
+	public static final String NON_REPUDIATION = "nonRepudiation";
+	public static final String KEY_ENCIPHERMENT = "keyEncipherment";
+	public static final String DATA_ENCIPHERMENT = "dataEncipherment";
+	public static final String KEY_AGREEMENT = "keyAgreement";
+	public static final String KEY_CERT_SIGN = "keyCertSign";
+	public static final String CRL_SIGN = "cRLSign";
+	public static final String ENCIPHER_ONLY = "encipherOnly";
+	public static final String DECIPHER_ONLY = "decipherOnly";
 
 	/**
 	 * Encapsulated X509 certificate.
@@ -526,21 +534,20 @@ public class CertificateToken extends Token {
 	 */
 	public boolean hasIdPkixOcspNoCheckExtension() {
 
-		byte[] extensionValue = x509Certificate.getExtensionValue(OID.id_pkix_ocsp_no_check.getId());
-		try {
+		final byte[] extensionValue = x509Certificate.getExtensionValue(OID.id_pkix_ocsp_no_check.getId());
+		if (extensionValue != null) {
 
-			if (extensionValue != null) {
+			try {
 
-				ASN1Primitive derObject = toDERObject(extensionValue);
+				final ASN1Primitive derObject = DSSASN1Utils.toASN1Primitive(extensionValue);
 				if (derObject instanceof DEROctetString) {
 
-					DEROctetString derOctetString = (DEROctetString) derObject;
-					byte[] data = derOctetString.getOctets();
-					return data.length == 0;
+					final boolean derOctetStringNull = DSSASN1Utils.isDEROctetStringNull((DEROctetString) derObject);
+					return derOctetStringNull;
 				}
+			} catch (Exception e) {
+				LOG.debug("Exception when processing 'id_pkix_ocsp_no_check'", e);
 			}
-		} catch (Exception e) {
-
 		}
 		return false;
 	}
@@ -552,32 +559,22 @@ public class CertificateToken extends Token {
 	 */
 	public boolean hasExpiredCertOnCRLExtension() {
 
-		byte[] extensionValue = x509Certificate.getExtensionValue(OID.id_ce_expiredCertsOnCRL.getId());
-		try {
+		final byte[] extensionValue = x509Certificate.getExtensionValue(OID.id_ce_expiredCertsOnCRL.getId());
+		if (extensionValue != null) {
 
-			if (extensionValue != null) {
+			try {
 
-				ASN1Primitive derObject = toDERObject(extensionValue);
+				final ASN1Primitive derObject = DSSASN1Utils.toASN1Primitive(extensionValue);
 				if (derObject instanceof DEROctetString) {
 
-					DEROctetString derOctetString = (DEROctetString) derObject;
-					byte[] data = derOctetString.getOctets();
-					return data.length == 0;
+					final boolean derOctetStringNull = DSSASN1Utils.isDEROctetStringNull((DEROctetString) derObject);
+					return derOctetStringNull;
 				}
+			} catch (Exception e) {
+				LOG.debug("Exception when processing 'id_ce_expiredCertsOnCRL'", e);
 			}
-		} catch (Exception e) {
-
 		}
 		return false;
-	}
-
-	private ASN1Primitive toDERObject(final byte[] data) throws IOException {
-
-		ByteArrayInputStream inStream = new ByteArrayInputStream(data);
-		ASN1InputStream asnInputStream = new ASN1InputStream(inStream);
-		ASN1Primitive object = asnInputStream.readObject();
-		asnInputStream.close();
-		return object;
 	}
 
 	/**
@@ -585,7 +582,7 @@ public class CertificateToken extends Token {
 	 *
 	 * @return
 	 */
-	CertificateTokenValidationExtraInfo extraInfo() {
+	public CertificateTokenValidationExtraInfo extraInfo() {
 
 		return extraInfo;
 	}
@@ -650,21 +647,17 @@ public class CertificateToken extends Token {
 	}
 
 	/**
-	 * This method returns the CRL distribution point of the wrapped certificate.
-	 *
-	 * @return {@code byte[]}
+	 * @return array of {@code byte}s representing the CRL distribution point of the wrapped certificate
 	 */
 	public byte[] getCRLDistributionPoints() {
 
-		final String id = X509Extension.cRLDistributionPoints.getId();
+		final String id = Extension.cRLDistributionPoints.getId();
 		final byte[] extensionValue = x509Certificate.getExtensionValue(id);
 		return extensionValue;
 	}
 
 	/**
-	 * Indicates if the wrapped certificate has cRLSign key usage bit set.
-	 *
-	 * @return
+	 * @return true if the wrapped certificate has cRLSign key usage bit set
 	 */
 	public boolean hasCRLSignKeyUsage() {
 
@@ -674,9 +667,7 @@ public class CertificateToken extends Token {
 	}
 
 	/**
-	 * This method returns the size of the public key of the certificate.
-	 *
-	 * @return
+	 * @return the size of the public key of the certificate
 	 */
 	public int getPublicKeyLength() {
 
@@ -770,8 +761,9 @@ public class CertificateToken extends Token {
 
 				out.append(indentStr).append("Revocation data[\n");
 				indentStr += "\t";
+				final CertificateToken revocationTokenIssuerToken = revocationToken.getIssuerToken();
 				out.append(indentStr).append("Status: ").append(revocationToken.getStatus()).append(" / ").append(revocationToken.getIssuingTime())
-					  .append(" / issuer's certificate ").append(revocationToken.getIssuerToken().getDSSIdAsString()).append('\n');
+					  .append(" / issuer's certificate ").append(revocationTokenIssuerToken != null ? revocationTokenIssuerToken.getDSSIdAsString() : "null").append('\n');
 				indentStr = indentStr.substring(1);
 				out.append(indentStr).append("]\n");
 			} else {
@@ -849,5 +841,47 @@ public class CertificateToken extends Token {
 	 */
 	public void setXmlId(final String xmlId) {
 		this.xmlId = xmlId;
+	}
+
+	/**
+	 * This method returns a {@code String} representing the key usages of the certificate.
+	 *
+	 * @return {@code List} of {@code String}s of different certificate's key usages
+	 */
+	public List<String> getKeyUsageBits() {
+
+		boolean[] keyUsageArray = x509Certificate.getKeyUsage();
+		if (keyUsageArray == null) {
+			return null;
+		}
+		final List<String> keyUsageBits = new ArrayList<String>();
+		if (keyUsageArray[0]) {
+			keyUsageBits.add(DIGITAL_SIGNATURE);
+		}
+		if (keyUsageArray[1]) {
+			keyUsageBits.add(NON_REPUDIATION);
+		}
+		if (keyUsageArray[2]) {
+			keyUsageBits.add(KEY_ENCIPHERMENT);
+		}
+		if (keyUsageArray[3]) {
+			keyUsageBits.add(DATA_ENCIPHERMENT);
+		}
+		if (keyUsageArray[4]) {
+			keyUsageBits.add(KEY_AGREEMENT);
+		}
+		if (keyUsageArray[5]) {
+			keyUsageBits.add(KEY_CERT_SIGN);
+		}
+		if (keyUsageArray[6]) {
+			keyUsageBits.add(CRL_SIGN);
+		}
+		if (keyUsageArray[7]) {
+			keyUsageBits.add(ENCIPHER_ONLY);
+		}
+		if (keyUsageArray[8]) {
+			keyUsageBits.add(DECIPHER_ONLY);
+		}
+		return keyUsageBits;
 	}
 }

@@ -33,6 +33,7 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.BLevelParameters;
+import eu.europa.ec.markt.dss.parameter.ChainCertificate;
 import eu.europa.ec.markt.dss.parameter.DSSReference;
 import eu.europa.ec.markt.dss.parameter.DSSTransform;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
@@ -52,6 +53,7 @@ import eu.europa.ec.markt.dss.ws.signature.SignatureLevel;
 import eu.europa.ec.markt.dss.ws.signature.SignaturePackaging;
 import eu.europa.ec.markt.dss.ws.signature.SignatureService;
 import eu.europa.ec.markt.dss.ws.signature.SignatureService_Service;
+import eu.europa.ec.markt.dss.ws.signature.WsChainCertificate;
 import eu.europa.ec.markt.dss.ws.signature.WsDocument;
 import eu.europa.ec.markt.dss.ws.signature.WsParameters;
 import eu.europa.ec.markt.dss.ws.signature.WsdssReference;
@@ -73,7 +75,6 @@ public final class SigningUtils {
 
 		System.setProperty("javax.xml.bind.JAXBContext", "com.sun.xml.internal.bind.v2.ContextFactory");
 		FACTORY = new ObjectFactory();
-
 	}
 
 	private SigningUtils() {
@@ -203,13 +204,17 @@ public final class SigningUtils {
 	}
 
 	private static void prepareCertificateChain(SignatureParameters parameters, WsParameters wsParameters) {
-		final List<X509Certificate> certificateChain = parameters.getCertificateChain();
-		if (certificateChain.size() > 0) {
+		final List<ChainCertificate> certificateChain = parameters.getCertificateChain();
+		if (!DSSUtils.isEmpty(certificateChain)) {
 
-			final List<byte[]> certificateChainByteArrayList = wsParameters.getCertificateChainByteArrayList();
-			for (final X509Certificate x509Certificate : certificateChain) {
+			final List<WsChainCertificate> wsChainCertificateList = wsParameters.getChainCertificateList();
+			for (final ChainCertificate chainCertificate : certificateChain) {
 
-				certificateChainByteArrayList.add(DSSUtils.getEncoded(x509Certificate));
+				final WsChainCertificate wsChainCertificate = new WsChainCertificate();
+				final X509Certificate x509Certificate = chainCertificate.getX509Certificate();
+				wsChainCertificate.setX509Certificate(DSSUtils.getEncoded(x509Certificate));
+				wsChainCertificate.setSignedAttribute(chainCertificate.isSignedAttribute());
+				wsChainCertificateList.add(wsChainCertificate);
 			}
 		}
 	}
@@ -240,6 +245,10 @@ public final class SigningUtils {
 		}
 	}
 
+	/**
+	 * @param parameters
+	 * @param wsParameters
+	 */
 	private static void prepareReferences(final SignatureParameters parameters, final WsParameters wsParameters) {
 
 		final List<WsdssReference> wsDssReferences = wsParameters.getReferences();
@@ -256,6 +265,8 @@ public final class SigningUtils {
 			final String name = dssReference.getDigestMethodAlgorithm().getName();
 			final DigestAlgorithm value = DigestAlgorithm.fromValue(name);
 			wsDssReference.setDigestMethodAlgorithm(value);
+			final DSSDocument contents = dssReference.getContents();
+			wsDssReference.setContents(toWsDocument(contents));
 
 			final List<DSSTransform> dssTransforms = dssReference.getTransforms();
 			if (dssTransforms != null) {
@@ -275,6 +286,20 @@ public final class SigningUtils {
 		}
 	}
 
+	public static WsDocument toWsDocument(final DSSDocument dssDocument) {
+
+		final WsDocument wsDocument = new WsDocument();
+		wsDocument.setBytes(dssDocument.getBytes());
+		wsDocument.setName(dssDocument.getName());
+		wsDocument.setAbsolutePath(dssDocument.getAbsolutePath());
+		final MimeType mimeType = dssDocument.getMimeType();
+		final eu.europa.ec.markt.dss.ws.signature.MimeType wsMimeType = FACTORY.createMimeType();
+		final String mimeTypeString = mimeType.getMimeTypeString();
+		wsMimeType.setMimeTypeString(mimeTypeString);
+		wsDocument.setMimeType(wsMimeType);
+		return wsDocument;
+	}
+
 	public static WsDocument toWsDocument(final File file) {
 
 		final DSSDocument dssDocument = new FileDocument(file);
@@ -283,11 +308,10 @@ public final class SigningUtils {
 		wsDocument.setName(dssDocument.getName());
 		wsDocument.setAbsolutePath(dssDocument.getAbsolutePath());
 		final MimeType mimeType = dssDocument.getMimeType();
-		if (mimeType != null) {
-
-			wsDocument.setMimeTypeString(mimeType.getCode());
-			wsDocument.setMimeType(eu.europa.ec.markt.dss.ws.signature.MimeType.fromValue(mimeType.name()));
-		}
+		final eu.europa.ec.markt.dss.ws.signature.MimeType wsMimeType = FACTORY.createMimeType();
+		final String mimeTypeString = mimeType.getMimeTypeString();
+		wsMimeType.setMimeTypeString(mimeTypeString);
+		wsDocument.setMimeType(wsMimeType);
 		return wsDocument;
 	}
 
@@ -296,8 +320,8 @@ public final class SigningUtils {
 		final InMemoryDocument inMemoryDocument = new InMemoryDocument(wsSignedDocument.getBytes());
 		inMemoryDocument.setName(wsSignedDocument.getName());
 		inMemoryDocument.setAbsolutePath(wsSignedDocument.getAbsolutePath());
-		final String mimeTypeString = wsSignedDocument.getMimeTypeString();
-		final MimeType mimeType = MimeType.fromCode(mimeTypeString);
+		final eu.europa.ec.markt.dss.ws.signature.MimeType wsMimeType = wsSignedDocument.getMimeType();
+		final MimeType mimeType = MimeType.fromMimeTypeString(wsMimeType.getMimeTypeString());
 		inMemoryDocument.setMimeType(mimeType);
 		return inMemoryDocument;
 	}

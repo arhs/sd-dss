@@ -31,6 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSRevocationUtils;
+import eu.europa.ec.markt.dss.validation102853.CertificatePool;
+import eu.europa.ec.markt.dss.validation102853.CertificateToken;
+import eu.europa.ec.markt.dss.validation102853.OCSPToken;
 
 /**
  * Abstract class that helps to implement an OCSPSource with an already loaded list of BasicOCSPResp
@@ -40,48 +43,66 @@ import eu.europa.ec.markt.dss.DSSRevocationUtils;
 
 public abstract class OfflineOCSPSource implements OCSPSource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OfflineOCSPSource.class);
+	private static final Logger LOG = LoggerFactory.getLogger(OfflineOCSPSource.class);
 
-    @Override
-    final public BasicOCSPResp getOCSPResponse(final X509Certificate x509Certificate, final X509Certificate issuerX509Certificate) {
+	@Override
+	final public OCSPToken getOCSPToken(final CertificateToken certificateToken, final CertificatePool certificatePool) {
 
-        /**
-         * TODO: (Bob 2013.05.08) Does the OCSP responses always use SHA1?<br>
-         * RFC 2560:<br>
-         * CertID ::= SEQUENCE {<br>
-         * hashAlgorithm AlgorithmIdentifier,<br>
-         * issuerNameHash OCTET STRING, -- Hash of Issuer's DN<br>
-         * issuerKeyHash OCTET STRING, -- Hash of Issuer's public key<br>
-         * serialNumber CertificateSerialNumber }<br>
-         *
-         * ... The hash algorithm used for both these hashes, is identified in hashAlgorithm. serialNumber is the
-         * serial number of the cert for which status is being requested.
-         */
-        Date bestUpdate = null;
-        BasicOCSPResp bestBasicOCSPResp = null;
-        final CertificateID certId = DSSRevocationUtils.getOCSPCertificateID(x509Certificate, issuerX509Certificate);
-        for (final BasicOCSPResp basicOCSPResp : getContainedOCSPResponses()) {
+		final List<BasicOCSPResp> containedOCSPResponses = getContainedOCSPResponses();
+		final String dssIdAsString = certificateToken.getDSSIdAsString();
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("--> OfflineOCSPSource queried for " + dssIdAsString + " contains: " + containedOCSPResponses.size() + " element(s).");
+		}
+		final X509Certificate x509Certificate = certificateToken.getCertificate();
+		final X509Certificate issuerX509Certificate = certificateToken.getIssuerToken().getCertificate();
+		/**
+		 * TODO: (Bob 2013.05.08) Does the OCSP responses always use SHA1?<br>
+		 * RFC 2560:<br>
+		 * CertID ::= SEQUENCE {<br>
+		 * hashAlgorithm AlgorithmIdentifier,<br>
+		 * issuerNameHash OCTET STRING, -- Hash of Issuer's DN<br>
+		 * issuerKeyHash OCTET STRING, -- Hash of Issuer's public key<br>
+		 * serialNumber CertificateSerialNumber }<br>
+		 *
+		 * ... The hash algorithm used for both these hashes, is identified in hashAlgorithm. serialNumber is the
+		 * serial number of the cert for which status is being requested.
+		 */
+		Date bestUpdate = null;
+		BasicOCSPResp bestBasicOCSPResp = null;
+		SingleResp bestSingleResp = null;
+		final CertificateID certId = DSSRevocationUtils.getOCSPCertificateID(x509Certificate, issuerX509Certificate);
+		for (final BasicOCSPResp basicOCSPResp : containedOCSPResponses) {
 
-            for (final SingleResp singleResp : basicOCSPResp.getResponses()) {
+			for (final SingleResp singleResp : basicOCSPResp.getResponses()) {
 
-                if (DSSRevocationUtils.matches(certId, singleResp)) {
+				if (DSSRevocationUtils.matches(certId, singleResp)) {
 
-                    final Date thisUpdate = singleResp.getThisUpdate();
-                    if (bestUpdate == null || thisUpdate.after(bestUpdate)) {
+					final Date thisUpdate = singleResp.getThisUpdate();
+					if (bestUpdate == null || thisUpdate.after(bestUpdate)) {
 
-                        bestBasicOCSPResp = basicOCSPResp;
-                        bestUpdate = thisUpdate;
-                    }
-                }
-            }
-        }
-        return bestBasicOCSPResp;
-    }
+						bestBasicOCSPResp = basicOCSPResp;
+						bestSingleResp = singleResp;
+						bestUpdate = thisUpdate;
+					}
+				}
+			}
+			if (bestBasicOCSPResp != null) {
+				break;
+			}
+		}
+		if (bestSingleResp != null) {
 
-    /**
-     * Retrieves the list of BasicOCSPResp contained in the source.
-     *
-     * @return
-     */
-    public abstract List<BasicOCSPResp> getContainedOCSPResponses();
+			final OCSPToken ocspToken = new OCSPToken(bestBasicOCSPResp, bestSingleResp, certificatePool);
+			certificateToken.setRevocationToken(ocspToken);
+			return ocspToken;
+		}
+		return null;
+	}
+
+	/**
+	 * Retrieves the list of {@code BasicOCSPResp} contained in the source.
+	 *
+	 * @return {@code List} of {@code BasicOCSPResp}s
+	 */
+	public abstract List<BasicOCSPResp> getContainedOCSPResponses();
 }

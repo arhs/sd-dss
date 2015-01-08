@@ -20,16 +20,16 @@
 
 package eu.europa.ec.markt.dss.validation102853.xades;
 
-import java.security.cert.X509CRL;
-import java.util.ArrayList;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import java.io.Serializable;
+import java.security.cert.X509CRL;
+import java.util.ArrayList;
 
 /**
  * Retrieves CRL values from an XAdES (-XL) signature.
@@ -37,12 +37,7 @@ import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
  * @version $Revision$ - $Date$
  */
 
-public class XAdESCRLSource extends OfflineCRLSource {
-
-    /**
-     * The element of the XML tree that contains the signature. All CRL(s) are extracted during the instantiation.
-     */
-    private Element signatureElement;
+public class XAdESCRLSource extends OfflineCRLSource implements Serializable {
 
     /**
      * The default constructor for XAdESCRLSource.
@@ -60,13 +55,12 @@ public class XAdESCRLSource extends OfflineCRLSource {
 
             throw new DSSNullException(XPathQueryHolder.class, "xPathQueryHolder");
         }
-        this.signatureElement = signatureElement;
-        x509CRLList = new ArrayList<X509CRL>();
-        addCRLs(xPathQueryHolder.XPATH_ENCAPSULATED_CRL_VALUE);
-        addCRLs(xPathQueryHolder.XPATH_TSVD_ENCAPSULATED_CRL_VALUE);
+	    x509CRLList = new ArrayList<X509CRL>();
+        addCRLs(signatureElement, xPathQueryHolder.XPATH_ENCAPSULATED_CRL_VALUE);
+        addCRLs(signatureElement, xPathQueryHolder.XPATH_TSVD_ENCAPSULATED_CRL_VALUE);
     }
 
-    private void addCRLs(final String xPathQuery) {
+    private void addCRLs(Element signatureElement, final String xPathQuery) {
 
         final NodeList nodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQuery);
         for (int ii = 0; ii < nodeList.getLength(); ii++) {

@@ -20,26 +20,23 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.bouncycastle.cert.ocsp.BasicOCSPResp;
-
 import eu.europa.ec.markt.dss.DSSRevocationUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
 import eu.europa.ec.markt.dss.validation102853.bean.CandidatesForSigningCertificate;
+import eu.europa.ec.markt.dss.validation102853.bean.CertificateValidity;
 import eu.europa.ec.markt.dss.validation102853.bean.SignatureCryptographicVerification;
-import eu.europa.ec.markt.dss.validation102853.bean.SigningCertificateValidity;
 import eu.europa.ec.markt.dss.validation102853.crl.CRLToken;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
 import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+
+import java.io.Serializable;
+import java.security.cert.X509CRL;
+import java.util.*;
 
 /**
  * TODO <p/> <p/> DISCLAIMER: Project owner DG-MARKT.
@@ -47,7 +44,7 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
-public abstract class DefaultAdvancedSignature implements AdvancedSignature {
+public abstract class DefaultAdvancedSignature implements AdvancedSignature, Serializable {
 
 	/**
 	 * This is the reference to the global (external) pool of certificates. All encapsulated certificates in the signature are added to this pool. See {@link
@@ -84,7 +81,7 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 	protected List<TimestampToken> contentTimestamps;
 
 	// Enclosed signature timestamps.
-	protected List<TimestampToken> signatureTimestamps;
+	protected transient List<TimestampToken> signatureTimestamps;
 
 	// Enclosed SignAndRefs timestamps.
 	protected List<TimestampToken> sigAndRefsTimestamps;
@@ -94,6 +91,13 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 
 	// This variable contains the list of enclosed archive signature timestamps.
 	protected List<TimestampToken> archiveTimestamps;
+
+	// Cached {@code OfflineCRLSource}
+	protected OfflineCRLSource offlineCRLSource;
+
+	// Cached {@code OfflineOCSPSource}
+	protected OfflineOCSPSource offlineOCSPSource;
+	private AdvancedSignature masterSignature;
 
 	/**
 	 * @param certPool can be null
@@ -165,11 +169,15 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 	public ValidationContext getSignatureValidationContext(final CertificateVerifier certificateVerifier) {
 
 		final ValidationContext validationContext = new SignatureValidationContext();
-		final CertificateToken signingCertificateToken = getSigningCertificateToken();
-		validationContext.addCertificateTokenForVerification(signingCertificateToken);
+		final List<CertificateToken> certificates = getCertificates();
+		for (final CertificateToken certificate : certificates) {
+
+			validationContext.addCertificateTokenForVerification(certificate);
+		}
 		prepareTimestamps(validationContext);
 		certificateVerifier.setSignatureCRLSource(new ListCRLSource(getCRLSource()));
 		certificateVerifier.setSignatureOCSPSource(new ListOCSPSource(getOCSPSource()));
+		// certificateVerifier.setAdjunctCertSource(getCertificateSource());
 		validationContext.initialize(certificateVerifier);
 		validationContext.validate();
 		return validationContext;
@@ -217,17 +225,17 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 	}
 
 	/**
-	 * This method returns revocation values (ocsp and crl) that will be included in the LT profile
+	 * This method returns revocation values (ocsp and crl) that will be included in the LT profile.
 	 *
-	 * @param validationContext
+	 * @param validationContext {@code ValidationContext} contains all the revocation data retrieved during the validation process.
 	 * @return {@code RevocationDataForInclusion}
 	 */
 	public RevocationDataForInclusion getRevocationDataForInclusion(final ValidationContext validationContext) {
 
-		//TODO: there can be also CRL and OCSP in TimestampToken CMS data
+		//TODO: to be checked: there can be also CRL and OCSP in TimestampToken CMS data
 		final Set<RevocationToken> revocationTokens = validationContext.getProcessedRevocations();
 		final OfflineCRLSource crlSource = getCRLSource();
-		final List<CRLToken> containedCRLs = crlSource.getContainedCRLTokens();
+		final List<X509CRL> containedX509CRLs = crlSource.getContainedX509CRLs();
 		final OfflineOCSPSource ocspSource = getOCSPSource();
 		final List<BasicOCSPResp> containedBasicOCSPResponses = ocspSource.getContainedOCSPResponses();
 		final List<CRLToken> crlTokens = new ArrayList<CRLToken>();
@@ -236,10 +244,11 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 
 			if (revocationToken instanceof CRLToken) {
 
-				final boolean tokenIn = containedCRLs.contains(revocationToken);
+				final CRLToken crlToken = (CRLToken) revocationToken;
+				final X509CRL x509crl = crlToken.getX509crl();
+				final boolean tokenIn = containedX509CRLs.contains(x509crl);
 				if (!tokenIn) {
 
-					final CRLToken crlToken = (CRLToken) revocationToken;
 					crlTokens.add(crlToken);
 				}
 			} else if (revocationToken instanceof OCSPToken) {
@@ -266,6 +275,16 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 	public List<String> getInfo() {
 
 		return Collections.unmodifiableList(info);
+	}
+
+	@Override
+	public void setMasterSignature(final AdvancedSignature masterSignature) {
+		this.masterSignature = masterSignature;
+	}
+
+	@Override
+	public AdvancedSignature getMasterSignature() {
+		return masterSignature;
 	}
 
 	public static class RevocationDataForInclusion {
@@ -298,21 +317,20 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 	@Override
 	public CertificateToken getSigningCertificateToken() {
 
+		// This ensures that the variable candidatesForSigningCertificate has been initialized
 		candidatesForSigningCertificate = getCandidatesForSigningCertificate();
-		if (signatureCryptographicVerification == null) {
+		// This ensures that the variable signatureCryptographicVerification has been initialized
+		signatureCryptographicVerification = checkSignatureIntegrity();
+		final CertificateValidity theCertificateValidity = candidatesForSigningCertificate.getTheCertificateValidity();
+		if (theCertificateValidity != null) {
 
-			checkSignatureIntegrity();
-		}
-		final SigningCertificateValidity theSigningCertificateValidity = candidatesForSigningCertificate.getTheSigningCertificateValidity();
-		if (theSigningCertificateValidity != null) {
+			if (theCertificateValidity.isValid()) {
 
-			if (theSigningCertificateValidity.isValid()) {
-
-				final CertificateToken signingCertificateToken = theSigningCertificateValidity.getCertificateToken();
+				final CertificateToken signingCertificateToken = theCertificateValidity.getCertificateToken();
 				return signingCertificateToken;
 			}
 		}
-		final SigningCertificateValidity theBestCandidate = candidatesForSigningCertificate.getTheBestCandidate();
+		final CertificateValidity theBestCandidate = candidatesForSigningCertificate.getTheBestCandidate();
 		return theBestCandidate == null ? null : theBestCandidate.getCertificateToken();
 	}
 
@@ -414,6 +432,11 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 			final byte[] timestampData = getArchiveTimestampData(timestampToken);
 			timestampToken.matchData(timestampData);
 		}
+	}
+
+	@Override
+	public String validateStructure() {
+		return null;
 	}
 }
 

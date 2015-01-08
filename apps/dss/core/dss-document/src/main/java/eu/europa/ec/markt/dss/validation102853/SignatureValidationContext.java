@@ -66,7 +66,7 @@ public class SignatureValidationContext implements ValidationContext {
 	/**
 	 * Each unit is approximately 5 seconds
 	 */
-	private final int MAX_TIMEOUT = 4;
+	public static int MAX_TIMEOUT = 5;
 
 	private final Set<CertificateToken> processedCertificates = new HashSet<CertificateToken>();
 	private final Set<RevocationToken> processedRevocations = new HashSet<RevocationToken>();
@@ -107,11 +107,10 @@ public class SignatureValidationContext implements ValidationContext {
 	 */
 	protected Date currentTime = new Date();
 
-
 	/**
 	 * A unique thread can be used to disable the parallel fetching:
-	 * final ExecutorService executorService = Executors.newFixedThreadPool(1);
 	 */
+	//	private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 	private final ExecutorService executorService = Executors.newCachedThreadPool();
 
 	/**
@@ -488,6 +487,7 @@ public class SignatureValidationContext implements ValidationContext {
 			// This check is not needed for the trust anchor.
 			return null;
 		}
+
 		if (certToken.isOCSPSigning() && certToken.hasIdPkixOcspNoCheckExtension()) {
 
 			certToken.extraInfo().add("OCSP check not needed: id-pkix-ocsp-nocheck extension present.");
