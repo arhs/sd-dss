@@ -91,6 +91,8 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	public static final int TIMEOUT_SOCKET = 6000;
 
+	public static final int CONNECT_TIMEOUT = 6000;
+
 	public static final String CONTENT_TYPE = "Content-Type";
 
 	protected String contentType;
@@ -105,6 +107,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	private int timeoutConnection = TIMEOUT_CONNECTION;
 	private int timeoutSocket = TIMEOUT_SOCKET;
+	private int connectTimeout = CONNECT_TIMEOUT;
 
 	private final Map<HttpHost, UsernamePasswordCredentials> authenticationMap = new HashMap<HttpHost, UsernamePasswordCredentials>();
 
@@ -173,6 +176,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		final RequestConfig.Builder custom = RequestConfig.custom();
 		custom.setSocketTimeout(timeoutSocket);
 		custom.setConnectionRequestTimeout(timeoutConnection);
+		custom.setConnectTimeout(connectTimeout);
 		final RequestConfig requestConfig = custom.build();
 		httpClientBuilder = httpClientBuilder.setDefaultRequestConfig(requestConfig);
 		httpClientBuilder.setConnectionManager(getConnectionManager());
@@ -574,6 +578,15 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	public void setTimeoutConnection(final int timeoutConnection) {
 		httpClient = null;
 		this.timeoutConnection = timeoutConnection;
+	}
+
+	public void setConnectTimeout(int connectTimeout) {
+	 httpClient = null;
+		this.connectTimeout = connectTimeout;
+	}
+
+	public int getConnectTimeout() {
+		return connectTimeout;
 	}
 
 	/**
