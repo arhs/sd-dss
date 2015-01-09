@@ -295,12 +295,17 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
       }
 
 			asicMimeType = determinateAsicMimeType(asicContainer.getMimeType(), asicEntryMimeType);
-			if (MimeType.ASICS == asicEntryMimeType) {
+			if (MimeType.ASICS == asicMimeType) {
 
-				for (final DSSDocument detachedContent : detachedContents) {
-					if ("mimetype".equals(detachedContent.getName())) {
-						detachedContents.remove(detachedContent);
-						break;
+				final ListIterator<DSSDocument> dssDocumentListIterator = detachedContents.listIterator();
+				while (dssDocumentListIterator.hasNext()) {
+
+					final DSSDocument dssDocument = dssDocumentListIterator.next();
+					final String detachedContentName = dssDocument.getName();
+					if ("mimetype".equals(detachedContentName)) {
+						dssDocumentListIterator.remove();
+					} else if (detachedContentName.indexOf('/') != -1) {
+						dssDocumentListIterator.remove();
 					}
 				}
 			}

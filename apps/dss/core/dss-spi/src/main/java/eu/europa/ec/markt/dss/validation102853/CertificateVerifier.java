@@ -1,8 +1,7 @@
 /*
  * DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT),
- * B-1049 Bruxelles/Brussel
+ * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
  *
  * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
  *
@@ -21,13 +20,13 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
+import java.io.Serializable;
+
 import eu.europa.ec.markt.dss.validation102853.crl.CRLSource;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
-
-import java.io.Serializable;
 
 /**
  * Provides information on the sources to be used in the validation process in the context of a signature.
@@ -37,104 +36,102 @@ import java.io.Serializable;
 
 public interface CertificateVerifier extends Serializable {
 
-  /**
-   * Returns the OCSP source associated with this verifier.
-   *
-   * @return
-   */
-  public OCSPSource getOcspSource();
+	/**
+	 * Returns the OCSP source associated with this verifier.
+	 *
+	 * @return
+	 */
+	public OCSPSource getOcspSource();
 
-  /**
-   * Returns the CRL source associated with this verifier.
-   *
-   * @return
-   */
-  public CRLSource getCrlSource();
+	/**
+	 * Returns the CRL source associated with this verifier.
+	 *
+	 * @return
+	 */
+	public CRLSource getCrlSource();
 
-  /**
-   * Defines the source of CRL used by this class
-   *
-   * @param crlSource the crlSource to set
-   */
-  public void setCrlSource(final CRLSource crlSource);
+	/**
+	 * Defines the source of CRL used by this class
+	 *
+	 * @param crlSource the crlSource to set
+	 */
+	public void setCrlSource(final CRLSource crlSource);
 
-  /**
-   * Defines the source of OCSP used by this class
-   *
-   * @param ocspSource the ocspSource to set
-   */
-  public void setOcspSource(final OCSPSource ocspSource);
+	/**
+	 * Defines the source of OCSP used by this class
+	 *
+	 * @param ocspSource the ocspSource to set
+	 */
+	public void setOcspSource(final OCSPSource ocspSource);
 
-  /**
-   * Returns the trusted certificates source associated with this verifier. This source is used to identify the
-   * trusted anchor.
-   *
-   * @return
-   */
-  public TrustedCertificateSource getTrustedCertSource();
+	/**
+	 * Returns the trusted certificates source associated with this verifier. This source is used to identify the trusted anchor.
+	 *
+	 * @return
+	 */
+	public TrustedCertificateSource getTrustedCertSource();
 
-  /**
-   * Sets the trusted certificates source.
-   *
-   * @param certSource The certificates source to set
-   */
-  public void setTrustedCertSource(final TrustedCertificateSource certSource);
+	/**
+	 * Sets the trusted certificates source.
+	 *
+	 * @param certSource The certificates source to set
+	 */
+	public void setTrustedCertSource(final TrustedCertificateSource certSource);
 
-  /**
-   * Returns the adjunct certificates source associated with this verifier.
-   *
-   * @return
-   */
-  public CertificateSource getAdjunctCertSource();
+	/**
+	 * Returns the adjunct certificates source associated with this verifier.
+	 *
+	 * @return
+	 */
+	public CertificateSource getAdjunctCertSource();
 
-  /**
-   * Associates an adjunct certificates source to this verifier.
-   *
-   * @param adjunctCertSource
-   */
-  public void setAdjunctCertSource(final CertificateSource adjunctCertSource);
+	/**
+	 * Associates an adjunct certificates source to this verifier.
+	 *
+	 * @param adjunctCertSource
+	 */
+	public void setAdjunctCertSource(final CertificateSource adjunctCertSource);
 
-  /**
-   * The data loader used to access AIA certificate source.
-   *
-   * @return
-   */
-  public DataLoader getDataLoader();
+	/**
+	 * The data loader used to access AIA certificate source.
+	 *
+	 * @return
+	 */
+	public DataLoader getDataLoader();
 
-  /**
-   * The data loader used to access AIA certificate source. If this property is not set the default {@code
-   * CommonsHttpDataLoader} is created.
-   *
-   * @param dataLoader
-   */
-  public void setDataLoader(final DataLoader dataLoader);
+	/**
+	 * The data loader used to access AIA certificate source. If this property is not set the default {@code CommonsHttpDataLoader} is created.
+	 *
+	 * @param dataLoader
+	 */
+	public void setDataLoader(final DataLoader dataLoader);
 
-  /**
-   * This method returns the CRL source (information extracted from signatures).
-   */
-  public ListCRLSource getSignatureCRLSource();
+	/**
+	 * This method returns the CRL source (information extracted from signatures).
+	 */
+	public ListCRLSource getSignatureCRLSource();
 
-  /**
-   * This method allows to set the CRL source (information extracted from signatures).
-   *
-   * @param signatureCRLSource
-   */
-  public void setSignatureCRLSource(final ListCRLSource signatureCRLSource);
+	/**
+	 * This method allows to set the CRL source (information extracted from signatures).
+	 *
+	 * @param signatureCRLSource
+	 */
+	public void setSignatureCRLSource(final ListCRLSource signatureCRLSource);
 
-  /**
-   * This method returns the OCSP source (information extracted from signatures).
-   */
-  public ListOCSPSource getSignatureOCSPSource();
+	/**
+	 * This method returns the OCSP source (information extracted from signatures).
+	 */
+	public ListOCSPSource getSignatureOCSPSource();
 
-  /**
-   * This method allows to set the OCSP source (information extracted from signatures).
-   *
-   * @param signatureOCSPSource
-   */
-  public void setSignatureOCSPSource(final ListOCSPSource signatureOCSPSource);
+	/**
+	 * This method allows to set the OCSP source (information extracted from signatures).
+	 *
+	 * @param signatureOCSPSource
+	 */
+	public void setSignatureOCSPSource(final ListOCSPSource signatureOCSPSource);
 
-  /**
-   * This method creates the validation pool of certificates which is used during the validation process.
-   */
-  public CertificatePool createValidationPool();
+	/**
+	 * This method creates the validation pool of certificates which is used during the validation process.
+	 */
+	public CertificatePool createValidationPool();
 }

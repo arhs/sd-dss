@@ -108,11 +108,6 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	protected CertificatePool validationCertPool;
 
 	/**
-	 * This is the unique timestamp Id. It is unique within one validation process.
-	 */
-	private int timestampIndex = 1;
-
-	/**
 	 * The document to validated (with the signature(s))
 	 */
 	protected DSSDocument document;
@@ -516,7 +511,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 	/**
 	 * @param allSignatureList  {@code List} of {@code AdvancedSignature}s to validate including the countersignatures
-	 * @param validationContext
+	 * @param validationContext {@code ValidationContext} is the implementation of the validators for: certificates, timestamps and revocation data.
 	 */
 	private void prepareCertificatesAndTimestamps(final List<AdvancedSignature> allSignatureList, final ValidationContext validationContext) {
 
@@ -617,7 +612,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	private XmlTimestampType xmlForTimestamp(final TimestampToken timestampToken) {
 
 		final XmlTimestampType xmlTimestampToken = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlTimestampType();
-		xmlTimestampToken.setId(timestampIndex++);
+		xmlTimestampToken.setId(timestampToken.getDSSId());
 		final TimestampType timestampType = timestampToken.getTimeStampType();
 		xmlTimestampToken.setType(timestampType.name());
 		xmlTimestampToken.setProductionTime(DSSXMLUtils.createXMLGregorianCalendar(timestampToken.getGenerationTime()));
@@ -666,7 +661,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 					final XmlSignedSignature xmlSignedSignature = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlSignedSignature();
 					xmlSignedSignature.setId(timestampReference.getSignatureId());
-					xmlSignedObjectsType.setSignedSignature(xmlSignedSignature);
+					xmlSignedObjectsType.getSignedSignature().add(xmlSignedSignature);
 				} else {
 
 					final XmlDigestAlgAndValueType xmlDigestAlgAndValue = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlDigestAlgAndValueType();

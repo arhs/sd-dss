@@ -20,7 +20,15 @@
 
 package eu.europa.ec.markt.dss.parameter;
 
-import eu.europa.ec.markt.dss.*;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
+
+import eu.europa.ec.markt.dss.CertificateIdentifier;
+import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.DigestAlgorithm;
+import eu.europa.ec.markt.dss.EncryptionAlgorithm;
+import eu.europa.ec.markt.dss.SignatureAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.ProfileParameters;
@@ -45,7 +53,7 @@ import java.util.List;
 
 public class SignatureParameters implements Serializable {
 
-  /**
+	/**
 	 * This variable is used to ensure the uniqueness of the signature in the same document.
 	 */
 	protected static int signatureCounter = 0;
@@ -610,7 +618,7 @@ public class SignatureParameters implements Serializable {
 
 	public TimestampParameters getSignatureTimestampParameters() {
 		if (signatureTimestampParameters == null) {
-			return new TimestampParameters();
+			signatureTimestampParameters = new TimestampParameters();
 		}
 		return signatureTimestampParameters;
 	}
@@ -621,7 +629,7 @@ public class SignatureParameters implements Serializable {
 
 	public TimestampParameters getArchiveTimestampParameters() {
 		if (archiveTimestampParameters == null) {
-			return new TimestampParameters();
+			archiveTimestampParameters = new TimestampParameters();
 		}
 		return archiveTimestampParameters;
 	}
@@ -631,6 +639,9 @@ public class SignatureParameters implements Serializable {
 	}
 
 	public TimestampParameters getContentTimestampParameters() {
+		if (contentTimestampParameters == null) {
+			contentTimestampParameters = new TimestampParameters();
+		}
 		return contentTimestampParameters;
 	}
 

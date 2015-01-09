@@ -20,6 +20,8 @@
 
 package eu.europa.ec.markt.dss.signature;
 
+import java.io.Serializable;
+
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.signature.cades.CAdESService;
 import eu.europa.ec.markt.dss.signature.xades.SignatureBuilder;
