@@ -19,11 +19,16 @@
  */
 package eu.europa.ec.markt.dss.validation102853.report;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Vector;
-
+import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.TSLConstant;
+import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.validation102853.*;
+import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
+import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
+import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
+import eu.europa.ec.markt.dss.validation102853.rules.*;
+import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
+import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jce.X509Principal;
@@ -31,24 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.TSLConstant;
-import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.validation102853.CertificateQualification;
-import eu.europa.ec.markt.dss.validation102853.RuleUtils;
-import eu.europa.ec.markt.dss.validation102853.SignatureQualification;
-import eu.europa.ec.markt.dss.validation102853.SignatureType;
-import eu.europa.ec.markt.dss.validation102853.TLQualification;
-import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
-import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
-import eu.europa.ec.markt.dss.validation102853.rules.Indication;
-import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
-import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
-import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
-import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Vector;
 
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.LABEL_TINTWS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.LABEL_TINVTWS;
@@ -239,8 +230,9 @@ public class SimpleReportBuilder {
 			}
 			if (!Indication.VALID.equals(ltvIndication)) {
 
-			addBasicInfo(signatureNode, basicValidationErrorList);
-      addAdestErrorsToBasicInfo(params, signatureNode, signatureId);
+				addBasicInfo(signatureNode, basicValidationErrorList);
+				addAdestErrorsToBasicInfo(params, signatureNode, signatureId);
+			}
 			addBasicInfo(signatureNode, basicValidationWarningList);
 			addBasicInfo(signatureNode, infoList);
 

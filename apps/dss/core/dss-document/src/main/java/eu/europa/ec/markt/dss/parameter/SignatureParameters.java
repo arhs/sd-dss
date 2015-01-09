@@ -20,15 +20,7 @@
 
 package eu.europa.ec.markt.dss.parameter;
 
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-
-import eu.europa.ec.markt.dss.CertificateIdentifier;
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.DigestAlgorithm;
-import eu.europa.ec.markt.dss.EncryptionAlgorithm;
-import eu.europa.ec.markt.dss.SignatureAlgorithm;
+import eu.europa.ec.markt.dss.*;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.ProfileParameters;

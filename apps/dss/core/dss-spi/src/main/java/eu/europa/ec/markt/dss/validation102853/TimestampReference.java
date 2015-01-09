@@ -24,6 +24,8 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 
+import java.io.Serializable;
+
 /**
  * This class stocks the timestamp reference, which is composed of:
  * - digest algorithm used to calculate the digest value of the reference;
@@ -33,7 +35,7 @@ import eu.europa.ec.markt.dss.exception.DSSNullException;
  *
  * @author bielecro
  */
-public class TimestampReference {
+public class TimestampReference implements Serializable {
 
 	private String signatureId;
 

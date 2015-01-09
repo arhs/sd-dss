@@ -1,9 +1,9 @@
 package eu.europa.ec.markt.dss.parameter;
 
-import java.io.Serializable;
-
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.validation102853.SignatureForm;
+
+import java.io.Serializable;
 
 /**
  * This class regroups the signature parameters related to ASiC form.
@@ -83,6 +83,15 @@ public class ASiCParameters implements Serializable {
    */
   public void setZipComment(final String zipComment) {
     this.zipComment = zipComment;
+  }
+
+  /**
+   * Not used by digidoc4j, needed for "mvn clean install"
+   *
+   * @param zipComment parameter
+   */
+  public void setZipComment(final boolean zipComment) {
+		this.zipComment = "mimetype=" + mimeType;
   }
 
 	public String getMimeType() {
