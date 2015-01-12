@@ -20,6 +20,14 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
+import java.security.cert.X509CRL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+
 import eu.europa.ec.markt.dss.DSSRevocationUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
@@ -32,7 +40,6 @@ import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
 import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
-import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 
 import java.io.Serializable;
 import java.security.cert.X509CRL;
@@ -71,11 +78,6 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature, Ser
 	 * The reference to the object containing all candidates to the signing certificate.
 	 */
 	protected CandidatesForSigningCertificate candidatesForSigningCertificate;
-
-	/**
-	 * This list contains the detail information collected during the check. It is reset for each call of {@code isDataForSignatureLevelPresent}
-	 */
-	protected List<String> info;
 
 	// Enclosed content timestamps.
 	protected List<TimestampToken> contentTimestamps;
@@ -264,17 +266,6 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature, Ser
 			}
 		}
 		return new RevocationDataForInclusion(crlTokens, ocspTokens);
-	}
-
-	/**
-	 * This list contains the detail information collected during the check. It is reset for each call.
-	 *
-	 * @return
-	 */
-	@Override
-	public List<String> getInfo() {
-
-		return Collections.unmodifiableList(info);
 	}
 
 	@Override

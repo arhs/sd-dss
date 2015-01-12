@@ -42,9 +42,6 @@ import java.util.List;
  */
 public class OfflineResolver extends ResourceResolverSpi {
 
-	/**
-	 * {@link org.apache.commons.logging} logging facility
-	 */
 	private static final Logger LOG = LoggerFactory.getLogger(OfflineResolver.class);
 
 	private final List<DSSDocument> documents;
