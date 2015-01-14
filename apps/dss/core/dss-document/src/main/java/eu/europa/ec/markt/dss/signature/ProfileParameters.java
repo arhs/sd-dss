@@ -30,6 +30,8 @@ import eu.europa.ec.markt.dss.signature.xades.XAdESService;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.SignatureForm;
 
+import java.io.Serializable;
+
 /**
  * This class This class manages the internal variables used in the process of creating of a signature and which allows to
  * accelerate the generation.<br>

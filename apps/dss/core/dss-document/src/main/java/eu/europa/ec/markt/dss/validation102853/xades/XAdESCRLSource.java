@@ -20,16 +20,16 @@
 
 package eu.europa.ec.markt.dss.validation102853.xades;
 
-import java.security.cert.X509CRL;
-import java.util.ArrayList;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import java.io.Serializable;
+import java.security.cert.X509CRL;
+import java.util.ArrayList;
 
 /**
  * Retrieves CRL values from an XAdES (-XL) signature.
@@ -37,7 +37,7 @@ import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
  * @version $Revision$ - $Date$
  */
 
-public class XAdESCRLSource extends OfflineCRLSource {
+public class XAdESCRLSource extends OfflineCRLSource implements Serializable {
 
     /**
      * The default constructor for XAdESCRLSource.

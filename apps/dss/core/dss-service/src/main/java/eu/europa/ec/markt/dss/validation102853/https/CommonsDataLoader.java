@@ -20,27 +20,11 @@
 
 package eu.europa.ec.markt.dss.validation102853.https;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.Context;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-
+import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.manager.ProxyPreferenceManager;
+import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
+import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -72,11 +56,25 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.manager.ProxyPreferenceManager;
-import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
-import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
+import javax.naming.Context;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of DataLoader for any protocol.<p/>
@@ -93,9 +91,13 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	public static final int TIMEOUT_SOCKET = 6000;
 
+	public static final int CONNECT_TIMEOUT = 10000;
+
 	public static final String CONTENT_TYPE = "Content-Type";
 
 	protected String contentType;
+
+	protected String userAgent;
 
 	// TODO: (Bob: 2014 Jan 28) It should be taken into account: Content-Transfer-Encoding if it is not the default value.
 	// TODO: (Bob: 2014 Jan 28) It is extracted from: https://joinup.ec.europa.eu/software/sd-dss/issue/dss-41-tsa-service-basic-auth
@@ -105,10 +107,11 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	private int timeoutConnection = TIMEOUT_CONNECTION;
 	private int timeoutSocket = TIMEOUT_SOCKET;
+	private int connectTimeout = CONNECT_TIMEOUT;
 
 	private final Map<HttpHost, UsernamePasswordCredentials> authenticationMap = new HashMap<HttpHost, UsernamePasswordCredentials>();
 
-	private HttpClient httpClient;
+	transient private HttpClient httpClient;
 
 	private boolean updated;
 
@@ -173,6 +176,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		final RequestConfig.Builder custom = RequestConfig.custom();
 		custom.setSocketTimeout(timeoutSocket);
 		custom.setConnectionRequestTimeout(timeoutConnection);
+		custom.setConnectTimeout(connectTimeout);
 		final RequestConfig requestConfig = custom.build();
 		httpClientBuilder = httpClientBuilder.setDefaultRequestConfig(requestConfig);
 		httpClientBuilder.setConnectionManager(getConnectionManager());
@@ -444,7 +448,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 			if (httpRequest != null) {
 
 				httpRequest.releaseConnection();
-				EntityUtils.consumeQuietly(httpResponse.getEntity());
+				if (httpResponse != null) EntityUtils.consumeQuietly(httpResponse.getEntity());
 			}
 		}
 	}
@@ -473,7 +477,9 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 			if (contentType != null) {
 				httpRequest.setHeader(CONTENT_TYPE, contentType);
 			}
-
+			if (userAgent != null ) {
+				httpRequest.setHeader("User-Agent", userAgent);
+			}
 			httpResponse = getHttpResponse(httpRequest, url);
 
 			final byte[] returnedBytes = readHttpResponse(url, httpResponse);
@@ -574,6 +580,15 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		this.timeoutConnection = timeoutConnection;
 	}
 
+	public void setConnectTimeout(int connectTimeout) {
+	 httpClient = null;
+		this.connectTimeout = connectTimeout;
+	}
+
+	public int getConnectTimeout() {
+		return connectTimeout;
+	}
+
 	/**
 	 * Used when the {@code HttpClient} is created.
 	 *
@@ -610,6 +625,16 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 		this.contentType = contentType;
 	}
+
+	/**
+	 * Sets HTTP header User-Agent value. If userAgent is not set then nothing is put to HTTP User-Agent header
+	 *
+	 * @param userAgent  user agent value
+	 */
+	public void setUserAgent(String userAgent) {
+		this.userAgent = userAgent;
+	}
+
 
 	/**
 	 * @return associated {@code ProxyPreferenceManager}

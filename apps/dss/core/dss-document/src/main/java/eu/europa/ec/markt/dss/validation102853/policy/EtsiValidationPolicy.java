@@ -20,17 +20,16 @@
 
 package eu.europa.ec.markt.dss.validation102853.policy;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.w3c.dom.Document;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
+import org.w3c.dom.Document;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class encapsulates the constraint file that controls the policy to be used during the validation process. It
@@ -49,10 +48,12 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 
 	private Long maxRevocationFreshness;
 
+  private Long revocationAndTimestampDelta;
+
 	private Long timestampDelayTime;
 	private Map<String, Date> algorithmExpirationDate = new HashMap<String, Date>();
 
-	public EtsiValidationPolicy(Document document) {
+  public EtsiValidationPolicy(Document document) {
 
 		super(document);
 	}
@@ -620,7 +621,26 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 		return getBasicConstraint(XP_ROOT, true);
 	}
 
-	@Override
+  @Override
+  public Long getRevocationAndTimestampDeltaInMilliseconds() {
+    if (revocationAndTimestampDelta == null) {
+
+      revocationAndTimestampDelta = Long.MAX_VALUE;
+      final XmlDom deltaXML = getElement("/ConstraintsParameters/Revocation/RevocationAndTimestampDelta");
+      if (deltaXML != null) {
+        long delta = getLongValue("/ConstraintsParameters/Revocation/RevocationAndTimestampDelta/text()");
+        String unit = getValue("/ConstraintsParameters/Revocation/RevocationAndTimestampDelta/@Unit");
+        revocationAndTimestampDelta = RuleUtils.convertDuration(unit, "MILLISECONDS", delta);
+        if (revocationAndTimestampDelta == 0) {
+          revocationAndTimestampDelta = Long.MAX_VALUE;
+        }
+      }
+    }
+    return revocationAndTimestampDelta;
+  }
+
+
+  @Override
 	public Constraint getTimestampDelaySigningTimePropertyConstraint() {
 
 		final Long timestampDelay = getTimestampDelayTime();

@@ -20,11 +20,11 @@
 
 package eu.europa.ec.markt.dss.signature;
 
-import java.io.Serializable;
-
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
+
+import java.io.Serializable;
 
 /**
  * This interface {@code DocumentSignatureService} provides operations for the signature creation and for its extension.

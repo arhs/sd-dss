@@ -30,13 +30,13 @@
  */
 package eu.europa.ec.markt.dss.signature;
 
+import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.exception.DSSException;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.exception.DSSException;
 
 /**
  * This class allows to handle different mime types. It also allows to add (define) new mime-type.

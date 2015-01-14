@@ -1,9 +1,9 @@
 package eu.europa.ec.markt.dss.signature.token;
 
-import java.util.List;
-
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
+
+import java.util.List;
 
 /**
  * TODO

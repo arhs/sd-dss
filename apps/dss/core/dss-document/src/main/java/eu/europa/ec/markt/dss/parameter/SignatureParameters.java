@@ -20,16 +20,7 @@
 
 package eu.europa.ec.markt.dss.parameter;
 
-import java.io.Serializable;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-
-import eu.europa.ec.markt.dss.CertificateIdentifier;
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.DigestAlgorithm;
-import eu.europa.ec.markt.dss.EncryptionAlgorithm;
-import eu.europa.ec.markt.dss.SignatureAlgorithm;
+import eu.europa.ec.markt.dss.*;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.ProfileParameters;
@@ -40,6 +31,11 @@ import eu.europa.ec.markt.dss.signature.token.SignatureTokenConnection;
 import eu.europa.ec.markt.dss.validation102853.SignatureForm;
 import eu.europa.ec.markt.dss.validation102853.TimestampToken;
 import eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder;
+
+import java.io.Serializable;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Parameters for a Signature creation/extension

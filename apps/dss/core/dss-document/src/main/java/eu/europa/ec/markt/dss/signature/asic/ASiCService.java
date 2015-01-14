@@ -29,31 +29,6 @@
  */
 package eu.europa.ec.markt.dss.signature.asic;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.CRC32;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
-
-import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
-
 import eu.europa.ec.markt.dss.ASiCNamespaces;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
@@ -62,13 +37,7 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.parameter.ASiCParameters;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
-import eu.europa.ec.markt.dss.signature.AbstractSignatureService;
-import eu.europa.ec.markt.dss.signature.DSSDocument;
-import eu.europa.ec.markt.dss.signature.DocumentSignatureService;
-import eu.europa.ec.markt.dss.signature.InMemoryDocument;
-import eu.europa.ec.markt.dss.signature.MimeType;
-import eu.europa.ec.markt.dss.signature.SignatureLevel;
-import eu.europa.ec.markt.dss.signature.SignaturePackaging;
+import eu.europa.ec.markt.dss.signature.*;
 import eu.europa.ec.markt.dss.signature.token.DSSPrivateKeyEntry;
 import eu.europa.ec.markt.dss.signature.token.SignatureTokenConnection;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
@@ -77,6 +46,26 @@ import eu.europa.ec.markt.dss.validation102853.SignatureForm;
 import eu.europa.ec.markt.dss.validation102853.SignedDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.asic.ASiCCMSDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.asic.ASiCContainerValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
+
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.*;
 
 /**
  * Implementation of {@code DocumentSignatureService} for ASiC-S and -E containers. It allows the creation of containers based on XAdES or CAdES standard.
@@ -203,7 +192,7 @@ public class ASiCService extends AbstractSignatureService {
 	public DSSDocument extendDocument(final DSSDocument toExtendDocument, final SignatureParameters parameters) throws DSSException {
 
 		final DocumentValidator validator = SignedDocumentValidator.fromDocument(toExtendDocument);
-		final DocumentValidator subordinatedValidator = validator.getSubordinatedValidator();
+    DocumentValidator subordinatedValidator = validator.getSubordinatedValidator();
 		final DocumentSignatureService specificService = getSpecificService(parameters);
 		specificService.setTspSource(tspSource);
 
@@ -211,31 +200,33 @@ public class ASiCService extends AbstractSignatureService {
 		final DSSDocument detachedContent = parameters.getDetachedContent();
 		final DSSDocument detachedContents = getDetachedContents(subordinatedValidator, detachedContent);
 		xadesParameters.setDetachedContent(detachedContents);
+
+    Map<String, DSSDocument> updatedDocuments = new HashMap<String, DSSDocument>();
+    do {
 		final DSSDocument signature = subordinatedValidator.getDocument();
-		final DSSDocument signedDocument = specificService.extendDocument(signature, xadesParameters);
+      updatedDocuments.put(signature.getName(), specificService.extendDocument(signature, xadesParameters));
+      subordinatedValidator = subordinatedValidator.getNextValidator();
+    } while (subordinatedValidator != null);
 
 		final ByteArrayOutputStream output = new ByteArrayOutputStream();
-		final ZipOutputStream zipOutputStream = new ZipOutputStream(output);
-		final ZipInputStream zipInputStream = new ZipInputStream(toExtendDocument.openStream());
+		final ZipOutputStream zip = new ZipOutputStream(output);
+		final ZipInputStream input = new ZipInputStream(toExtendDocument.openStream());
 		ZipEntry entry;
-		while ((entry = getNextZipEntry(zipInputStream)) != null) {
 
-			final String name = entry.getName();
-			final ZipEntry newEntry = new ZipEntry(name);
-			if (ASiCContainerValidator.isXAdES(name) || ASiCContainerValidator.isCAdES(name)) {
-
-				createZipEntry(zipOutputStream, newEntry);
-				final InputStream inputStream = signedDocument.openStream();
-				DSSUtils.copy(inputStream, zipOutputStream);
-				DSSUtils.closeQuietly(inputStream);
+    while ((entry = getNextZipEntry(input)) != null) {
+      String entryName = entry.getName();
+      ZipEntry newEntry = new ZipEntry(entryName);
+      DSSDocument updatedDocument = updatedDocuments.get(entryName);
+      if (updatedDocument != null) {
+				createZipEntry(zip, newEntry);
+        DSSUtils.copy(updatedDocument.openStream(), zip);
 			} else {
 
-				createZipEntry(zipOutputStream, newEntry);
-				DSSUtils.copy(zipInputStream, zipOutputStream);
+				createZipEntry(zip, newEntry);
+				DSSUtils.copy(input, zip);
 			}
 		}
-		DSSUtils.closeQuietly(zipInputStream);
-		DSSUtils.closeQuietly(zipOutputStream);
+		DSSUtils.close(zip);
 		return new InMemoryDocument(output.toByteArray());
 	}
 
@@ -273,14 +264,15 @@ public class ASiCService extends AbstractSignatureService {
 		return null;
 	}
 
-	private InMemoryDocument buildASiCContainer(final DSSDocument toSignDocument, DSSDocument signDocument, final SignatureParameters underlyingParameters,
+	public InMemoryDocument buildASiCContainer(final DSSDocument toSignDocument, DSSDocument signDocument, final SignatureParameters underlyingParameters,
 	                                            final DSSDocument signature) {
+
+    final DSSDocument detachedDocument = underlyingParameters.getDetachedContent();
+    final String toSignDocumentName = detachedDocument.getName();
 
 		final ASiCParameters asicParameters = underlyingParameters.aSiC();
 		final boolean asice = isAsice(asicParameters);
 		final boolean cadesForm = isCAdESForm(asicParameters);
-
-		final String toSignDocumentName = toSignDocument.getName();
 
 		final ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
 		ZipOutputStream zipOutputStream = new ZipOutputStream(outBytes);
@@ -293,13 +285,15 @@ public class ASiCService extends AbstractSignatureService {
 
 			storeMimetype(asicParameters, zipOutputStream);
 		}
+		if (asice && cadesForm) {
+			storeAsicManifest(underlyingParameters, toSignDocument, zipOutputStream);
+		} else if (isAsice(asicParameters) && isXAdESForm(asicParameters)) {
+			storeManifest(toSignDocument, zipOutputStream);
+		}
 		storeSignedFiles(toSignDocument, zipOutputStream);
 
 		storesSignature(asicParameters, signature, zipOutputStream);
 
-		if (asice && cadesForm) {
-			storeAsicManifest(underlyingParameters, toSignDocument, zipOutputStream);
-		}
 		DSSUtils.close(zipOutputStream);
 
 		final InMemoryDocument asicContainer = createASiCContainer(asicParameters, outBytes, toSignDocumentName);
@@ -307,18 +301,35 @@ public class ASiCService extends AbstractSignatureService {
 	}
 
 	private void copyZipContent(DSSDocument toSignAsicContainer, ZipOutputStream zipOutputStream) {
+		final ZipInputStream zipInputStream = new ZipInputStream(toSignAsicContainer.openStream());
 
-		final InputStream inputStream = toSignAsicContainer.openStream();
-		final ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-		for (ZipEntry entry = getNextZipEntry(zipInputStream); entry != null; entry = getNextZipEntry(zipInputStream)) {
-
+    for (ZipEntry entry = getNextZipEntry(zipInputStream); entry != null; entry = getNextZipEntry(zipInputStream)) {
+      if (entry.getName().equals("META-INF/manifest.xml"))
+        continue;
 			createZipEntry(zipOutputStream, entry);
 			DSSUtils.copy(zipInputStream, zipOutputStream);
 		}
+
 		DSSUtils.closeQuietly(zipInputStream);
 	}
 
-	private void storeAsicManifest(final SignatureParameters underlyingParameters, final DSSDocument detachedDocument, final ZipOutputStream outZip) {
+  private void storeManifest(DSSDocument document, ZipOutputStream outZip) {
+    Manifest manifest = new Manifest();
+    manifest.addFileEntry(document);
+    try {
+      outZip.putNextEntry(new ZipEntry("META-INF/manifest.xml"));
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      manifest.save(out);
+      outZip.write(out.toByteArray());
+    } catch (IOException e) {
+      LOG.error(e.getMessage());
+      throw new DSSException(e);
+    }
+  }
+
+
+  private void storeAsicManifest(final SignatureParameters underlyingParameters, final DSSDocument detachedDocument,
+                                 final ZipOutputStream outZip) {
 
 		final String signatureName = getSignatureFileName(underlyingParameters.aSiC());
 		final int indexOfSignature = signatureName.indexOf("signature");
@@ -415,9 +426,11 @@ public class ASiCService extends AbstractSignatureService {
 
 	private void storeZipComment(final ASiCParameters asicParameters, final ZipOutputStream outZip, final String toSignDocumentName) {
 
-		if (asicParameters.isZipComment() && DSSUtils.isNotEmpty(toSignDocumentName)) {
 
-			outZip.setComment("mimetype=" + getMimeTypeBytes(asicParameters));
+		String zipComment = asicParameters.getZipComment();
+		if ((zipComment != null) && DSSUtils.isNotEmpty(toSignDocumentName)) {
+
+			outZip.setComment(zipComment);
 		}
 	}
 
@@ -578,6 +591,8 @@ public class ASiCService extends AbstractSignatureService {
 
 				return META_INF + asicParameters.getSignatureFileName();
 			} else {
+        if (asice && asicParameters.getSignatureFileName() != null)
+          return META_INF + asicParameters.getSignatureFileName();
 
 				return asice ? ZIP_ENTRY_ASICE_METAINF_XADES_SIGNATURE : ZIP_ENTRY_ASICS_METAINF_XADES_SIGNATURE;
 			}
@@ -636,9 +651,7 @@ public class ASiCService extends AbstractSignatureService {
 			try {
 
 				createZipEntry(outZip, entryDocument);
-				final InputStream inputStream = currentDetachedDocument.openStream();
-				DSSUtils.copy(inputStream, outZip);
-				DSSUtils.closeQuietly(inputStream);
+				DSSUtils.copy(currentDetachedDocument.openStream(), outZip);
 			} catch (DSSException e) {
 				if (!(e.getCause() instanceof ZipException && e.getCause().getMessage().startsWith("duplicate entry:"))) {
 					throw e;

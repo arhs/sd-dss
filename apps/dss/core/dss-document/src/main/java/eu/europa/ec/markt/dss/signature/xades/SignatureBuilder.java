@@ -36,6 +36,7 @@ import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.EncryptionAlgorithm;
 import eu.europa.ec.markt.dss.SignatureAlgorithm;
+import eu.europa.ec.markt.dss.*;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.BLevelParameters;
 import eu.europa.ec.markt.dss.parameter.ChainCertificate;
@@ -51,9 +52,19 @@ import eu.europa.ec.markt.dss.validation102853.TimestampInclude;
 import eu.europa.ec.markt.dss.validation102853.TimestampToken;
 import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 
 import static eu.europa.ec.markt.dss.XAdESNamespaces.XAdES;
 import static javax.xml.crypto.dsig.XMLSignature.XMLNS;
+
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.datatype.XMLGregorianCalendar;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * This class implements all the necessary mechanisms to build each form of the XML signature.
@@ -435,13 +446,13 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 
 		incorporateSignedDataObjectProperties();
 
-		incorporateSignerRole();
+		incorporatePolicy();
 
 		incorporateSignatureProductionPlace();
 
-		incorporateCommitmentTypeIndications();
+		incorporateSignerRole();
 
-		incorporatePolicy();
+		incorporateCommitmentTypeIndications();
 	}
 
 	private void incorporatePolicy() {
@@ -459,7 +470,8 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 				final Element sigPolicyIdDom = DSSXMLUtils.addElement(documentDom, signaturePolicyIdDom, XAdES, XADES_SIG_POLICY_ID);
 
 				final String signaturePolicyId = signaturePolicy.getId();
-				DSSXMLUtils.addTextElement(documentDom, sigPolicyIdDom, XAdES, XADES_IDENTIFIER, signaturePolicyId);
+        Element policyIdElement = DSSXMLUtils.addTextElement(documentDom, sigPolicyIdDom, XAdESNamespaces.XAdES,
+            XADES_IDENTIFIER, signaturePolicyId);
 
 				if (signaturePolicy.getDigestAlgorithm() != null && signaturePolicy.getDigestValue() != null) {
 
@@ -473,6 +485,18 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 					final String bas64EncodedHashValue = DSSUtils.base64Encode(hashValue);
 					DSSXMLUtils.addTextElement(documentDom, sigPolicyHashDom, XMLNS, DS_DIGEST_VALUE, bas64EncodedHashValue);
 				}
+
+        //Estonian bdoc TM support
+        if (params.bLevel().getSignaturePolicy().getId().equals("urn:oid:1.3.6.1.4.1.10015.1000.3.2.1")) {
+          policyIdElement.setAttribute("Qualifier", "OIDAsURN");
+        }
+        if (signaturePolicy.getSigPolicyQualifiers().size() != 0) {
+          final Element signaturePolicyQualifier = DSSXMLUtils.addElement(documentDom, signaturePolicyIdDom, XAdESNamespaces.XAdES, XADES_SIG_POLICY_QUALIFIERS);
+          for (java.net.URI uri : signaturePolicy.getSigPolicyQualifiers()) {
+            final Element qualifier = DSSXMLUtils.addElement(documentDom, signaturePolicyQualifier, XAdESNamespaces.XAdES, XADES_SIG_POLICY_QUALIFIER);
+            DSSXMLUtils.addTextElement(documentDom, qualifier, XAdESNamespaces.XAdES, XADES_SP_URI, uri.toString());
+          }
+        }
 			}
 		}
 	}

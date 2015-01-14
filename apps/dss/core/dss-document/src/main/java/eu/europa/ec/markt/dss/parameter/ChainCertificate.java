@@ -20,10 +20,11 @@
 
 package eu.europa.ec.markt.dss.parameter;
 
-import java.io.Serializable;
 import java.security.cert.X509Certificate;
 
 import eu.europa.ec.markt.dss.exception.DSSNullException;
+
+import java.io.Serializable;
 
 /**
  * This class represent an element of the certificate chain. Each element is composed of a {@code X509Certificate} and a {@code boolean} value idicating if the certificate must be

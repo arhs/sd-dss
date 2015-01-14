@@ -20,83 +20,42 @@
 
 package eu.europa.ec.markt.dss.validation102853.xades;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.math.BigInteger;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.security.auth.x500.X500Principal;
-import javax.xml.crypto.dsig.CanonicalizationMethod;
-import javax.xml.transform.stream.StreamSource;
-
-import org.apache.xml.security.Init;
-import org.apache.xml.security.algorithms.JCEMapper;
-import org.apache.xml.security.keys.KeyInfo;
-import org.apache.xml.security.keys.keyresolver.KeyResolverException;
-import org.apache.xml.security.signature.Reference;
-import org.apache.xml.security.signature.ReferenceNotInitializedException;
-import org.apache.xml.security.signature.SignedInfo;
-import org.apache.xml.security.signature.XMLSignature;
-import org.apache.xml.security.signature.XMLSignatureException;
-import org.bouncycastle.tsp.TimeStampToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import eu.europa.ec.markt.dss.DSSASN1Utils;
-import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.DSSXMLUtils;
-import eu.europa.ec.markt.dss.DigestAlgorithm;
-import eu.europa.ec.markt.dss.EncryptionAlgorithm;
-import eu.europa.ec.markt.dss.SignatureAlgorithm;
-import eu.europa.ec.markt.dss.XAdESNamespaces;
+import eu.europa.ec.markt.dss.*;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNotETSICompliantException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.exception.DSSNullReturnedException;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
-import eu.europa.ec.markt.dss.validation102853.AdvancedSignature;
-import eu.europa.ec.markt.dss.validation102853.ArchiveTimestampType;
-import eu.europa.ec.markt.dss.validation102853.CertificatePool;
-import eu.europa.ec.markt.dss.validation102853.CertificateToken;
-import eu.europa.ec.markt.dss.validation102853.DefaultAdvancedSignature;
-import eu.europa.ec.markt.dss.validation102853.SignatureForm;
-import eu.europa.ec.markt.dss.validation102853.SignaturePolicy;
-import eu.europa.ec.markt.dss.validation102853.TimestampInclude;
-import eu.europa.ec.markt.dss.validation102853.TimestampReference;
-import eu.europa.ec.markt.dss.validation102853.TimestampToken;
-import eu.europa.ec.markt.dss.validation102853.TimestampType;
-import eu.europa.ec.markt.dss.validation102853.bean.CandidatesForSigningCertificate;
-import eu.europa.ec.markt.dss.validation102853.bean.CertificateValidity;
-import eu.europa.ec.markt.dss.validation102853.bean.CertifiedRole;
-import eu.europa.ec.markt.dss.validation102853.bean.CommitmentType;
-import eu.europa.ec.markt.dss.validation102853.bean.SignatureCryptographicVerification;
-import eu.europa.ec.markt.dss.validation102853.bean.SignatureProductionPlace;
+import eu.europa.ec.markt.dss.validation102853.*;
+import eu.europa.ec.markt.dss.validation102853.bean.*;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateRef;
 import eu.europa.ec.markt.dss.validation102853.crl.CRLRef;
 import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPRef;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.toolbox.XPointerResourceResolver;
+import org.apache.xml.security.Init;
+import org.apache.xml.security.algorithms.JCEMapper;
+import org.apache.xml.security.keys.KeyInfo;
+import org.apache.xml.security.keys.keyresolver.KeyResolverException;
+import org.apache.xml.security.signature.*;
+import org.bouncycastle.tsp.TimeStampToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.*;
 
-import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_ALGORITHM;
-import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_REFS_ONLY_TIME_STAMP;
-import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIGNATURE_TIME_STAMP;
-import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIG_AND_REFS_TIME_STAMP;
+import javax.security.auth.x500.X500Principal;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.math.BigInteger;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.*;
+
+import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.*;
 
 /**
  * Parse an XAdES signature structure. Note that for each signature to be validated a new instance of this object must be created.
@@ -576,6 +535,12 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				final Element policyDigestValue = DSSXMLUtils.getElement(policyIdentifier, xPathQueryHolder.XPATH__POLICY_DIGEST_VALUE);
 				final String digestValue = policyDigestValue.getTextContent().trim();
 				signaturePolicy.setDigestValue(digestValue);
+
+        final Element policyUrl = DSSXMLUtils.getElement(policyIdentifier, "./xades:SignaturePolicyId/xades:SigPolicyQualifiers/xades:SigPolicyQualifier/xades:SPURI");
+        if (policyUrl != null) {
+          signaturePolicy.setUrl(policyUrl.getTextContent().trim());
+        }
+
 				return signaturePolicy;
 			} else {
 				// Implicit policy
@@ -1246,7 +1211,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 
 			final XMLSignature santuarioSignature = new XMLSignature(signatureElement, "");
 			santuarioSignature.addResourceResolver(new XPointerResourceResolver(signatureElement));
-			santuarioSignature.addResourceResolver(new OfflineResolver(detachedContents));
+			santuarioSignature.addResourceResolver(new OfflineResolver(detachedContents, signatureElement));
 
 			boolean coreValidity = false;
 			final List<CertificateValidity> certificateValidityList = getSigningCertificateValidityList(santuarioSignature, signatureCryptographicVerification,

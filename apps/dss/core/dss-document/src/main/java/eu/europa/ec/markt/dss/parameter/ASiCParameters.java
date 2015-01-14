@@ -1,9 +1,9 @@
 package eu.europa.ec.markt.dss.parameter;
 
-import java.io.Serializable;
-
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.validation102853.SignatureForm;
+
+import java.io.Serializable;
 
 /**
  * This class regroups the signature parameters related to ASiC form.
@@ -16,10 +16,10 @@ import eu.europa.ec.markt.dss.validation102853.SignatureForm;
  */
 public class ASiCParameters implements Serializable {
 
-	/**
-	 * Indicates if the ZIP comment should be used to store the signed content mime-type.
-	 */
-	private boolean zipComment = false;
+  /**
+   * Indicates if the ZIP comment should be used to store the signed content mime-type.
+   */
+  private String zipComment;
 
 	/**
 	 * Indicates the mime-type to be set within the mimetype file. If null the stored mime-type is that of the signed content.
@@ -67,23 +67,32 @@ public class ASiCParameters implements Serializable {
 		signatureFileName = source.signatureFileName;
 	}
 
-	/**
-	 * Indicates if the ZIP comment must include the mime-type.
-	 *
-	 * @return {@code boolean}
-	 */
-	public boolean isZipComment() {
-		return zipComment;
-	}
+  /**
+   * Returns the zip file comment
+   *
+   * @return {@code String} return zip comment
+   */
+  public String getZipComment() {
+    return zipComment;
+  }
 
-	/**
-	 * This method allows to indicate if the zip comment will contain the mime type.
-	 *
-	 * @param zipComment
-	 */
-	public void setZipComment(final boolean zipComment) {
-		this.zipComment = zipComment;
-	}
+  /**
+   * Sets the comment that will be used for the zip file
+   *
+   * @param zipComment comment for zip file
+   */
+  public void setZipComment(final String zipComment) {
+    this.zipComment = zipComment;
+  }
+
+  /**
+   * Not used by digidoc4j, needed for "mvn clean install"
+   *
+   * @param zipComment parameter
+   */
+  public void setZipComment(final boolean zipComment) {
+		this.zipComment = "mimetype=" + mimeType;
+  }
 
 	public String getMimeType() {
 		return mimeType;

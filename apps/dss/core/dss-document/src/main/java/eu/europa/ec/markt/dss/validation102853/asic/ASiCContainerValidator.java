@@ -20,21 +20,6 @@
 
 package eu.europa.ec.markt.dss.validation102853.asic;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
 import eu.europa.ec.markt.dss.ASiCNamespaces;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
@@ -52,6 +37,19 @@ import eu.europa.ec.markt.dss.validation102853.SignedDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.report.Reports;
 import eu.europa.ec.markt.dss.validation102853.scope.SignatureScopeFinder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * This class is the base class for ASiC containers.
@@ -234,6 +232,7 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 
 	private void analyseEntries() throws DSSException {
 
+    Document manifestFileDom= null;
 		ZipInputStream asicsInputStream = null;
 		try {
 
@@ -265,9 +264,8 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 
 					addAsicManifestEntryElement(entryName, detachedContents, asicsInputStream);
 				} else if (isManifest(entryName)) {
-
-					addEntryElement(entryName, detachedContents, asicsInputStream);
-				} else if (isContainer(entryName)) {
+          manifestFileDom = DSSXMLUtils.buildDOM(addEntryElement(entryName, detachedContents, asicsInputStream));
+        } else if (isContainer(entryName)) {
 
 					addEntryElement(entryName, detachedContents, asicsInputStream);
 				} else if (isMetadata(entryName)) {
@@ -287,6 +285,15 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 					addEntryElement(entryName, detachedContents, asicsInputStream);
 				}
 			}
+      if (manifestFileDom != null) {
+        Map<String, String> entries = getManifestFileItems(manifestFileDom);
+        for (DSSDocument file : detachedContents) {
+          if (entries.containsKey(file.getName())) {
+            file.setMimeType(MimeType.fromMimeTypeString(entries.get(file.getName())));
+          }
+        }
+      }
+
 			asicMimeType = determinateAsicMimeType(asicContainer.getMimeType(), asicEntryMimeType);
 			if (MimeType.ASICS == asicMimeType) {
 
@@ -312,7 +319,29 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 		}
 	}
 
-	public MimeType getAsicMimeType() {
+  private Map<String, String> getManifestFileItems(Document manifestFile) {
+
+    Map<String, String> entries = new HashMap<String, String>();
+
+    Element root = manifestFile.getDocumentElement();
+    Node firstChild = root.getFirstChild();
+    while (firstChild != null) {
+      String nodeName = firstChild.getNodeName();
+      if ("manifest:file-entry".equals(nodeName)) {
+        NamedNodeMap attributes = firstChild.getAttributes();
+        String textContent = attributes.getNamedItem("manifest:full-path").getTextContent();
+        String mimeType = attributes.getNamedItem("manifest:media-type").getTextContent();
+        if (!"/".equals(textContent))
+          entries.put(textContent, mimeType);
+      }
+      firstChild = firstChild.getNextSibling();
+    }
+
+    return entries;
+  }
+
+
+  public MimeType getAsicMimeType() {
 		return asicMimeType;
 	}
 
@@ -326,7 +355,7 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 			final InputStream inputStream = mimeType.openStream();
 			final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 			DSSUtils.copy(inputStream, byteArrayOutputStream);
-			final String mimeTypeString = byteArrayOutputStream.toString("UTF-8");
+			final String mimeTypeString = byteArrayOutputStream.toString("UTF-8").trim();
 			final MimeType asicMimeType = MimeType.fromMimeTypeString(mimeTypeString);
 			return asicMimeType;
 		} catch (UnsupportedEncodingException e) {

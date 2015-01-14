@@ -20,10 +20,8 @@
 
 package eu.europa.ec.markt.dss.validation102853.cades;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
+import eu.europa.ec.markt.dss.DSSASN1Utils;
+import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
@@ -43,8 +41,9 @@ import org.bouncycastle.util.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.ec.markt.dss.DSSASN1Utils;
-import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * OCSPSource that retrieves information from a CAdESSignature.
