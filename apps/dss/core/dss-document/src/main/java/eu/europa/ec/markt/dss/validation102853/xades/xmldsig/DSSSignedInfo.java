@@ -34,11 +34,6 @@ public class DSSSignedInfo extends SignedInfo {
 	
 	
 	@Override
-	protected SignatureAlgorithm getSignatureAlgorithm() {	
-		return super.getSignatureAlgorithm();
-	}
-	
-	@Override
 	public boolean verifyReferences(boolean followManifests)
 			throws MissingResourceFailureException, XMLSecurityException {
 		
