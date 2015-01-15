@@ -1,8 +1,7 @@
 /*
  * DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT),
- * B-1049 Bruxelles/Brussel
+ * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
  *
  * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
  *
@@ -21,11 +20,11 @@
 
 package eu.europa.ec.markt.dss.signature;
 
-import eu.europa.ec.markt.dss.DigestAlgorithm;
-import eu.europa.ec.markt.dss.exception.DSSException;
-
 import java.io.InputStream;
 import java.io.Serializable;
+
+import eu.europa.ec.markt.dss.DigestAlgorithm;
+import eu.europa.ec.markt.dss.exception.DSSException;
 
 /**
  * Interface representing a DSS document.
@@ -35,73 +34,71 @@ import java.io.Serializable;
 
 public interface DSSDocument extends Serializable {
 
-  /**
-   * Opens a {@code InputStream} on the {@code DSSDocument} contents. The type of the {@code InputStream} depends on
-   * the type of the {@code DSSDocument}. The stream must be
-   * closed in case of the {@code FileDocument}.
-   *
-   * @return an {@code InputStream}
-   * @throws DSSException
-   */
-  public InputStream openStream() throws DSSException;
+	/**
+	 * Opens a {@code InputStream} on the {@code DSSDocument} contents. The type of the {@code InputStream} depends on the type of the {@code DSSDocument}. The stream must be
+	 * closed in case of the {@code FileDocument}.
+	 *
+	 * @return an {@code InputStream}
+	 * @throws DSSException
+	 */
+	public InputStream openStream() throws DSSException;
 
-  /**
-   * Returns the array of bytes representing the document. Do not use this method with large files.
-   *
-   * @return array of {@code byte}
-   */
-  public byte[] getBytes() throws DSSException;
+	/**
+	 * Returns the array of bytes representing the document. Do not use this method with large files.
+	 *
+	 * @return array of {@code byte}
+	 */
+	public byte[] getBytes() throws DSSException;
 
-  /**
-   * Returns the name of the document. If the {@code DSSDocument} was built based on the {@code File} then the file
-   * name is returned.
-   *
-   * @return {@code String}  representing the name of the current {@code DSSDocument}
-   */
-  public String getName();
+	/**
+	 * Returns the name of the document. If the {@code DSSDocument} was built based on the {@code File} then the file name is returned.
+	 *
+	 * @return {@code String}  representing the name of the current {@code DSSDocument}
+	 */
+	public String getName();
 
-  /**
-   * Returns the {@code String} representing the absolute path to the encapsulated document.
-   *
-   * @return {@code String} representing the absolute path to the encapsulated document.
-   */
-  public String getAbsolutePath();
+	/**
+	 * Returns the {@code String} representing the absolute path to the encapsulated document.
+	 *
+	 * @return {@code String} representing the absolute path to the encapsulated document.
+	 */
+	public String getAbsolutePath();
 
-  /**
-   * Returns the mime-type of the {@code DSSDocument}.
-   *
-   * @return {@code MimeType}
-   */
-  public MimeType getMimeType();
+	/**
+	 * Returns the mime-type of the {@code DSSDocument}.
+	 *
+	 * @return {@code MimeType}
+	 */
+	public MimeType getMimeType();
 
-  /**
-   * This method sets the mime-type of the {@code DSSDocument}.
-   *
-   * @param mimeType {@code MimeType}
-   */
-  public void setMimeType(final MimeType mimeType);
+	/**
+	 * This method sets the mime-type of the {@code DSSDocument}.
+	 *
+	 * @param mimeType {@code MimeType}
+	 */
+	public void setMimeType(final MimeType mimeType);
 
-  /**
-   * Save the content of the DSSDocument to the file.
-   *
-   * @param filePath the path to the file to be created
-   */
-  public void save(final String filePath);
+	/**
+	 * Save the content of the DSSDocument to the file.
+	 *
+	 * @param filePath the path to the file to be created
+	 */
+	public void save(final String filePath);
 
-  /**
-   * This method returns the encoded digest value of the current {@code DSSDocument} using the base64 algorithm.
-   *
-   * @param digestAlgorithm {@code DigestAlgorithm}
-   * @return base64 encoded {@code String}
-   */
-  public String getDigest(final DigestAlgorithm digestAlgorithm);
+	/**
+	 * This method returns the encoded digest value of the current {@code DSSDocument} using the base64 algorithm.
+	 *
+	 * @param digestAlgorithm {@code DigestAlgorithm}
+	 * @return base64 encoded {@code String}
+	 */
+	public String getDigest(final DigestAlgorithm digestAlgorithm);
 
-  /**
-   * This method return the next {@code DSSDocument}.
-   *
-   * @return {@code DSSDocument}
-   */
-  public DSSDocument getNextDocument();
+	/**
+	 * This method return the next {@code DSSDocument}.
+	 *
+	 * @return {@code DSSDocument}
+	 */
+	public DSSDocument getNextDocument();
 
-  public void setNextDocument(final DSSDocument nextDocument);
+	public void setNextDocument(final DSSDocument nextDocument);
 }

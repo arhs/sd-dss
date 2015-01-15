@@ -21,52 +21,51 @@ public class ASiCParameters implements Serializable {
    */
   private String zipComment;
 
-  /**
-   * Indicates the mime-type to be set within the mimetype file. If null the stored mime-type is that of the signed
-   * content.
-   */
-  private String mimeType = null;
+	/**
+	 * Indicates the mime-type to be set within the mimetype file. If null the stored mime-type is that of the signed content.
+	 */
+	private String mimeType = null;
 
-  /**
-   * The default signature form to use within the ASiC containers.
-   */
-  private SignatureForm underlyingForm = SignatureForm.XAdES;
+	/**
+	 * The default signature form to use within the ASiC containers.
+	 */
+	private SignatureForm underlyingForm = SignatureForm.XAdES;
 
-  /**
-   * The form of the container -S or -E.
-   */
-  SignatureForm containerForm;
+	/**
+	 * The form of the container -S or -E.
+	 */
+	SignatureForm containerForm;
 
-  /**
-   * This variable contains already enclosed signature(s) when appending a new one.
-   */
-  private DSSDocument enclosedSignature;
+	/**
+	 * This variable contains already enclosed signature(s) when appending a new one.
+	 */
+	private DSSDocument enclosedSignature;
 
-  /**
-   * This property allows to provide a specific signature file name in the case of an ASiC-E container.
-   */
-  private String signatureFileName;
+	/**
+	 * This property allows to provide a specific signature file name in the case of an ASiC-E container.
+	 */
+	private String signatureFileName;
 
-  /**
-   * Default constructor
-   */
-  public ASiCParameters() {
-  }
+	/**
+	 * Default constructor
+	 */
+	public ASiCParameters() {
+	}
 
-  /**
-   * A copy constructor.
-   *
-   * @param source {@code ASiCParameters}
-   */
-  public ASiCParameters(final ASiCParameters source) {
+	/**
+	 * A copy constructor.
+	 *
+	 * @param source {@code ASiCParameters}
+	 */
+	public ASiCParameters(final ASiCParameters source) {
 
-    zipComment = source.zipComment;
-    mimeType = source.mimeType;
-    underlyingForm = source.underlyingForm;
-    containerForm = source.containerForm;
-    enclosedSignature = source.enclosedSignature;
-    signatureFileName = source.signatureFileName;
-  }
+		zipComment = source.zipComment;
+		mimeType = source.mimeType;
+		underlyingForm = source.underlyingForm;
+		containerForm = source.containerForm;
+		enclosedSignature = source.enclosedSignature;
+		signatureFileName = source.signatureFileName;
+	}
 
   /**
    * Returns the zip file comment
@@ -86,72 +85,81 @@ public class ASiCParameters implements Serializable {
     this.zipComment = zipComment;
   }
 
-  public String getMimeType() {
-    return mimeType;
-  }
-
   /**
-   * This method allows to set the mime-type within the mimetype file.
+   * Not used by digidoc4j, needed for "mvn clean install"
    *
-   * @param mimeType the mimetype to  store
+   * @param zipComment parameter
    */
-  public void setMimeType(final String mimeType) {
-    this.mimeType = mimeType;
+  public void setZipComment(final boolean zipComment) {
+		this.zipComment = "mimetype=" + mimeType;
   }
 
-  public SignatureForm getUnderlyingForm() {
-    return underlyingForm;
-  }
+	public String getMimeType() {
+		return mimeType;
+	}
 
-  /**
-   * Sets the signature form associated with an ASiC container. Only two forms are acceptable: XAdES and CAdES.
-   *
-   * @param underlyingForm signature form to associate with the ASiC container.
-   */
-  public void setUnderlyingForm(final SignatureForm underlyingForm) {
-    this.underlyingForm = underlyingForm;
-  }
+	/**
+	 * This method allows to set the mime-type within the mimetype file.
+	 *
+	 * @param mimeType the mimetype to  store
+	 */
+	public void setMimeType(final String mimeType) {
+		this.mimeType = mimeType;
+	}
 
-  /**
-   * @return the {@code SignatureForm} of the ASiC container
-   */
-  public SignatureForm getContainerForm() {
-    return containerForm;
-  }
+	public SignatureForm getUnderlyingForm() {
+		return underlyingForm;
+	}
 
-  /**
-   * This method allows to set the already existing signature. It is used when re-sign the ASIC-S container.
-   *
-   * @param signature extracted from the already existing container.
-   */
-  public void setEnclosedSignature(final DSSDocument signature) {
-    this.enclosedSignature = signature;
-  }
+	/**
+	 * Sets the signature form associated with an ASiC container. Only two forms are acceptable: XAdES and CAdES.
+	 *
+	 * @param underlyingForm signature form to associate with the ASiC container.
+	 */
+	public void setUnderlyingForm(final SignatureForm underlyingForm) {
+		this.underlyingForm = underlyingForm;
+	}
 
-  /**
-   * This method returns the already existing signature within a container.
-   *
-   * @return {@code DSSDocument} representing a signature
-   */
-  public DSSDocument getEnclosedSignature() {
-    return enclosedSignature;
-  }
+	/**
+	 * @return the {@code SignatureForm} of the ASiC container
+	 */
+	public SignatureForm getContainerForm() {
+		return containerForm;
+	}
 
-  /**
-   * This method returns the name of the signature file to use with ASiC-E container.
-   *
-   * @return signature file name
-   */
-  public String getSignatureFileName() {
-    return signatureFileName;
-  }
+	/**
+	 * This method allows to set the already existing signature. It is used when re-sign the ASIC-S container.
+	 *
+	 * @param signature extracted from the already existing container.
+	 */
+	public void setEnclosedSignature(final DSSDocument signature) {
+		this.enclosedSignature = signature;
+	}
 
-  /**
-   * This method allows to set the signature file name to use with ASiC-E container.
-   *
-   * @param signatureFileName signature file name
-   */
-  public void setSignatureFileName(final String signatureFileName) {
-    this.signatureFileName = signatureFileName;
-  }
+	/**
+	 * This method returns the already existing signature within a container.
+	 *
+	 * @return {@code DSSDocument} representing a signature
+	 */
+	public DSSDocument getEnclosedSignature() {
+		return enclosedSignature;
+	}
+
+	/**
+	 * This method returns the name of the signature file to use with ASiC-E container.
+	 *
+	 * @return signature file name
+	 */
+	public String getSignatureFileName() {
+		return signatureFileName;
+	}
+
+	/**
+	 * This method allows to set the signature file name to use with ASiC-E container.
+	 *
+	 * @param signatureFileName signature file name
+	 */
+	public void setSignatureFileName(final String signatureFileName) {
+		this.signatureFileName = signatureFileName;
+	}
 }

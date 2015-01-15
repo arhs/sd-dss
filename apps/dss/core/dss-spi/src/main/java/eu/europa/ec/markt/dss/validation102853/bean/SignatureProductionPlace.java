@@ -28,49 +28,49 @@ import java.io.Serializable;
  */
 public class SignatureProductionPlace implements Serializable {
 
-    private String City;
-    private String StateOrProvince;
-    private String PostalCode;
-    private String CountryName;
-    private String address;
+	private String City;
+	private String StateOrProvince;
+	private String PostalCode;
+	private String CountryName;
+	private String address;
 
-    public String getCity() {
-        return City;
-    }
+	public String getCity() {
+		return City;
+	}
 
-    public void setCity(String city) {
-        City = city;
-    }
+	public void setCity(String city) {
+		City = city;
+	}
 
-    public String getStateOrProvince() {
-        return StateOrProvince;
-    }
+	public String getStateOrProvince() {
+		return StateOrProvince;
+	}
 
-    public void setStateOrProvince(String stateOrProvince) {
-        StateOrProvince = stateOrProvince;
-    }
+	public void setStateOrProvince(String stateOrProvince) {
+		StateOrProvince = stateOrProvince;
+	}
 
-    public String getPostalCode() {
-        return PostalCode;
-    }
+	public String getPostalCode() {
+		return PostalCode;
+	}
 
-    public void setPostalCode(String postalCode) {
-        PostalCode = postalCode;
-    }
+	public void setPostalCode(String postalCode) {
+		PostalCode = postalCode;
+	}
 
-    public String getCountryName() {
-        return CountryName;
-    }
+	public String getCountryName() {
+		return CountryName;
+	}
 
-    public void setCountryName(String countryName) {
-        CountryName = countryName;
-    }
+	public void setCountryName(String countryName) {
+		CountryName = countryName;
+	}
 
-    public String getAddress() {
-        return address;
-    }
+	public String getAddress() {
+		return address;
+	}
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+	public void setAddress(String address) {
+		this.address = address;
+	}
 }

@@ -35,7 +35,7 @@ import eu.europa.ec.markt.dss.validation102853.CertificateToken;
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
-public class CandidatesForSigningCertificate implements Serializable {
+public class CandidatesForSigningCertificate implements Serializable{
 
 	/**
 	 * This field contains the reference to the signing certificate with its validity. This reference is set after the signature verification.

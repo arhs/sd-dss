@@ -91,7 +91,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	public static final int TIMEOUT_SOCKET = 6000;
 
-	public static final int CONNECT_TIMEOUT = 6000;
+	public static final int CONNECT_TIMEOUT = 10000;
 
 	public static final String CONTENT_TYPE = "Content-Type";
 
