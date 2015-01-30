@@ -23,6 +23,7 @@ package eu.europa.ec.markt.dss.validation102853.processes.subprocesses;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.TSLConstant;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.exception.SigningCertificateRevokedException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.policy.*;
@@ -662,6 +663,10 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		}
 		constraint.create(validationDataXmlNode, BBB_XCV_ISCR);
 		final boolean revoked = !revocationStatus && !revocationReason.equals(CRL_REASON_CERTIFICATE_HOLD);
+
+		if (revoked)
+			throw new SigningCertificateRevokedException();
+
 		constraint.setValue(String.valueOf(revoked));
 		constraint.setIndications(INDETERMINATE, REVOKED_NO_POE, BBB_XCV_ISCR_ANS);
 		constraint.setAttribute(CERTIFICATE_ID, certificateId);
