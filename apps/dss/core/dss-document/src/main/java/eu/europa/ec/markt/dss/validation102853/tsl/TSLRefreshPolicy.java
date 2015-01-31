@@ -21,7 +21,7 @@
 package eu.europa.ec.markt.dss.validation102853.tsl;
 
 /**
- * This enumeration represents different refresh policies.
+ * This enumeration represents different TSL refresh policies.
  * - ALWAYS: the refresh is always performed;
  * - WHEN_NECESSARY: the refresh is performed only if the hash value described in "ETSI TS 119 612 V1.1.1 (2013-06) 6.1 TL publication" has changed.
  * - WHEN_NECESSARY_OR_INDETERMINATE: as above but also when the mechanism described in "ETSI TS 119 612 V1.1.1 (2013-06) 6.1 TL publication" is not supported.

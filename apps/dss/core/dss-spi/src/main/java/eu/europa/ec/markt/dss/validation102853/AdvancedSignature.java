@@ -277,7 +277,7 @@ public interface AdvancedSignature extends Serializable {
 	 * element), the signature time-stamp(s) present in the AdES-T form, the certification path references and the
 	 * revocation status references.
 	 *
-	 * @param timestampToken {@code TimestampToken} or null during the creation process
+	 * @param timestampToken         {@code TimestampToken} or null during the creation process
 	 * @param canonicalizationMethod canonicalization method
 	 * @return {@code byte} array representing the canonicalized data to be timestamped
 	 */
@@ -310,7 +310,7 @@ public interface AdvancedSignature extends Serializable {
 	 * Archive timestamp seals the data of the signature in a specific order. We need to retrieve the data for each
 	 * timestamp.
 	 *
-	 * @param timestampToken null when adding a new archive timestamp
+	 * @param timestampToken         null when adding a new archive timestamp
 	 * @param canonicalizationMethod
 	 * @return {@code byte} array representing the canonicalized data to be timestamped
 	 */
@@ -383,7 +383,7 @@ public interface AdvancedSignature extends Serializable {
 	/**
 	 * This method allows the structure validation of the signature. In the case of an XML signature a validation against XSD schema is performed.
 	 *
-	 * @return null if the validation does not apply, true if the structure is valid otherwise false
+	 * @return null if the validation does not apply, an empty {@code String} if the structure is valid otherwise error message
 	 */
 	String validateStructure();
 }
