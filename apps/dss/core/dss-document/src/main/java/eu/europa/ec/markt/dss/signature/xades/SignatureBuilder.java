@@ -655,14 +655,14 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_CITY, city);
 			}
 
+			final String stateOrProvince = signatureProductionPlace.getStateOrProvince();
+			if (stateOrProvince != null) {
+			    DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_STATE_OR_PROVINCE, stateOrProvince);
+			}
+
 			final String postalCode = signatureProductionPlace.getPostalCode();
 			if (postalCode != null) {
 				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_POSTAL_CODE, postalCode);
-			}
-
-			final String stateOrProvince = signatureProductionPlace.getStateOrProvince();
-			if (stateOrProvince != null) {
-				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_STATE_OR_PROVINCE, stateOrProvince);
 			}
 
 			final String country = signatureProductionPlace.getCountry();
