@@ -26,11 +26,13 @@ import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
+import eu.europa.ec.markt.dss.exception.SigningCertificateUnknownException;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.parameter.TimestampParameters;
 import eu.europa.ec.markt.dss.signature.*;
 import eu.europa.ec.markt.dss.signature.ProfileParameters.Operation;
 import eu.europa.ec.markt.dss.validation102853.*;
+import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
 import eu.europa.ec.markt.dss.validation102853.xades.XAdESSignature;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -203,6 +205,9 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 
 		// <xades:CertificateValues>
 		// ...<xades:EncapsulatedX509Certificate>MIIC9TC...
+		if (isSigningCertificateStatusUnknown(valContext.getProcessedCertificates())) {
+			throw new SigningCertificateUnknownException();
+		}
 
 		final Element certificateValuesDom = DSSXMLUtils.addElement(documentDom, parentDom, XAdES, XADES_CERTIFICATE_VALUES);
 
@@ -255,6 +260,30 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 				element.setAttribute("Id", xadesSignature.getId() + "-RESPONDER_CERT");
 				DSSXMLUtils.setTextNode(documentDom, element, base64EncodeCertificate);
 			}
+	}
+
+	private boolean isSigningCertificateStatusUnknown(Set<CertificateToken> processedCertificates) {
+		if(processedCertificates == null) {
+			return false;
+		}
+		for(CertificateToken cert : processedCertificates) {
+			List<CertificateSourceType> sources = cert.getSources();
+			if (sources == null) {
+				continue;
+			}
+			for (CertificateSourceType source : sources) {
+				if (source == CertificateSourceType.SIGNATURE) {
+					if (cert.getRevocationToken() == null) {
+						continue;
+					}
+					String reason = cert.getRevocationToken().getReason();
+					if(reason != null && reason.contains("unknown")) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
