@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.CertificateIdentifier;
+import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
@@ -54,13 +55,12 @@ public class CertificatePool implements Serializable {
 	private static final Logger LOG = LoggerFactory.getLogger(CertificatePool.class);
 
 	/**
-	 * Map of encapsulated certificates with unique DSS identifier as key (hash code calculated on issuer distinguished name and serial
-	 * number)
+	 * Map of encapsulated certificates with unique DSS identifier as key
 	 */
 	private Map<Integer, CertificateToken> certById = new HashMap<Integer, CertificateToken>();
 
 	/**
-	 * Map f encapsulated certificates with subject distinguished name as key.
+	 * Map of encapsulated certificates with subject distinguished name as key.
 	 */
 	private Map<String, List<CertificateToken>> certBySubject = new HashMap<String, List<CertificateToken>>();
 
@@ -73,7 +73,7 @@ public class CertificatePool implements Serializable {
 	 */
 	public CertificateToken getInstance(final X509Certificate cert, final CertificateSourceType certSource) {
 
-		return getInstance(cert, certSource, (ServiceInfo) null);
+		return getInstance(cert, certSource, null);
 	}
 
 	/**
@@ -133,7 +133,8 @@ public class CertificatePool implements Serializable {
 
 				certToken = CertificateToken.newInstance(certificateToAdd, id);
 				certById.put(id, certToken);
-				final String subjectName = certificateToAdd.getSubjectX500Principal().getName(X500Principal.CANONICAL);
+				final X500Principal subjectX500Principal = DSSUtils.getSubjectX500Principal(certificateToAdd);
+				final String subjectName = subjectX500Principal.getName(X500Principal.CANONICAL);
 				List<CertificateToken> list = certBySubject.get(subjectName);
 				if (list == null) {
 
