@@ -82,11 +82,6 @@ public class OnlineOCSPSource implements OCSPSource {
 	public static boolean ADD_NONCE = false;
 
 	/**
-	 * This variable is used to prevent the replay attack.
-	 */
-	private DEROctetString nonce;
-
-	/**
 	 * The data loader used to retrieve the OCSP response.
 	 */
 	private DataLoader dataLoader;
@@ -134,22 +129,19 @@ public class OnlineOCSPSource implements OCSPSource {
 				certificateToken.extraInfo().infoNoOCSPResponse(ocspAccessLocation);
 				return null;
 			}
-			final byte[] content = buildOCSPRequest(x509Certificate, issuerX509Certificate);
+
+			// The nonce extension is used to bind a request to a response to prevent replay attacks.
+			final NonceContainer nonceContainer = getNonceContainer();
+			final byte[] content = buildOCSPRequest(x509Certificate, issuerX509Certificate, nonceContainer);
 
 			final byte[] ocspRespBytes = dataLoader.post(ocspAccessLocation, content);
 
 			final OCSPResp ocspResp = new OCSPResp(ocspRespBytes);
 
 			final BasicOCSPResp basicOCSPResp = (BasicOCSPResp) ocspResp.getResponseObject();
-			if (ADD_NONCE) {
 
-				final Extension extension = basicOCSPResp.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
-				final DEROctetString receivedNonce = (DEROctetString) extension.getExtnValue();
-				if (!receivedNonce.equals(nonce)) {
+			checkNonce(dssIdAsString, basicOCSPResp, nonceContainer);
 
-					throw new DSSException("The OCSP request for " + dssIdAsString + " was the victim of replay attack: nonce[sent:" + nonce + ", received:" + receivedNonce);
-				}
-			}
 			Date bestUpdate = null;
 			SingleResp bestSingleResp = null;
 			final CertificateID certId = DSSRevocationUtils.getOCSPCertificateID(x509Certificate, issuerX509Certificate);
@@ -182,7 +174,29 @@ public class OnlineOCSPSource implements OCSPSource {
 		return null;
 	}
 
-	private byte[] buildOCSPRequest(final X509Certificate x509Certificate, final X509Certificate issuerX509Certificate) throws DSSException {
+	private NonceContainer getNonceContainer() {
+
+		if (ADD_NONCE) {
+			return new NonceContainer();
+		}
+		return null;
+	}
+
+	private void checkNonce(String dssIdAsString, BasicOCSPResp basicOCSPResp, NonceContainer nonceContainer) {
+
+		if (ADD_NONCE) {
+
+			final Extension extension = basicOCSPResp.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
+			final DEROctetString receivedNonce = (DEROctetString) extension.getExtnValue();
+			if (!receivedNonce.equals(nonceContainer.nonce)) {
+
+				throw new DSSException(
+					  "The OCSP request for " + dssIdAsString + " was the victim of replay attack: nonce[sent:" + nonceContainer.nonce + ", received:" + receivedNonce);
+			}
+		}
+	}
+
+	private byte[] buildOCSPRequest(final X509Certificate x509Certificate, final X509Certificate issuerX509Certificate, final NonceContainer nonceContainer) throws DSSException {
 
 		try {
 
@@ -190,18 +204,9 @@ public class OnlineOCSPSource implements OCSPSource {
 			final OCSPReqBuilder ocspReqBuilder = new OCSPReqBuilder();
 			ocspReqBuilder.addRequest(certId);
 
-	        /*
-	         * The nonce extension is used to bind a request to a response to prevent replay attacks.
-             */
-			if (ADD_NONCE) {
-
-				final long currentTimeNonce = System.currentTimeMillis();
-
-				nonce = new DEROctetString(DSSUtils.toByteArray(currentTimeNonce));
-				final Extension extension = new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, true, nonce);
-				final Extensions extensions = new Extensions(extension);
-				ocspReqBuilder.setRequestExtensions(extensions);
-			}
+			final Extension extension = new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, true, nonceContainer.nonce);
+			final Extensions extensions = new Extensions(extension);
+			ocspReqBuilder.setRequestExtensions(extensions);
 			final OCSPReq ocspReq = ocspReqBuilder.build();
 			final byte[] ocspReqData = ocspReq.getEncoded();
 			return ocspReqData;
@@ -270,6 +275,20 @@ public class OnlineOCSPSource implements OCSPSource {
 
 			DSSUtils.closeQuietly(ais1);
 			DSSUtils.closeQuietly(ais2);
+		}
+	}
+
+	private class NonceContainer {
+
+		/**
+		 * This variable is used to prevent the replay attack.
+		 */
+		private DEROctetString nonce;
+
+		public NonceContainer() {
+
+			final long currentTimeNonce = System.currentTimeMillis();
+			nonce = new DEROctetString(DSSUtils.toByteArray(currentTimeNonce));
 		}
 	}
 }
