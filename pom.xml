@@ -463,17 +463,14 @@
 		</repository>
 		<repository>
 			<id>jboss-public</id>
-			<name>JBoss Public Maven repository</name>
 			<url>https://repository.jboss.org/nexus/</url>
 		</repository>
 		<repository>
 			<id>netbeans</id>
-			<name>Maven Repository for org.openide</name>
 			<url>http://bits.netbeans.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>java.net</id>
-			<name>Maven Repository of java.net</name>
 			<url>http://download.java.net/maven/2/</url>
 		</repository>
 	</repositories>
