@@ -139,7 +139,7 @@ public abstract class Token implements Serializable {
 	 * @param issuerToken
 	 * @return
 	 */
-	protected abstract boolean isSignedBy(CertificateToken issuerToken);
+	protected abstract boolean isSignedBy(final CertificateToken issuerToken);
 
 	/**
 	 * Returns the additional information gathered during the validation process.
