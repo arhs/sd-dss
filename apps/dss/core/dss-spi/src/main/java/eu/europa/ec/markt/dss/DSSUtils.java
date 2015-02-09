@@ -127,6 +127,9 @@ import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
 
+/**
+ * This class is a collection (grouping) of utility methods.
+ */
 public final class DSSUtils {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DSSUtils.class);
@@ -2495,7 +2498,8 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * This method compares two {@code X500Principal}s. {@code X500Principal.CANONICAL} and {@code X500Principal.RFC2253} forms are compared.
+	 * This method compares two {@code X500Principal}s. {@code X500Principal.CANONICAL} and {@code X500Principal.RFC2253} forms are compared. The {@code X500Principal}s are broken
+	 * down into individual elements.
 	 * TODO: (Bob: 2014 Feb 20) To be investigated why the standard equals does not work!?
 	 *
 	 * @param firstX500Principal
@@ -2518,15 +2522,14 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * @param x509SubjectName
-	 * @return
+	 * @param x500PrincipalString {@code String} representation of the {@code X500Principal}
+	 * @return {@code X500Principal} built from a given {@code String}
 	 */
-	public static X500Principal getX500Principal(String x509SubjectName) throws DSSException {
+	public static X500Principal getX500Principal(final String x500PrincipalString) throws DSSException {
 
 		try {
-			final X500Principal x500Principal = new X500Principal(x509SubjectName);
-			final String utf8String = getUtf8String(x500Principal);
-			final X500Principal normalizedX500Principal = new X500Principal(utf8String);
+			final X500Principal x500Principal = new X500Principal(x500PrincipalString);
+			final X500Principal normalizedX500Principal = getX500Principal(x500Principal);
 			return normalizedX500Principal;
 		} catch (IllegalArgumentException e) {
 			throw new DSSException(e);
@@ -2534,33 +2537,37 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * @param x509Certificate
-	 * @return
+	 * This method transcodes {@code X500Principal} related to the subject name of a given {@code X509Certificate}.
+	 *
+	 * @param x509Certificate for which the subject name must be transcoded
+	 * @return {@code X500Principal} transcoded
 	 */
 	public static X500Principal getSubjectX500Principal(final X509Certificate x509Certificate) {
 
 		final X500Principal x500Principal = x509Certificate.getSubjectX500Principal();
-		final String utf8Name = getUtf8String(x500Principal);
-		// System.out.println(">>> " + x500Principal.getName() + "-------" + utf8Name);
-		final X500Principal x500PrincipalNormalized = new X500Principal(utf8Name);
-		return x500PrincipalNormalized;
+		final X500Principal normalizedX500Principal = getX500Principal(x500Principal);
+		return normalizedX500Principal;
 	}
 
-
 	/**
-	 * @param x500Principal to be normalized
-	 * @return {@code X500Principal} normalized
+	 * This method transcodes {@code X500Principal}.
+	 *
+	 * @param x500Principal to be transcoded
+	 * @return {@code X500Principal} transcoded
 	 */
 	public static X500Principal getX500Principal(final X500Principal x500Principal) {
 
 		final String utf8Name = getUtf8String(x500Principal);
-		final X500Principal x500PrincipalNormalized = new X500Principal(utf8Name);
-		return x500PrincipalNormalized;
+		final X500Principal normalizedX500Principal = new X500Principal(utf8Name);
+		return normalizedX500Principal;
 	}
 
 	/**
-	 * @param x509Certificate
-	 * @return
+	 * For a given {@code X509Certificate} this method returns its subject name as string representation of the X.500 distinguished name using the format defined in RFC 2253. The
+	 * {@code X500Principal} is transcoded first.
+	 *
+	 * @param x509Certificate for which the string representation of the subject name must be returned
+	 * @return {@code String} representation of the certificate's subject name using the format defined in RFC 2253
 	 */
 	public static String getSubjectX500PrincipalName(final X509Certificate x509Certificate) {
 
@@ -2568,22 +2575,24 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * The distinguished name is regenerated to avoid problems related to the {@code X500Principal} encoding.
+	 * This method transcodes {@code X500Principal} related to the issuer name of a given {@code X509Certificate}.
 	 *
-	 * @param x509Certificate
-	 * @return
+	 * @param x509Certificate for which the issuer subject name must be transcoded
+	 * @return {@code X500Principal} transcoded
 	 */
 	public static X500Principal getIssuerX500Principal(final X509Certificate x509Certificate) {
 
 		final X500Principal x500Principal = x509Certificate.getIssuerX500Principal();
-		final String utf8Name = getUtf8String(x500Principal);
-		final X500Principal x500PrincipalNormalized = new X500Principal(utf8Name);
+		final X500Principal x500PrincipalNormalized = getX500Principal(x500Principal);
 		return x500PrincipalNormalized;
 	}
 
 	/**
-	 * @param x509Certificate
-	 * @return
+	 * For a given {@code X509Certificate} this method returns its issuer name as string representation of the X.500 distinguished name using the format defined in RFC 2253. The
+	 * {@code X500Principal} is transcoded first.
+	 *
+	 * @param x509Certificate for which the string representation of the issuer name must be returned
+	 * @return {@code String} representation of the certificate's issuer name using the format defined in RFC 2253
 	 */
 	public static String getIssuerX500PrincipalName(final X509Certificate x509Certificate) {
 
