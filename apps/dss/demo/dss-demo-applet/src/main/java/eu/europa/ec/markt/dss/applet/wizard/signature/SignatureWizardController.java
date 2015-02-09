@@ -256,10 +256,12 @@ public class SignatureWizardController extends DSSWizardController<SignatureMode
 
 		DSSTransform dssTransform = new DSSTransform();
 		dssTransform.setAlgorithm(CanonicalizationMethod.ENVELOPED);
+		dssTransform.setPerform(true);
 		transforms.add(dssTransform);
 
 		dssTransform = new DSSTransform();
 		dssTransform.setAlgorithm(CanonicalizationMethod.EXCLUSIVE);
+		dssTransform.setPerform(true);
 		transforms.add(dssTransform);
 
 		dssReference.setTransforms(transforms);
