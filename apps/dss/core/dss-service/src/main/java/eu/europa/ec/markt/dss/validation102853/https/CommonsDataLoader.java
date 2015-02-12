@@ -322,13 +322,10 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		return get(url);
 	}
 
-	private byte[] fileGet(String urlString) {
-		try {
-			return DSSUtils.toByteArray(new URL(urlString).openStream());
-		} catch (IOException e) {
-			LOG.warn(e.toString(), e);
-		}
-		return null;
+	private byte[] fileGet(final String urlString) {
+
+		final URL url = DSSUtils.toUrlQuietly(urlString);
+		return DSSUtils.toByteArrayQuietly(url);
 	}
 
 	//    /**
@@ -401,19 +398,8 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	 */
 	protected byte[] ftpGet(final String urlString) {
 
-		InputStream inputStream = null;
-		try {
-
-			final URL url = new URL(urlString);
-			inputStream = url.openStream();
-			return DSSUtils.toByteArray(inputStream);
-		} catch (Exception e) {
-
-			LOG.warn(e.getMessage());
-		} finally {
-			DSSUtils.closeQuietly(inputStream);
-		}
-		return null;
+		final URL url = DSSUtils.toUrlQuietly(urlString);
+		return DSSUtils.toByteArrayQuietly(url);
 	}
 
 	/**
@@ -442,11 +428,9 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 			throw new DSSException(e);
 		} finally {
 			if (httpRequest != null) {
-
 				httpRequest.releaseConnection();
 			}
 			if (httpResponse != null) {
-
 				EntityUtils.consumeQuietly(httpResponse.getEntity());
 			}
 		}
@@ -545,16 +529,13 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	protected byte[] getContent(final HttpEntity responseEntity) throws DSSException {
 
-		InputStream content = null;
 		try {
 
-			content = responseEntity.getContent();
+			final InputStream content = responseEntity.getContent();
 			final byte[] bytes = DSSUtils.toByteArray(content);
 			return bytes;
 		} catch (IOException e) {
 			throw new DSSException(e);
-		} finally {
-			DSSUtils.closeQuietly(content);
 		}
 	}
 

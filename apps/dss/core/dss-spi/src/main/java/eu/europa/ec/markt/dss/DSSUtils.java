@@ -36,6 +36,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
@@ -1553,7 +1554,6 @@ public final class DSSUtils {
 	public static byte[] toByteArray(final File file) throws DSSException {
 
 		if (file == null) {
-
 			throw new DSSNullException(File.class);
 		}
 		try {
@@ -1621,10 +1621,10 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * Get the contents of an {@code InputStream} as a {@code byte[]}.
+	 * Get the contents of an {@code InputStream} as a {@code byte[]}. The {@code inputStream} is closed.
 	 *
-	 * @param inputStream
-	 * @return
+	 * @param inputStream {@code InputStream} (cannot be {@code null})
+	 * @return array of {@code byte}s
 	 */
 	public static byte[] toByteArray(final InputStream inputStream) {
 
@@ -1636,7 +1636,46 @@ public final class DSSUtils {
 			return bytes;
 		} catch (IOException e) {
 			throw new DSSException(e);
+		} finally {
+			closeQuietly(inputStream);
 		}
+	}
+
+	/**
+	 * This method Creates a {@code URL} object from the {@code String} representation..
+	 *
+	 * @param urlString {@code String} to parse as a URL
+	 * @return {@code URL} or {@code null}
+	 */
+	public static URL toUrlQuietly(final String urlString) {
+
+		try {
+			final URL url = new URL(urlString);
+			return url;
+		} catch (MalformedURLException e) {
+			LOG.warn(e.toString(), e);
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the content of a file referenced by its URL. All exceptions are caught.
+	 *
+	 * @param url {@code URL} representing a file
+	 * @return array of {@code byte}s or null
+	 */
+	public static byte[] toByteArrayQuietly(final URL url) {
+
+		if (url == null) {
+			return null;
+		}
+		try {
+			final InputStream inputStream = url.openStream();
+			return DSSUtils.toByteArray(inputStream);
+		} catch (IOException e) {
+			LOG.warn(e.toString(), e);
+		}
+		return null;
 	}
 
 	/**
@@ -1683,15 +1722,16 @@ public final class DSSUtils {
 	public static void saveToFile(final byte[] bytes, final File file) throws DSSException {
 
 		file.getParentFile().mkdirs();
+		FileOutputStream fileOutputStream = null;
 		try {
 
-			final FileOutputStream fileOutputStream = new FileOutputStream(file);
-			final ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-			copy(inputStream, fileOutputStream);
-			closeQuietly(inputStream);
-			closeQuietly(fileOutputStream);
+			final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+			fileOutputStream = new FileOutputStream(file);
+			copy(byteArrayInputStream, fileOutputStream);
 		} catch (IOException e) {
 			throw new DSSException(e);
+		} finally {
+			closeQuietly(fileOutputStream);
 		}
 	}
 
@@ -1704,8 +1744,11 @@ public final class DSSUtils {
 	public static void saveToFile(final InputStream inputStream, final String path) {
 
 		final FileOutputStream fileOutputStream = toFileOutputStream(path);
-		copy(inputStream, fileOutputStream);
-		closeQuietly(fileOutputStream);
+		try {
+			copy(inputStream, fileOutputStream);
+		} finally {
+			closeQuietly(fileOutputStream);
+		}
 	}
 
 	/**

@@ -96,7 +96,6 @@ public class FileDocument extends CommonDocument {
 
 		final InputStream inputStream = openStream();
 		final byte[] bytes = DSSUtils.toByteArray(inputStream);
-		DSSUtils.closeQuietly(inputStream);
 		return bytes;
 	}
 
