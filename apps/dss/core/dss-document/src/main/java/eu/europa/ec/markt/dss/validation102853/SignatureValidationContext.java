@@ -21,6 +21,7 @@
 package eu.europa.ec.markt.dss.validation102853;
 
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,8 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -391,6 +394,7 @@ public class SignatureValidationContext implements ValidationContext {
 		final ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executorService;
 		boolean exit = false;
 		boolean checkAgain = true;
+		List<Future<?>> submittedTasks = new ArrayList<Future<?>>();
 		do {
 
 			final Token token = getNotYetVerifiedToken();
@@ -402,8 +406,8 @@ public class SignatureValidationContext implements ValidationContext {
 					//					System.out.println("----------------------------------------------------");
 					//					System.out.println(" DSS_ID: " + token.getDSSId());
 					//					System.out.println("----------------------------------------------------");
-					final Task task = new Task(token);
-					executorService.submit(task);
+					final Task task = createTask(token);
+					submittedTasks.add(executorService.submit(task));
 				} catch (RejectedExecutionException e) {
 					LOG.error(e.getMessage(), e);
 					throw new DSSException(e);
@@ -436,7 +440,20 @@ public class SignatureValidationContext implements ValidationContext {
 			}
 		} while (!exit);
 
+        for (Future<?> submittedTask : submittedTasks) {
+            try {
+                submittedTask.get();
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
 	}
+
+    protected Task createTask(final Token token) {
+        return new Task(token);
+    }
 
 	class Task implements Runnable {
 
