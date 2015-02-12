@@ -243,9 +243,9 @@ public class FileCacheDataLoader extends CommonsDataLoader {
 			final URI uri = URI.create(urlString.trim());
 			httpRequest = new HttpPost(uri);
 
-			final ByteArrayInputStream bis = new ByteArrayInputStream(content);
+			final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(content);
 
-			final HttpEntity httpEntity = new InputStreamEntity(bis, content.length);
+			final HttpEntity httpEntity = new InputStreamEntity(byteArrayInputStream, content.length);
 			final HttpEntity requestEntity = new BufferedHttpEntity(httpEntity);
 			httpRequest.setEntity(requestEntity);
 			if (contentType != null) {
