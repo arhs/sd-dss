@@ -203,10 +203,13 @@ public class OnlineOCSPSource implements OCSPSource {
 			final CertificateID certId = DSSRevocationUtils.getOCSPCertificateID(x509Certificate, issuerX509Certificate);
 			final OCSPReqBuilder ocspReqBuilder = new OCSPReqBuilder();
 			ocspReqBuilder.addRequest(certId);
+			if (nonceContainer != null) {
 
-			final Extension extension = new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, true, nonceContainer.nonce);
-			final Extensions extensions = new Extensions(extension);
-			ocspReqBuilder.setRequestExtensions(extensions);
+				final DEROctetString nonce = nonceContainer.nonce;
+				final Extension extension = new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, true, nonce);
+				final Extensions extensions = new Extensions(extension);
+				ocspReqBuilder.setRequestExtensions(extensions);
+			}
 			final OCSPReq ocspReq = ocspReqBuilder.build();
 			final byte[] ocspReqData = ocspReq.getEncoded();
 			return ocspReqData;
