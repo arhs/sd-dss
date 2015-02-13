@@ -405,11 +405,11 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	 */
 	protected byte[] httpGet(final String urlString) {
 
+		final URI uri = DSSUtils.toUri(urlString.trim());
 		HttpGet httpGet = null;
 		HttpResponse httpResponse = null;
 		try {
 
-			final URI uri = DSSUtils.toUri(urlString.trim());
 			httpGet = new HttpGet(uri);
 			defineContentType(httpGet);
 			defineContentTransferEncoding(httpGet);

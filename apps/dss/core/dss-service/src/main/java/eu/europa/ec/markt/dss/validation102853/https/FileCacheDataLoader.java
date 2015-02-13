@@ -124,7 +124,7 @@ public class FileCacheDataLoader extends CommonsDataLoader {
 			final byte[] bytes = DSSUtils.toByteArray(file);
 			return bytes;
 		} else {
-			if(!fileExists) {
+			if (!fileExists) {
 				LOG.debug("There is no cached file!");
 			} else {
 				LOG.debug("The refresh is forced!");
@@ -236,11 +236,11 @@ public class FileCacheDataLoader extends CommonsDataLoader {
 			return returnedBytes;
 		}
 
+		final URI uri = DSSUtils.toUri(urlString.trim());
 		HttpPost httpRequest = null;
 		HttpResponse httpResponse = null;
 		try {
 
-			final URI uri = URI.create(urlString.trim());
 			httpRequest = new HttpPost(uri);
 
 			final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(content);
@@ -252,9 +252,9 @@ public class FileCacheDataLoader extends CommonsDataLoader {
 				httpRequest.setHeader(CONTENT_TYPE, contentType);
 			}
 
-			httpResponse = super.getHttpResponse(httpRequest, urlString);
+			httpResponse = super.getHttpResponse(httpRequest, uri);
 
-			returnedBytes = readHttpResponse(urlString, httpResponse);
+			returnedBytes = readHttpResponse(uri, httpResponse);
 			if (returnedBytes.length != 0) {
 
 				final File cacheFile = getCacheFile(cacheFileName);
