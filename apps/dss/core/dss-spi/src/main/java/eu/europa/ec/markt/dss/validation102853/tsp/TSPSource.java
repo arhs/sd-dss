@@ -37,23 +37,25 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 public interface TSPSource extends Serializable {
 
 	/**
-	 * Gets a TimeStampResponse relevant to the provided digest
+	 * Gets a TimeStampResponse relevant to the provided digest value.
 	 *
-	 * @param digestAlgorithm
-	 * @param digest
-	 * @return
+	 * @param digestAlgorithm {@code DigestAlgorithm} used to generate the message imprint
+	 * @param digest          digest value as byte array
+	 * @return {@code TimeStampToken}
 	 * @throws DSSException
 	 */
 	public TimeStampToken getTimeStampResponse(final DigestAlgorithm digestAlgorithm, final byte[] digest) throws DSSException;
 
 	/**
-	 * @param policyOid
+	 * Set the request policy OID.
+	 *
+	 * @param reqPolicyOid {@code String} representing the requested policy OID
 	 */
-	public void setPolicyOid(final String policyOid);
+	public void setReqPolicyOid(final String reqPolicyOid);
 
 	/**
-	 * @return this method returns the unique id associated with the timestamp
-	 * @param digestValue
+	 * @param digestValue array of bytes to be digested
+	 * @return this method returns the unique id associated with the timestamp. It's a MD5 of {@code digestValue} and nonce
 	 */
 	public String getUniqueId(byte[] digestValue);
 }

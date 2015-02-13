@@ -37,6 +37,8 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
@@ -116,6 +118,9 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.tsp.TSPException;
+import org.bouncycastle.tsp.TimeStampRequest;
+import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1400,6 +1405,21 @@ public final class DSSUtils {
 	}
 
 	/**
+	 * Returns the encoded (as ASN.1 DER) form of this {@code TimeStampRequest}.
+	 *
+	 * @param timeStampRequest {@code TimeStampToken}
+	 * @return encoded array of bytes
+	 */
+	public static byte[] getEncoded(final TimeStampRequest timeStampRequest) {
+
+		try {
+			return timeStampRequest.getEncoded();
+		} catch (IOException e) {
+			throw new DSSException(e);
+		}
+	}
+
+	/**
 	 * Returns the encoded (as ASN.1 DER) form of this {@code TimeStampToken}.
 	 *
 	 * @param timeStamp {@code TimeStampToken}
@@ -1650,12 +1670,26 @@ public final class DSSUtils {
 	public static URL toUrlQuietly(final String urlString) {
 
 		try {
-			final URL url = new URL(urlString);
-			return url;
+			return new URL(urlString);
 		} catch (MalformedURLException e) {
 			LOG.warn(e.toString(), e);
 		}
 		return null;
+	}
+
+	/**
+	 * This method creates a {@code URI} object from the {@code String} representation.
+	 *
+	 * @param urlString {@code String} to parse as a URI
+	 * @return {@code URI}
+	 */
+	public static URI toUri(final String urlString) {
+
+		try {
+			return new URI(urlString);
+		} catch (URISyntaxException e) {
+			throw new DSSException(e);
+		}
 	}
 
 	/**
@@ -3248,5 +3282,21 @@ public final class DSSUtils {
 			}
 		}
 		return joinedArray;
+	}
+
+	/**
+	 * Creates a new instance of {@code TimeStampResponse} based on an array of bytes. The underlying exceptions are encapsulated into a {@code DSSException}.
+	 *
+	 * @param respBytes array of bytes
+	 * @return {@code TimeStampResponse}
+	 */
+	public static TimeStampResponse newTimeStampResponse(final byte[] respBytes) {
+		try {
+			return new TimeStampResponse(respBytes);
+		} catch (TSPException e) {
+			throw new DSSException(e);
+		} catch (IOException e) {
+			throw new DSSException(e);
+		}
 	}
 }

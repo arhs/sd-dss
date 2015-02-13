@@ -23,9 +23,7 @@ package eu.europa.ec.markt.dss.validation102853.https;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.HashMap;
@@ -68,6 +66,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.AbstractHttpMessage;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,9 +96,9 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	protected String contentType;
 
-	// TODO: (Bob: 2014 Jan 28) It should be taken into account: Content-Transfer-Encoding if it is not the default value.
-	// TODO: (Bob: 2014 Jan 28) It is extracted from: https://joinup.ec.europa.eu/software/sd-dss/issue/dss-41-tsa-service-basic-auth
-	// tsaConnection.setRequestProperty("Content-Transfer-Encoding", "binary");
+	public static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
+
+	protected String contentTransferEncoding; // = "binary";
 
 	private ProxyPreferenceManager proxyPreferenceManager;
 
@@ -110,6 +109,9 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 	private HttpClient httpClient;
 
+	/**
+	 * This variable indicates if any parameter has changed: authentication, proxy...
+	 */
 	private boolean updated;
 
 	/**
@@ -158,7 +160,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		}
 	}
 
-	protected synchronized HttpClient getHttpClient(final String url) throws DSSException {
+	protected synchronized HttpClient getHttpClient(final URI uri) throws DSSException {
 
 		if (httpClient != null && !updated) {
 			return httpClient;
@@ -166,15 +168,12 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		if (LOG.isTraceEnabled() && updated) {
 			LOG.trace(">>> Proxy preferences updated");
 		}
-		HttpClientBuilder httpClientBuilder = HttpClients.custom();
-
-		httpClientBuilder = configCredentials(httpClientBuilder, url);
-
+		final HttpClientBuilder httpClientBuilder = configCredentials(uri);
 		final RequestConfig.Builder custom = RequestConfig.custom();
 		custom.setSocketTimeout(timeoutSocket);
 		custom.setConnectionRequestTimeout(timeoutConnection);
 		final RequestConfig requestConfig = custom.build();
-		httpClientBuilder = httpClientBuilder.setDefaultRequestConfig(requestConfig);
+		httpClientBuilder.setDefaultRequestConfig(requestConfig);
 		httpClientBuilder.setConnectionManager(getConnectionManager());
 
 		httpClient = httpClientBuilder.build();
@@ -184,12 +183,12 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	/**
 	 * Define the Credentials
 	 *
-	 * @param httpClientBuilder
-	 * @param url
-	 * @return
+	 * @param uri
+	 * @return {@code HttpClientBuilder}
 	 */
-	private HttpClientBuilder configCredentials(HttpClientBuilder httpClientBuilder, final String url) throws DSSException {
+	private HttpClientBuilder configCredentials(final URI uri) throws DSSException {
 
+		HttpClientBuilder httpClientBuilder = HttpClients.custom();
 		final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 		for (final Map.Entry<HttpHost, UsernamePasswordCredentials> entry : authenticationMap.entrySet()) {
 
@@ -198,8 +197,8 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 			final AuthScope authscope = new AuthScope(httpHost.getHostName(), httpHost.getPort());
 			credentialsProvider.setCredentials(authscope, usernamePasswordCredentials);
 		}
-		httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-		httpClientBuilder = configureProxy(httpClientBuilder, credentialsProvider, url);
+		httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+		httpClientBuilder = configureProxy(httpClientBuilder, credentialsProvider, uri);
 		return httpClientBuilder;
 	}
 
@@ -208,77 +207,73 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	 *
 	 * @param httpClientBuilder
 	 * @param credentialsProvider
-	 * @param url
+	 * @param uri
 	 * @return
 	 */
-	private HttpClientBuilder configureProxy(HttpClientBuilder httpClientBuilder, CredentialsProvider credentialsProvider, String url) throws DSSException {
+	private HttpClientBuilder configureProxy(final HttpClientBuilder httpClientBuilder, final CredentialsProvider credentialsProvider, final URI uri) throws DSSException {
 
 		if (proxyPreferenceManager == null) {
 			return httpClientBuilder;
 		}
-		try {
 
-			final String protocol = new URL(url).getProtocol();
-			final boolean proxyHTTPS = Protocol.isHttps(protocol) && proxyPreferenceManager.isHttpsEnabled();
-			final boolean proxyHTTP = Protocol.isHttp(protocol) && proxyPreferenceManager.isHttpEnabled();
+		final String protocol = uri.getScheme();
+		final boolean proxyHTTPS = Protocol.isHttps(protocol) && proxyPreferenceManager.isHttpsEnabled();
+		final boolean proxyHTTP = Protocol.isHttp(protocol) && proxyPreferenceManager.isHttpEnabled();
 
-			if (!proxyHTTPS && !proxyHTTP) {
-				return httpClientBuilder;
-			}
-
-			String proxyHost = null;
-			int proxyPort = 0;
-			String proxyUser = null;
-			String proxyPassword = null;
-
-			if (proxyHTTPS) {
-
-				LOG.debug("Use proxy https parameters");
-				final Long port = proxyPreferenceManager.getHttpsPort();
-				proxyPort = port != null ? port.intValue() : 0;
-				proxyHost = proxyPreferenceManager.getHttpsHost();
-				proxyUser = proxyPreferenceManager.getHttpsUser();
-				proxyPassword = proxyPreferenceManager.getHttpsPassword();
-			} else if (proxyHTTP) { // noinspection ConstantConditions
-
-				LOG.debug("Use proxy http parameters");
-				final Long port = proxyPreferenceManager.getHttpPort();
-				proxyPort = port != null ? port.intValue() : 0;
-				proxyHost = proxyPreferenceManager.getHttpHost();
-				proxyUser = proxyPreferenceManager.getHttpUser();
-				proxyPassword = proxyPreferenceManager.getHttpPassword();
-			}
-			if (DSSUtils.isNotEmpty(proxyUser) && DSSUtils.isNotEmpty(proxyPassword)) {
-
-				AuthScope proxyAuth = new AuthScope(proxyHost, proxyPort);
-				UsernamePasswordCredentials proxyCredentials = new UsernamePasswordCredentials(proxyUser, proxyPassword);
-				credentialsProvider.setCredentials(proxyAuth, proxyCredentials);
-			}
-
-			LOG.debug("proxy host/port: " + proxyHost + ":" + proxyPort);
-			// TODO SSL peer shut down incorrectly when protocol is https
-			final HttpHost proxy = new HttpHost(proxyHost, proxyPort, Protocol.HTTP.getName());
-			final HttpClientBuilder httpClientBuilder1 = httpClientBuilder.setProxy(proxy);
-			updated = false;
-			return httpClientBuilder1;
-		} catch (MalformedURLException e) {
-			throw new DSSException(e);
+		if (!proxyHTTPS && !proxyHTTP) {
+			return httpClientBuilder;
 		}
+
+		String proxyHost = null;
+		int proxyPort = 0;
+		String proxyUser = null;
+		String proxyPassword = null;
+
+		if (proxyHTTPS) {
+
+			LOG.debug("Use proxy https parameters");
+			final Long port = proxyPreferenceManager.getHttpsPort();
+			proxyPort = port != null ? port.intValue() : 0;
+			proxyHost = proxyPreferenceManager.getHttpsHost();
+			proxyUser = proxyPreferenceManager.getHttpsUser();
+			proxyPassword = proxyPreferenceManager.getHttpsPassword();
+		} else if (proxyHTTP) { // noinspection ConstantConditions
+
+			LOG.debug("Use proxy http parameters");
+			final Long port = proxyPreferenceManager.getHttpPort();
+			proxyPort = port != null ? port.intValue() : 0;
+			proxyHost = proxyPreferenceManager.getHttpHost();
+			proxyUser = proxyPreferenceManager.getHttpUser();
+			proxyPassword = proxyPreferenceManager.getHttpPassword();
+		}
+		if (DSSUtils.isNotEmpty(proxyUser) && DSSUtils.isNotEmpty(proxyPassword)) {
+
+			AuthScope proxyAuth = new AuthScope(proxyHost, proxyPort);
+			UsernamePasswordCredentials proxyCredentials = new UsernamePasswordCredentials(proxyUser, proxyPassword);
+			credentialsProvider.setCredentials(proxyAuth, proxyCredentials);
+		}
+
+		LOG.debug("proxy host/port: " + proxyHost + ":" + proxyPort);
+		// TODO SSL peer shut down incorrectly when protocol is https
+		final HttpHost proxy = new HttpHost(proxyHost, proxyPort, Protocol.HTTP.getName());
+		httpClientBuilder.setProxy(proxy);
+		updated = false;
+		return httpClientBuilder;
 	}
 
 	@Override
 	public byte[] get(final String urlString) {
 
-		if (Protocol.isFileUrl(urlString)) {
-			return fileGet(urlString);
-		} else if (Protocol.isHttpUrl(urlString)) {
+		if (Protocol.isHttpUrl(urlString)) {
 			return httpGet(urlString);
-		} else if (Protocol.isFtpUrl(urlString)) {
-			return ftpGet(urlString);
 		} else if (Protocol.isLdapUrl(urlString)) {
 			return ldapGet(urlString);
+		} else if (Protocol.isFtpUrl(urlString)) {
+			return ftpGet(urlString);
+		} else if (Protocol.isFileUrl(urlString)) {
+			return fileGet(urlString);
 		} else {
-			LOG.warn("DSS framework only supports HTTP, HTTPS, FTP and LDAP CRL's urlString.");
+			LOG.warn("DSS framework only supports HTTP, HTTPS, FTP, LDAP and FILE urlString.");
 		}
 		return httpGet(urlString);
 	}
@@ -405,30 +400,25 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	/**
 	 * This method retrieves data using HTTP or HTTPS protocol and 'get' method.
 	 *
-	 * @param url to access
+	 * @param urlString to access
 	 * @return {@code byte} array of obtained data or null
 	 */
-	protected byte[] httpGet(final String url) {
+	protected byte[] httpGet(final String urlString) {
 
-		HttpGet httpRequest = null;
+		HttpGet httpGet = null;
 		HttpResponse httpResponse = null;
 		try {
 
-			final URI uri = new URI(url.trim());
-			httpRequest = new HttpGet(uri);
-			if (contentType != null) {
-				httpRequest.setHeader(CONTENT_TYPE, contentType);
-			}
-
-			httpResponse = getHttpResponse(httpRequest, url);
-
-			final byte[] returnedBytes = readHttpResponse(url, httpResponse);
+			final URI uri = DSSUtils.toUri(urlString.trim());
+			httpGet = new HttpGet(uri);
+			defineContentType(httpGet);
+			defineContentTransferEncoding(httpGet);
+			httpResponse = getHttpResponse(httpGet, uri);
+			final byte[] returnedBytes = readHttpResponse(uri, httpResponse);
 			return returnedBytes;
-		} catch (URISyntaxException e) {
-			throw new DSSException(e);
 		} finally {
-			if (httpRequest != null) {
-				httpRequest.releaseConnection();
+			if (httpGet != null) {
+				httpGet.releaseConnection();
 			}
 			if (httpResponse != null) {
 				EntityUtils.consumeQuietly(httpResponse.getEntity());
@@ -436,17 +426,30 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		}
 	}
 
+	private void defineContentTransferEncoding(final AbstractHttpMessage httpMessage) {
+		if (contentTransferEncoding != null) {
+			httpMessage.setHeader(CONTENT_TRANSFER_ENCODING, contentTransferEncoding);
+		}
+	}
+
+	private void defineContentType(final AbstractHttpMessage httpMessage) {
+		if (contentType != null) {
+			httpMessage.setHeader(CONTENT_TYPE, contentType);
+		}
+	}
+
 	@Override
 	public byte[] post(final String url, final byte[] content) throws DSSException {
 
-		LOG.debug("Fetching data via POST from url " + url);
-
-		HttpPost httpRequest = null;
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Fetching data via POST from url " + url);
+		}
+		HttpPost httpPost = null;
 		HttpResponse httpResponse = null;
-
 		try {
+
 			final URI uri = URI.create(url.trim());
-			httpRequest = new HttpPost(uri);
+			httpPost = new HttpPost(uri);
 
 			// The length for the InputStreamEntity is needed, because some receivers (on the other side) need this information.
 			// To determine the length, we cannot read the content-stream up to the end and re-use it afterwards.
@@ -456,20 +459,17 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 
 			final HttpEntity httpEntity = new InputStreamEntity(bis, content.length);
 			final HttpEntity requestEntity = new BufferedHttpEntity(httpEntity);
-			httpRequest.setEntity(requestEntity);
-			if (contentType != null) {
-				httpRequest.setHeader(CONTENT_TYPE, contentType);
-			}
-
-			httpResponse = getHttpResponse(httpRequest, url);
-
-			final byte[] returnedBytes = readHttpResponse(url, httpResponse);
+			httpPost.setEntity(requestEntity);
+			defineContentType(httpPost);
+			defineContentTransferEncoding(httpPost);
+			httpResponse = getHttpResponse(httpPost, uri);
+			final byte[] returnedBytes = readHttpResponse(uri, httpResponse);
 			return returnedBytes;
 		} catch (IOException e) {
 			throw new DSSException(e);
 		} finally {
-			if (httpRequest != null) {
-				httpRequest.releaseConnection();
+			if (httpPost != null) {
+				httpPost.releaseConnection();
 			}
 			if (httpResponse != null) {
 				EntityUtils.consumeQuietly(httpResponse.getEntity());
@@ -477,19 +477,18 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		}
 	}
 
-	protected HttpResponse getHttpResponse(final HttpUriRequest httpRequest, final String url) throws DSSException {
+	protected HttpResponse getHttpResponse(final HttpUriRequest httpRequest, final URI uri) throws DSSException {
 
-		final HttpClient client = getHttpClient(url);
+		final HttpClient client = getHttpClient(uri);
 
-		final String host = httpRequest.getURI().getHost();
-		final int port = httpRequest.getURI().getPort();
-		final String scheme = httpRequest.getURI().getScheme();
+		final String host = uri.getHost();
+		final int port = uri.getPort();
+		final String scheme = uri.getScheme();
 		final HttpHost targetHost = new HttpHost(host, port, scheme);
 
 		// Create AuthCache instance
 		AuthCache authCache = new BasicAuthCache();
-		// Generate BASIC scheme object and add it to the local
-		// auth cache
+		// Generate BASIC scheme object and add it to the local auth cache
 		BasicScheme basicAuth = new BasicScheme();
 		authCache.put(targetHost, basicAuth);
 
@@ -505,7 +504,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		}
 	}
 
-	protected byte[] readHttpResponse(final String url, final HttpResponse httpResponse) throws DSSException {
+	protected byte[] readHttpResponse(final URI uri, final HttpResponse httpResponse) throws DSSException {
 
 		final int statusCode = httpResponse.getStatusLine().getStatusCode();
 		if (LOG.isDebugEnabled()) {
@@ -513,13 +512,13 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		}
 		if (statusCode != HttpStatus.SC_OK) {
 
-			LOG.warn("No content available via url: " + url + " - will use nothing: " + url);
+			LOG.warn("No content available via url: " + uri + " - returns null");
 			return null;
 		}
 
 		final HttpEntity responseEntity = httpResponse.getEntity();
 		if (responseEntity == null) {
-			LOG.warn("No message entity for this response - will use nothing: " + url);
+			LOG.warn("No message entity for this response via url: " + uri + " - returns null");
 			return null;
 		}
 
@@ -596,6 +595,22 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	}
 
 	/**
+	 * @return Content-Transfer-Encoding
+	 */
+	public String getContentTransferEncoding() {
+		return contentTransferEncoding;
+	}
+
+	/**
+	 * This allows to set the content transfer encoding. Example: Content-Transfer-Encoding "binary"
+	 *
+	 * @param contentTransferEncoding
+	 */
+	public void setContentTransferEncoding(final String contentTransferEncoding) {
+		this.contentTransferEncoding = contentTransferEncoding;
+	}
+
+	/**
 	 * @return associated {@code ProxyPreferenceManager}
 	 */
 	public ProxyPreferenceManager getProxyPreferenceManager() {
@@ -618,11 +633,11 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	}
 
 	/**
-	 * @param host     host
-	 * @param port     port
-	 * @param scheme   scheme
-	 * @param login    login
-	 * @param password password
+	 * @param host     the hostname (IP or DNS name)
+	 * @param port     the port number. {@code -1} indicates the scheme default port.
+	 * @param scheme   the name of the scheme. {@code null} indicates the {@link HttpHost#DEFAULT_SCHEME_NAME default scheme}
+	 * @param login    login the user name
+	 * @param password password the password
 	 * @return this for fluent addAuthentication
 	 */
 	public CommonsDataLoader addAuthentication(final String host, final int port, final String scheme, final String login, final String password) {
@@ -635,7 +650,7 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 	}
 
 	/**
-	 * This method allows to propgate the authentication information from the current object.
+	 * This method allows to propagate the authentication information from the current object.
 	 *
 	 * @param commonsDataLoader {@code CommonsDataLoader} to be initialised with authentication information
 	 */
@@ -649,6 +664,9 @@ public class CommonsDataLoader implements DataLoader, DSSNotifier {
 		}
 	}
 
+	/**
+	 * Call this method to indicate to the {@code DataLoader} if the {@code HttpClient} must be regenerated to take into account new parameters: authentication, proxy...
+	 */
 	@Override
 	public void update() {
 

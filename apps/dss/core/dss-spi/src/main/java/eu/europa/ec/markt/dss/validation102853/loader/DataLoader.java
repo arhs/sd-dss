@@ -37,7 +37,7 @@ public interface DataLoader extends Serializable {
 	public static class DataAndUrl {
 
 		/**
-		 * Url used to obtain data.
+		 * A {@code String} representation of the URL to be used to obtain the data.
 		 */
 		public String urlString;
 
