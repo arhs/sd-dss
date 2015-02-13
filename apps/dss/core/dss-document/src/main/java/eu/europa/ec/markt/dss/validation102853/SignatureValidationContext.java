@@ -108,10 +108,9 @@ public class SignatureValidationContext implements ValidationContext {
 	protected Date currentTime = new Date();
 
 	/**
-	 * A unique thread can be used to disable the parallel fetching:
+	 * This variable :
 	 */
-	//	private final ExecutorService executorService = Executors.newFixedThreadPool(1);
-	private final ExecutorService executorService = Executors.newCachedThreadPool();
+	protected ExecutorService executorService;
 
 	/**
 	 * This constructor is used during the signature creation process. The certificate pool is created within initialize method.
@@ -151,6 +150,24 @@ public class SignatureValidationContext implements ValidationContext {
 		this.dataLoader = certificateVerifier.getDataLoader();
 		this.signatureCRLSource = certificateVerifier.getSignatureCRLSource();
 		this.signatureOCSPSource = certificateVerifier.getSignatureOCSPSource();
+	}
+
+	@Override
+	public ExecutorService getExecutorService() {
+		return executorService;
+	}
+
+	@Override
+	public void setExecutorService(final ExecutorService executorService) {
+		this.executorService = executorService;
+	}
+
+	private ExecutorService provideExecutorService() {
+
+		if (executorService == null) {
+			executorService = Executors.newCachedThreadPool();
+		}
+		return executorService;
 	}
 
 	public Date getCurrentTime() {
@@ -377,6 +394,7 @@ public class SignatureValidationContext implements ValidationContext {
 		try {
 
 			LOG.debug(">>> MT ***DONE***");
+			final ExecutorService executorService = provideExecutorService();
 			executorService.shutdown();
 			executorService.awaitTermination(5, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
@@ -388,6 +406,7 @@ public class SignatureValidationContext implements ValidationContext {
 
 		int threshold = 0;
 		int max_timeout = 0;
+		final ExecutorService executorService = provideExecutorService();
 		final ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executorService;
 		boolean exit = false;
 		boolean checkAgain = true;

@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.x500.X500Principal;
@@ -455,6 +457,13 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		prepareDiagnosticData();
 
 		final ValidationContext validationContext = new SignatureValidationContext(validationCertPool);
+		final ProcessExecutor processExecutor = provideProcessExecutorInstance();
+		final int concurrentThreadNumber = processExecutor.getConcurrentThreadNumber();
+		if (concurrentThreadNumber > 0) {
+
+			final ExecutorService executorService = Executors.newFixedThreadPool(concurrentThreadNumber);
+			validationContext.setExecutorService(executorService);
+		}
 
 		final List<AdvancedSignature> allSignatureList = getAllSignatures();
 
@@ -468,8 +477,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		certificateVerifier.setSignatureOCSPSource(signatureOCSPSource);
 
 		validationContext.initialize(certificateVerifier);
-
-		validationContext.setCurrentTime(provideProcessExecutorInstance().getCurrentTime());
+		validationContext.setCurrentTime(processExecutor.getCurrentTime());
 		validationContext.validate();
 
 		// For each validated signature present in the document to be validated the extraction of diagnostic data is launched.
@@ -1297,7 +1305,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 	private void performStructuralValidation(final AdvancedSignature signature, final XmlSignature xmlSignature) {
 
-		final ValidationPolicy validationPolicy = processExecutor.getValidationPolicy();
+		final ValidationPolicy validationPolicy = provideProcessExecutorInstance().getValidationPolicy();
 		if (validationPolicy == null || validationPolicy.getStructuralValidationConstraint() == null) {
 			return;
 		}

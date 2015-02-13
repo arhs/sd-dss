@@ -22,6 +22,7 @@ package eu.europa.ec.markt.dss.validation102853;
 
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 
@@ -38,6 +39,10 @@ public interface ValidationContext {
 	public void setCurrentTime(final Date currentTime);
 
 	void initialize(final CertificateVerifier certificateVerifier);
+
+	ExecutorService getExecutorService();
+
+	void setExecutorService(ExecutorService executorService);
 
 	public Date getCurrentTime();
 
