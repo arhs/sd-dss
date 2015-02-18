@@ -131,7 +131,8 @@ public interface CertificateVerifier extends Serializable {
 	public void setSignatureOCSPSource(final ListOCSPSource signatureOCSPSource);
 
 	/**
-	 * This method creates the validation pool of certificates which is used during the validation process.
+	 * This method creates the validation pool of certificates which is used during the validation process. It contains the certificates that compose the trusted and the adjunct
+	 * certificate source.
 	 */
 	public CertificatePool createValidationPool();
 }

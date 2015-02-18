@@ -184,7 +184,6 @@ public final class DSSUtils {
 	private static final Date deterministicDate = DSSUtils.getUtcDate(1970, 04, 23);
 
 	public static final String DEFAULT_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
 	/**
 	 * The default date pattern: "yyyy-MM-dd"
 	 */
