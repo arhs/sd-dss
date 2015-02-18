@@ -82,13 +82,15 @@ public final class CertificateIdentifier {
 		if (x509Certificate == null) {
 			throw new DSSException("The certificate cannot be null!");
 		}
-		final String certKey = getKey(x509Certificate);
-		Integer id = ids.get(certKey);
-		if (id == null) {
+		synchronized (ids) {
 
-			id = add(certKey);
+			final String certKey = getKey(x509Certificate);
+			Integer id = ids.get(certKey);
+			if (id == null) {
+				id = add(certKey);
+			}
+			return id;
 		}
-		return id;
 	}
 
 	/**
