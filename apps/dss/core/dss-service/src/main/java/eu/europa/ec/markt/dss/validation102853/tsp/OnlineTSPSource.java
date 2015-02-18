@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.validation102853.https.CommonsDataLoader;
+import eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 
 /**
@@ -175,10 +175,10 @@ public class OnlineTSPSource implements TSPSource {
 	 *
 	 * @return {@code CommonsDataLoader}
 	 */
-	protected CommonsDataLoader getDefaultDataLoader() {
+	protected CommonDataLoader getDefaultDataLoader() {
 
-		final CommonsDataLoader commonsDataLoader = new CommonsDataLoader(CONTENT_TYPE);
-		return commonsDataLoader;
+		final CommonDataLoader commonDataLoader = new CommonDataLoader(CONTENT_TYPE);
+		return commonDataLoader;
 	}
 
 	@Override

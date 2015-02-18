@@ -15,7 +15,7 @@
 		<!--<property name="proxyDao" ref="proxyFile"/>-->
 	</bean>
 
-	<bean id="dataLoader" class="eu.europa.ec.markt.dss.validation102853.https.CommonsDataLoader">
+	<bean id="dataLoader" class="eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader">
 		<property name="proxyPreferenceManager" ref="proxyPreferenceManager"/>
 	</bean>
 

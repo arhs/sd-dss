@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
@@ -46,7 +47,7 @@ import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
  * This class provides some caching features to handle the resources. The default cache folder is set to {@code java.io.tmpdir}. The urls of the resources is transformed to the
  * file name by replacing the special characters by {@code _}
  */
-public class FileCacheDataLoader extends CommonsDataLoader {
+public class FileCacheDataLoader extends CommonDataLoader {
 
 	private static final Logger LOG = LoggerFactory.getLogger(FileCacheDataLoader.class);
 
@@ -271,5 +272,13 @@ public class FileCacheDataLoader extends CommonsDataLoader {
 			}
 		}
 		return returnedBytes;
+	}
+
+	public List<String> getToBeLoaded() {
+		return toBeLoaded == null ? null : Collections.unmodifiableList(toBeLoaded);
+	}
+
+	public List<String> getToIgnored() {
+		return toIgnored == null ? null : Collections.unmodifiableList(toIgnored);
 	}
 }

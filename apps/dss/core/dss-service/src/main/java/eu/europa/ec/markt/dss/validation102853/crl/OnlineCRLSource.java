@@ -40,7 +40,7 @@ import eu.europa.ec.markt.dss.DSSASN1Utils;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
-import eu.europa.ec.markt.dss.validation102853.https.CommonsDataLoader;
+import eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
 
@@ -71,7 +71,7 @@ public class OnlineCRLSource extends CommonCRLSource {
 	 */
 	public OnlineCRLSource() {
 
-		dataLoader = new CommonsDataLoader();
+		dataLoader = new CommonDataLoader();
 		LOG.trace("+OnlineCRLSource with the default data loader.");
 	}
 

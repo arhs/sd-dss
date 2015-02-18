@@ -25,12 +25,12 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.validation102853.crl.CRLSource;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
-import eu.europa.ec.markt.dss.validation102853.https.CommonsDataLoader;
+import eu.europa.ec.markt.dss.validation102853.crl.OnlineCRLSource;
+import eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OnlineOCSPSource;
-import eu.europa.ec.markt.dss.validation102853.crl.OnlineCRLSource;
 
 /**
  * This class provides the different sources used to verify the status of a certificate using the trust model. There are four different types of sources to be defined:<br /> -
@@ -78,7 +78,7 @@ public class CommonCertificateVerifier implements CertificateVerifier {
 	/**
 	 * This variable contains the {@code ListOCSPSource} extracted from the signatures to validate.
 	 */
-	ListOCSPSource signatureOCSPSource;
+	private ListOCSPSource signatureOCSPSource;
 
 	/**
 	 * This method returns a new instance of the {@code CommonCertificateVerifier} including the {@code OnlineCRLSource}, {@code OnlineOCSPSource} and {@code
@@ -104,7 +104,7 @@ public class CommonCertificateVerifier implements CertificateVerifier {
 	public CommonCertificateVerifier() {
 
 		LOG.info("+ New CommonCertificateVerifier created.");
-		dataLoader = new CommonsDataLoader();
+		dataLoader = new CommonDataLoader();
 	}
 
 	/**
@@ -115,7 +115,7 @@ public class CommonCertificateVerifier implements CertificateVerifier {
 	public CommonCertificateVerifier(final boolean simpleCreationOnly) {
 
 		if (!simpleCreationOnly) {
-			dataLoader = new CommonsDataLoader();
+			dataLoader = new CommonDataLoader();
 		}
 	}
 
