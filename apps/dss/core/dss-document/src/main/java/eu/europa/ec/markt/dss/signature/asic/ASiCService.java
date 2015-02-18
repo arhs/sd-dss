@@ -700,7 +700,7 @@ public class ASiCService extends AbstractSignatureService {
 	 */
 	private void buildXAdES(final ASiCParameters asicParameters, final DSSDocument signature, final ZipOutputStream outZip) throws DSSException {
 
-		final String signatureZipEntryName = getSignatureFileName(asicParameters);
+		final String signatureZipEntryName = getSignatureFileName(asicParameters); 
 		final ZipEntry entrySignature = new ZipEntry(signatureZipEntryName);
 		createZipEntry(outZip, entrySignature);
 		// Creates the XAdES signature

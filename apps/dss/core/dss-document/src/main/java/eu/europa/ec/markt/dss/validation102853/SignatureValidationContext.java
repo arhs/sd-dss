@@ -509,7 +509,7 @@ public class SignatureValidationContext implements ValidationContext {
 		
 		// TODO: A hack for DDS configuration
 		byte[] publicKeySha256 = DigestUtils.sha256(certToken.getPublicKey().getEncoded());
-		String publicKeySha256Hex = Hex.toHexString(publicKeySha256).toUpperCase();
+		String publicKeySha256Hex = Hex.toHexString(publicKeySha256).toUpperCase();  Hex.toHexString(certToken.getPublicKey().getEncoded()).toUpperCase();
 		LOG.info("Certificate public key hash is: " + publicKeySha256Hex);
 		synchronized (sha256ForTrustedPublicKeysInHex) {
 		    if(sha256ForTrustedPublicKeysInHex.contains(publicKeySha256Hex)) {
