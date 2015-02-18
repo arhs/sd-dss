@@ -24,10 +24,12 @@ import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
+import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
+
 /**
- * This class allows the implementation of the trusted certificate source.
- *
- * <p>
+ * This class allows the implementation of the trusted certificate source. Note that in the case of the {@code TrustedCertificateSource} the content of the {@code CertificatePool}
+ * is identical to the content of the instance of the {@code CertificateSource}
+ * <p/>
  * DISCLAIMER: Project owner DG-MARKT.
  *
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
@@ -35,7 +37,23 @@ import javax.security.auth.x500.X500Principal;
  */
 public interface TrustedCertificateSource {
 
-    public CertificatePool getCertificatePool();
+	/**
+	 * @return the {@code CertificateSourceType} associated to the implementation class
+	 */
+	public CertificateSourceType getCertificateSourceType();
 
-    public List<CertificateToken> get(X500Principal x500Principal);
+	/**
+	 * This method return the {@link CertificatePool} encapsulated by the source.
+	 */
+	public CertificatePool getCertificatePool();
+
+	/**
+	 * This method returns an unmodifiable {@code List} of trusted {@code CertificateToken}(s) corresponding to the given subject distinguished name.
+	 * The search is performed at the level of {@code CertificateSource} and not at the level of the {@code CertificateSource} (The same {@code CertificatePool} can be shared by
+	 * many sources and therefore its content can be different from the content of the {@code CertificateSource}.
+	 *
+	 * @param x500Principal subject distinguished names of the certificate to find
+	 * @return an unmodifiable {@code List} of trusted {@code CertificateToken}s or if no match is found an empty unmodifiable list
+	 */
+	public List<CertificateToken> get(X500Principal x500Principal);
 }

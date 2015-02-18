@@ -32,9 +32,9 @@ import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 
 /**
- * This source of certificates handles any non trusted certificates. (ex: intermediate certificates used in building certification chain)
- *
- * <p>
+ * This source of certificates handles any non trusted certificates. (ex: intermediate certificates used in building certification chain). The {@code CertificateSource} is based
+ * on the {@code CertificatePool} which guaranties uniqueness of each certificate. The same {@code CertificatePool} can be shared by many {@code CertificateSource}s.
+ * <p/>
  * DISCLAIMER: Project owner DG-MARKT.
  *
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
@@ -42,135 +42,92 @@ import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
  */
 public class CommonCertificateSource implements CertificateSource {
 
-    /**
-     * This variable represents the certificate pool with all encapsulated certificates
-     */
-    protected CertificatePool certPool;
-    /**
-     * The list of all encapsulated certificate tokens. It must be <code>null</code> when instantiating.
-     */
-    protected List<CertificateToken> certificateTokens;
+	/**
+	 * This variable represents the certificate pool with all encapsulated certificates
+	 */
+	protected CertificatePool certPool;
 
-    /**
-     * The default constructor to generate a certificates source with an independent certificates pool.
-     */
-    public CommonCertificateSource() {
+	/**
+	 * The list of all encapsulated certificate tokens. It must be <code>null</code> when instantiating.
+	 */
+	protected List<CertificateToken> certificateTokens;
 
-        certPool = new CertificatePool();
-    }
+	/**
+	 * The default constructor to generate a certificates source with an independent certificates pool.
+	 */
+	public CommonCertificateSource() {
+		certPool = new CertificatePool();
+	}
 
-    /**
-     * The default constructor with mandatory certificates pool.
-     *
-     * @param certPool
-     */
-    public CommonCertificateSource(final CertificatePool certPool) {
+	/**
+	 * The default constructor with a mandatory shared certificates pool.
+	 *
+	 * @param certPool shared (external) {@code CertificatePool}
+	 */
+	public CommonCertificateSource(final CertificatePool certPool) {
 
-        if (certPool == null) {
+		if (certPool == null) {
+			throw new DSSNullException(CertificatePool.class);
+		}
+		this.certPool = certPool;
+	}
 
-            throw new DSSNullException(CertificatePool.class);
-        }
-        this.certPool = certPool;
-    }
+	@Override
+	public CertificateSourceType getCertificateSourceType() {
 
-    /**
-     * This method returns the certificate source type associated to the implementation class.
-     *
-     * @return
-     */
-    protected CertificateSourceType getCertificateSourceType() {
+		return CertificateSourceType.OTHER;
+	}
 
-        return CertificateSourceType.OTHER;
-    }
+	@Override
+	public CertificatePool getCertificatePool() {
 
-    @Override
-    public CertificatePool getCertificatePool() {
+		return certPool;
+	}
 
-        return certPool;
-    }
+	@Override
+	public CertificateToken addCertificate(final X509Certificate x509Certificate) {
 
-    /**
-     * This method adds an external certificate to the encapsulated pool and to the source. If the certificate is already present in the pool its
-     * source type is associated to the token.
-     *
-     * @param x509Certificate the certificate to add
-     * @return the corresponding certificate token
-     */
-    @Override
-    public CertificateToken addCertificate(final X509Certificate x509Certificate) {
+		final CertificateToken certificateToken = addCertificate(x509Certificate, null);
+		return certificateToken;
+	}
 
-        final CertificateToken certToken = certPool.getInstance(x509Certificate, getCertificateSourceType());
-        if (certificateTokens != null) {
+	@Override
+	public List<CertificateToken> getCertificates() {
 
-            if (!certificateTokens.contains(certToken)) {
+		return Collections.unmodifiableList(certificateTokens);
+	}
 
-                certificateTokens.add(certToken);
-            }
-        }
-        return certToken;
-    }
+	@Override
+	public List<CertificateToken> get(final X500Principal x500Principal) {
 
-    /**
-     * Retrieves the unmodifiable list of all certificate tokens from this source.
-     *
-     * @return
-     */
-    public List<CertificateToken> getCertificates() {
+		if (x500Principal != null) {
 
-        return Collections.unmodifiableList(certificateTokens);
-    }
+			final List<CertificateToken> localCertificateTokens = new ArrayList<CertificateToken>();
+			final List<CertificateToken> poolCertificateTokens = certPool.get(x500Principal);
+			for (final CertificateToken certificateToken : poolCertificateTokens) {
 
-    /**
-     * This method returns the <code>List</code> of <code>CertificateToken</code>(s) corresponding to the given subject distinguished name.
-     * The content of the encapsulated certificates pool can be different from the content of the source.
-     *
-     * @param x500Principal subject distinguished names of the certificate to find
-     * @return If no match is found then an empty list is returned.
-     */
-    @Override
-    public List<CertificateToken> get(final X500Principal x500Principal) {
+				if (certificateTokens.contains(certificateToken)) {
+					localCertificateTokens.add(certificateToken);
+				}
+			}
+			return Collections.unmodifiableList(localCertificateTokens);
+		}
+		return CertificatePool.EMPTY_UNMODIFIABLE_CERTIFICATE_TOKEN_LIST;
+	}
 
-        List<CertificateToken> certificateTokenList = null;
-        if (x500Principal != null) {
+	/**
+	 * This method is used internally to prevent the addition of a certificate through the {@code CertificatePool}.
+	 *
+	 * @param x509Certificate {@code X509Certificate} to add to this source
+	 * @param serviceInfo     {@code ServiceInfo} associated to the certificate
+	 * @return an existing or newly created instance of the {@code CertificateToken}
+	 */
+	protected CertificateToken addCertificate(final X509Certificate x509Certificate, final ServiceInfo serviceInfo) {
 
-            final List<CertificateToken> missingCertificateTokens = new ArrayList<CertificateToken>();
-            certificateTokenList = certPool.get(x500Principal);
-            for (final CertificateToken certificateToken : certificateTokenList) {
-
-                if (!certificateTokens.contains(certificateToken)) {
-
-                    missingCertificateTokens.add(certificateToken);
-                }
-            }
-            if (missingCertificateTokens.size() > 0) {
-
-                certificateTokenList.removeAll(missingCertificateTokens);
-            }
-        } else {
-
-            certificateTokenList = new ArrayList<CertificateToken>();
-        }
-        return Collections.unmodifiableList(certificateTokenList);
-    }
-
-    /**
-     * This method is used internally to prevent the addition of a certificate through the <code>CertificatePool</code>.
-     *
-     * @param certificate
-     * @param serviceInfo
-     * @return
-     */
-    protected CertificateToken addCertificate(final X509Certificate certificate, final ServiceInfo serviceInfo) {
-
-        final CertificateToken certToken = certPool.getInstance(certificate, getCertificateSourceType(), serviceInfo);
-        if (certificateTokens != null) {
-
-            if (!certificateTokens.contains(certToken)) {
-
-                certificateTokens.add(certToken);
-            }
-        }
-        return certToken;
-    }
-
+		final CertificateToken certificateToken = certPool.getInstance(x509Certificate, getCertificateSourceType(), serviceInfo);
+		if (certificateTokens != null && !certificateTokens.contains(certificateToken)) {
+			certificateTokens.add(certificateToken);
+		}
+		return certificateToken;
+	}
 }

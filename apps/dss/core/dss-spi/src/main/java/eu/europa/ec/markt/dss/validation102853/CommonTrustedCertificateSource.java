@@ -36,71 +36,72 @@ import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 
 public class CommonTrustedCertificateSource extends CommonCertificateSource implements TrustedCertificateSource {
 
-    @Override
-    protected CertificateSourceType getCertificateSourceType() {
+	@Override
+	public CertificateSourceType getCertificateSourceType() {
 
-        return CertificateSourceType.TRUSTED_STORE;
-    }
+		return CertificateSourceType.TRUSTED_STORE;
+	}
 
-    protected CertificateToken addCertificate(final X509Certificate cert, final List<CertificateSourceType> sources, final List<ServiceInfo> services) {
+	protected CertificateToken addCertificate(final X509Certificate cert, final List<CertificateSourceType> sources, final List<ServiceInfo> services) {
 
-        final CertificateToken certToken = certPool.getInstance(cert, sources, services);
-        return certToken;
-    }
+		final CertificateToken certToken = certPool.getInstance(cert, sources, services);
+		return certToken;
+	}
 
-    /**
-     * This method allows to define (to add) any certificate as trusted. A service information is associated to this certificate. The source of the certificate is set to
-     * {@code CertificateSourceType.TRUSTED_LIST}
-     *
-     * @param certificate the certificate you have to trust
-     * @param serviceInfo the service information associated to the service
-     * @return the corresponding certificate token
-     */
-    public CertificateToken addCertificate(final X509Certificate certificate, final ServiceInfo serviceInfo) {
+	/**
+	 * This method allows to define (to add) any certificate as trusted. A service information is associated to this certificate. The source of the certificate is set to
+	 * {@code CertificateSourceType.TRUSTED_LIST}
+	 *
+	 * @param certificate the certificate you have to trust
+	 * @param serviceInfo the service information associated to the service
+	 * @return the corresponding certificate token
+	 */
+	public CertificateToken addCertificate(final X509Certificate certificate, final ServiceInfo serviceInfo) {
 
-        final CertificateToken certToken = certPool.getInstance(certificate, getCertificateSourceType(), serviceInfo);
-        // print certificate
-        // System.out.println(certToken);
-        // This allows to check the conversion of X500 principal
-        // System.out.println("> " + DSSUtils.getSubjectX500Principal(certToken.getCertificate()).getName());
-        // System.out.println("> " + DSSUtils.getIssuerX500Principal(certToken.getCertificate()).getName());
-        return certToken;
-    }
+		final CertificateToken certToken = certPool.getInstance(certificate, getCertificateSourceType(), serviceInfo);
+		// print certificate
+		// System.out.println(certToken);
+		// This allows to check the conversion of X500 principal
+		// System.out.println("> " + DSSUtils.getSubjectX500Principal(certToken.getCertificate()).getName());
+		// System.out.println("> " + DSSUtils.getIssuerX500Principal(certToken.getCertificate()).getName());
+		return certToken;
+	}
 
-    /**
-     * This method allows to declare all certificates from a given key store as trusted.
-     *
-     * @param keyStore the set of certificates you have to trust
-     */
-    public void importAsTrusted(final KeyStoreCertificateSource keyStore) {
+	/**
+	 * This method allows to declare all certificates from a given key store as trusted.
+	 *
+	 * @param keyStore the set of certificates you have to trust
+	 */
+	public void importAsTrusted(final KeyStoreCertificateSource keyStore) {
 
-        final List<CertificateToken> certTokenList = keyStore.getCertificates();
-        for (final CertificateToken certToken : certTokenList) {
+		final List<CertificateToken> certTokenList = keyStore.getCertificates();
+		for (final CertificateToken certToken : certTokenList) {
 
-            certPool.getInstance(certToken.getCertificate(), getCertificateSourceType());
-        }
-    }
+			certPool.getInstance(certToken.getCertificate(), getCertificateSourceType());
+		}
+	}
 
-    /**
-     * Retrieves the list of all certificate tokens from this source.
-     *
-     * @return
-     */
-    public List<CertificateToken> getCertificates() {
+	/**
+	 * {@inheritDoc}
+	 * <p/>
+	 * Note that in the case of a {@code CommonTrustedCertificateSource} the list of {@code CertificateToken}s related thereto is the same as that encapsulated by the {@code
+	 * CertificateSource}
+	 */
+	@Override
+	public List<CertificateToken> getCertificates() {
 
-        return certPool.getCertificateTokens();
-    }
+		return certPool.getCertificateTokens();
+	}
 
-    /**
-     * This method returns the {@code List} of {@code CertificateToken}(s) corresponding to the given subject distinguished name. In the case of
-     * {@code CommonTrustedCertificateSource} the content of the encapsulated pool is equal to the content of the source.
-     *
-     * @param x500Principal subject distinguished names of the certificate to find
-     * @return If no match is found then an empty list is returned.
-     */
-    @Override
-    public List<CertificateToken> get(final X500Principal x500Principal) {
+	/**
+	 * {@inheritDoc}
+	 * <p/>
+	 * Note that in the case of a {@code CommonTrustedCertificateSource} the list of {@code CertificateToken}s related thereto is the same as that encapsulated by the {@code
+	 * CertificateSource}
+	 */
+	@Override
+	public List<CertificateToken> get(final X500Principal x500Principal) {
 
-        return certPool.get(x500Principal);
-    }
+		return certPool.get(x500Principal);
+	}
 }

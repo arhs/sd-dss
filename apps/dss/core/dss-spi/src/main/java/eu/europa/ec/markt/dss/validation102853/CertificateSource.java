@@ -26,6 +26,8 @@ import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
+import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
+
 /**
  * The validation of a certificate requires to access many different certificates from multiple sources (Trusted List, Trust
  * Store, the signature itself). This interface provides an abstraction for accessing certificates, regardless of the
@@ -37,25 +39,38 @@ import javax.security.auth.x500.X500Principal;
 public interface CertificateSource extends Serializable {
 
 	/**
+	 * @return the {@code CertificateSourceType} associated to the implementation class
+	 */
+	public CertificateSourceType getCertificateSourceType();
+
+	/**
 	 * This method return the {@link CertificatePool} encapsulated by the source.
 	 */
 	public CertificatePool getCertificatePool();
 
 	/**
-	 * This method allows to manually add any certificate to the source. The type of the source is automatically set par each specific
-	 * implementation.
+	 * Retrieves the unmodifiable list of all certificate tokens from this source.
 	 *
-	 * @param certificate the certificate you have to trust
-	 * @return the corresponding certificate token
+	 * @return an unmodifiable {@code List} of all {@code CertificateToken}s from this source
 	 */
-	public CertificateToken addCertificate(final X509Certificate certificate);
+	List<CertificateToken> getCertificates();
 
 	/**
-	 * This method returns the <code>List</code> of <code>CertificateToken</code>(s) corresponding to the given subject distinguished name.
-	 * The search is performed at the level of source and not at the pool level (The same pool can be shared by many sources).
+	 * This method adds an external certificate to the encapsulated pool and to the source. If the certificate is already present in the pool its
+	 * source type is associated to the token.
+	 *
+	 * @param x509Certificate {@code X509Certificate} to add to this source
+	 * @return an existing or newly created instance of the {@code CertificateToken}
+	 */
+	public CertificateToken addCertificate(final X509Certificate x509Certificate);
+
+	/**
+	 * This method returns an unmodifiable {@code List} of {@code CertificateToken}(s) corresponding to the given subject distinguished name.
+	 * The search is performed at the level of {@code CertificateSource} and not at the level of the {@code CertificateSource} (The same {@code CertificatePool} can be shared by
+	 * many sources and therefore its content can be different from the content of the {@code CertificateSource}.
 	 *
 	 * @param x500Principal subject distinguished names of the certificate to find
-	 * @return
+	 * @return an unmodifiable {@code List} of {@code CertificateToken}s or if no match is found an empty unmodifiable list
 	 */
 	public List<CertificateToken> get(final X500Principal x500Principal);
 }

@@ -54,26 +54,30 @@ public class CertificatePool implements Serializable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CertificatePool.class);
 
+	public static final List<CertificateToken> EMPTY_UNMODIFIABLE_CERTIFICATE_TOKEN_LIST = Collections.unmodifiableList(new ArrayList<CertificateToken>());
+
 	/**
 	 * Map of encapsulated certificates with unique DSS identifier as key
 	 */
-	private Map<Integer, CertificateToken> certById = new HashMap<Integer, CertificateToken>();
+	private final Map<Integer, CertificateToken> certById = new HashMap<Integer, CertificateToken>();
 
 	/**
 	 * Map of encapsulated certificates with subject distinguished name as key.
 	 */
-	private Map<String, List<CertificateToken>> certBySubject = new HashMap<String, List<CertificateToken>>();
+	// TODO-Bob (17/02/2015):  The key should be the ASN.1 bytes of X500Principal
+	private final Map<String, List<CertificateToken>> certBySubject = new HashMap<String, List<CertificateToken>>();
 
 	/**
 	 * Returns the instance of a certificate token. If the certificate is not referenced yet a new instance of
 	 * {@link CertificateToken} is created.
 	 *
-	 * @param cert
-	 * @return
+	 * @param x509Certificate {@code X509Certificate} to add to the pool
+	 * @param source          {@code CertificateSourceType} associated to the certificate
+	 * @return an existing or newly created instance of the {@code CertificateToken}
 	 */
-	public CertificateToken getInstance(final X509Certificate cert, final CertificateSourceType certSource) {
+	public CertificateToken getInstance(final X509Certificate x509Certificate, final CertificateSourceType source) {
 
-		return getInstance(cert, certSource, null);
+		return getInstance(x509Certificate, source, null);
 	}
 
 	/**
@@ -81,24 +85,22 @@ public class CertificatePool implements Serializable {
 	 * If the given certificate is not yet present in the pool it will be added. If the {@link CertificateToken} exists
 	 * already in the pool but has no {@link ServiceInfo} this reference will be added.
 	 *
-	 * @param cert
-	 * @param certSource
-	 * @param serviceInfo
-	 * @return
+	 * @param x509Certificate {@code X509Certificate} to add to the pool
+	 * @param source          {@code CertificateSourceType} associated to the certificate
+	 * @param serviceInfo     {@code ServiceInfo} associated to the certificate
+	 * @return an existing or newly created instance of the {@code CertificateToken}
 	 */
-	public CertificateToken getInstance(final X509Certificate cert, final CertificateSourceType certSource, final ServiceInfo serviceInfo) {
+	public CertificateToken getInstance(final X509Certificate x509Certificate, final CertificateSourceType source, final ServiceInfo serviceInfo) {
 
 		final List<ServiceInfo> services = new ArrayList<ServiceInfo>();
 		if (serviceInfo != null) {
-
 			services.add(serviceInfo);
 		}
 		final List<CertificateSourceType> sources = new ArrayList<CertificateSourceType>();
-		if (certSource != null) {
-
-			sources.add(certSource);
+		if (source != null) {
+			sources.add(source);
 		}
-		return getInstance(cert, sources, services);
+		return getInstance(x509Certificate, sources, services);
 	}
 
 	/**
@@ -106,34 +108,46 @@ public class CertificatePool implements Serializable {
 	 * If the given certificate is not yet present in the pool it will added. If the {@link CertificateToken} exists
 	 * already in the pool but has no {@link ServiceInfo} this reference will be added.
 	 *
-	 * @param certificateToAdd
-	 * @param sources
-	 * @param services
-	 * @return
+	 * @param x509Certificate {@code X509Certificate} to add to the pool
+	 * @param sources         {@code List} of {@code CertificateSourceType} associated to the certificate
+	 * @param services        {@code List} of {@code ServiceInfo} associated to the certificate
+	 * @return an existing or newly created instance of the {@code CertificateToken}
 	 */
-	public CertificateToken getInstance(final X509Certificate certificateToAdd, final List<CertificateSourceType> sources, final List<ServiceInfo> services) {
+	public CertificateToken getInstance(final X509Certificate x509Certificate, final List<CertificateSourceType> sources, final List<ServiceInfo> services) {
 
-		if (certificateToAdd == null) {
-
+		if (x509Certificate == null) {
 			throw new DSSNullException(X509Certificate.class);
 		}
 		if (sources == null || sources.size() == 0) {
-
 			throw new DSSException("The certificate source type must be set.");
 		}
 		// TRACE ++
 		//		if (LOG.isTraceEnabled()) {
 		//			LOG.trace("Certificate to add: " + certificateToAdd.getIssuerX500Principal().toString() + "|" + certificateToAdd.getSerialNumber());
 		//		}
-		final int id = CertificateIdentifier.getId(certificateToAdd);
+		final CertificateToken certToken = getCertificateToken(x509Certificate);
+		for (final CertificateSourceType sourceType : sources) {
+			certToken.addSourceType(sourceType);
+		}
+		if (services != null) {
+			for (final ServiceInfo serviceInfo : services) {
+				certToken.addServiceInfo(serviceInfo);
+			}
+		}
+		return certToken;
+	}
+
+	private CertificateToken getCertificateToken(final X509Certificate x509Certificate) {
+
+		final int id = CertificateIdentifier.getId(x509Certificate);
 		synchronized (certById) {
 
 			CertificateToken certToken = certById.get(id);
 			if (certToken == null) {
 
-				certToken = CertificateToken.newInstance(certificateToAdd, id);
+				certToken = CertificateToken.newInstance(x509Certificate, id);
 				certById.put(id, certToken);
-				final X500Principal subjectX500Principal = DSSUtils.getSubjectX500Principal(certificateToAdd);
+				final X500Principal subjectX500Principal = DSSUtils.getSubjectX500Principal(x509Certificate);
 				final String subjectName = subjectX500Principal.getName(X500Principal.CANONICAL);
 				List<CertificateToken> list = certBySubject.get(subjectName);
 				if (list == null) {
@@ -142,36 +156,27 @@ public class CertificatePool implements Serializable {
 					certBySubject.put(subjectName, list);
 				}
 				list.add(certToken);
-			} else {
-
-				final X509Certificate foundCertificate = certToken.getCertificate();
-				final byte[] foundCertificateSignature = foundCertificate.getSignature();
-				final byte[] certificateToAddSignature = certificateToAdd.getSignature();
-				if (!Arrays.equals(foundCertificateSignature, certificateToAddSignature)) {
-
-					LOG.warn(" Found certificate: " + certToken.getIssuerX500Principal().toString() + "|" + certToken.getSerialNumber());
-					LOG.warn("More than one certificate for the same issuer subject name and serial number! The standard is not met by the certificate issuer!");
-				}
-			}
-			for (final CertificateSourceType sourceType : sources) {
-
-				certToken.addSourceType(sourceType);
-			}
-			if (services != null) {
-
-				for (final ServiceInfo serviceInfo : services) {
-
-					certToken.addServiceInfo(serviceInfo);
-				}
+			} else if (LOG.isTraceEnabled()) {
+				checkCertificateUniqueness(x509Certificate, certToken);
 			}
 			return certToken;
 		}
 	}
 
+	private static void checkCertificateUniqueness(final X509Certificate certificateToAdd, final CertificateToken certToken) {
+
+		final X509Certificate foundCertificate = certToken.getCertificate();
+		final byte[] foundCertificateSignature = foundCertificate.getSignature();
+		final byte[] certificateToAddSignature = certificateToAdd.getSignature();
+		if (!Arrays.equals(foundCertificateSignature, certificateToAddSignature)) {
+
+			LOG.warn("Found certificate: " + certToken.getIssuerX500Principal().toString() + "|" + certToken.getSerialNumber());
+			LOG.warn("More than one certificate for the same issuer subject name and serial number! The standard is not met by the certificate issuer!");
+		}
+	}
+
 	/**
-	 * This method returns an unmodifiable list containing all encapsulated certificate tokens {@link CertificateToken}.
-	 *
-	 * @return
+	 * @return an unmodifiable list containing all encapsulated certificate tokens {@link CertificateToken}
 	 */
 	public List<CertificateToken> getCertificateTokens() {
 
@@ -192,45 +197,38 @@ public class CertificatePool implements Serializable {
 	/**
 	 * This method allows to add certificates from another {@link CertificatePool}. If an instance of the
 	 * {@link CertificateToken} already exists in this pool only the {@link ServiceInfo} and
-	 * {@link CertificateSourceType} are added.
+	 * {@link CertificateSourceType} are updated.
 	 *
-	 * @param certPool
+	 * @param certPool {@code CertificatePool} to merge
 	 */
 	public void merge(final CertificatePool certPool) {
 
-		Collection<CertificateToken> certTokens = certPool.getCertificateTokens();
-		for (CertificateToken certificateToken : certTokens) {
+		final Collection<CertificateToken> certTokens = certPool.getCertificateTokens();
+		for (final CertificateToken certificateToken : certTokens) {
 
-			X509Certificate cert = certificateToken.getCertificate();
-			List<CertificateSourceType> sources = certificateToken.getSources();
-			List<ServiceInfo> services = certificateToken.getAssociatedTSPS();
-			getInstance(cert, sources, services);
+			final X509Certificate x509Certificate = certificateToken.getCertificate();
+			final List<CertificateSourceType> sources = certificateToken.getSources();
+			final List<ServiceInfo> services = certificateToken.getAssociatedTSPS();
+			getInstance(x509Certificate, sources, services);
 		}
 	}
 
 	/**
-	 * This method returns the list of certificates with the same issuerDN.
+	 * This method returns an unmodifiable list of certificates with the same issuerDN.
 	 *
-	 * @param x500Principal subject distinguished name to match.
-	 * @return If no match is found then an empty list is returned.
+	 * @param x500Principal subject distinguished name to match
+	 * @return If no match is found then an empty list is returned
 	 */
 	public List<CertificateToken> get(final X500Principal x500Principal) {
 
-		List<CertificateToken> certificateTokenList = null;
 		if (x500Principal != null) {
 
-			/**
-			 * TODO: (Bob: 2014 Feb 21) For some certificates the comparison based on X500Principal.CANONICAL does not returns the same result as this based on X500Principal
-			 * .RFC2253. The CANONICAL form seems to be compliant with the requirements of RFC 2459.
-			 * The returned list can be maybe enriched by RFC2253 form?
-			 */
 			final String x500PrincipalCanonicalized = x500Principal.getName(X500Principal.CANONICAL);
-			certificateTokenList = certBySubject.get(x500PrincipalCanonicalized);
+			final List<CertificateToken> certificateTokenList = certBySubject.get(x500PrincipalCanonicalized);
+			if (certificateTokenList != null) {
+				return Collections.unmodifiableList(certificateTokenList);
+			}
 		}
-		if (certificateTokenList == null) {
-
-			certificateTokenList = new ArrayList<CertificateToken>();
-		}
-		return Collections.unmodifiableList(certificateTokenList);
+		return EMPTY_UNMODIFIABLE_CERTIFICATE_TOKEN_LIST;
 	}
 }

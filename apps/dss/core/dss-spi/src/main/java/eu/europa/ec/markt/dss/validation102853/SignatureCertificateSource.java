@@ -71,7 +71,7 @@ public abstract class SignatureCertificateSource extends CommonCertificateSource
      *
      * @return
      */
-    protected CertificateSourceType getCertificateSourceType() {
+    public CertificateSourceType getCertificateSourceType() {
 
         return CertificateSourceType.SIGNATURE;
     }

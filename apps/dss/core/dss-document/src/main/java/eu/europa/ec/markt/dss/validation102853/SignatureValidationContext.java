@@ -113,38 +113,20 @@ public class SignatureValidationContext implements ValidationContext {
 	protected ExecutorService executorService;
 
 	/**
-	 * This constructor is used during the signature creation process. The certificate pool is created within initialize method.
-	 */
-	public SignatureValidationContext() {
-
-	}
-
-	/**
 	 * This constructor is used when a signature need to be validated.
 	 *
+	 * @param certificateVerifier       The certificates verifier (eg: using the TSL as list of trusted certificates).
 	 * @param validationCertificatePool The pool of certificates used during the validation process
 	 */
-	public SignatureValidationContext(final CertificatePool validationCertificatePool) {
-
-		if (validationCertificatePool == null) {
-			throw new DSSNullException(CertificatePool.class);
-		}
-		this.validationCertificatePool = validationCertificatePool;
-	}
-
-	/**
-	 * @param certificateVerifier The certificates verifier (eg: using the TSL as list of trusted certificates).
-	 */
-	@Override
-	public void initialize(final CertificateVerifier certificateVerifier) {
+	public SignatureValidationContext(final CertificateVerifier certificateVerifier, final CertificatePool validationCertificatePool) {
 
 		if (certificateVerifier == null) {
 			throw new DSSNullException(CertificateVerifier.class);
 		}
 		if (validationCertificatePool == null) {
-
-			validationCertificatePool = certificateVerifier.createValidationPool();
+			throw new DSSNullException(CertificatePool.class);
 		}
+		this.validationCertificatePool = validationCertificatePool;
 		this.crlSource = certificateVerifier.getCrlSource();
 		this.ocspSource = certificateVerifier.getOcspSource();
 		this.dataLoader = certificateVerifier.getDataLoader();
