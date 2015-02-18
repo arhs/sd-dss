@@ -456,7 +456,15 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 		prepareDiagnosticData();
 
-		final ValidationContext validationContext = new SignatureValidationContext(validationCertPool);
+		final List<AdvancedSignature> allSignatureList = getAllSignatures();
+
+		final ListCRLSource signatureCRLSource = getSignatureCrlSource(allSignatureList);
+		certificateVerifier.setSignatureCRLSource(signatureCRLSource);
+
+		final ListOCSPSource signatureOCSPSource = getSignatureOcspSource(allSignatureList);
+		certificateVerifier.setSignatureOCSPSource(signatureOCSPSource);
+
+		final ValidationContext validationContext = new SignatureValidationContext(certificateVerifier, validationCertPool);
 		final ProcessExecutor processExecutor = provideProcessExecutorInstance();
 		final int concurrentThreadNumber = processExecutor.getConcurrentThreadNumber();
 		if (concurrentThreadNumber > 0) {
@@ -465,18 +473,9 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			validationContext.setExecutorService(executorService);
 		}
 
-		final List<AdvancedSignature> allSignatureList = getAllSignatures();
-
 		// The list of all signing certificates is created to allow a parallel validation.
 		prepareCertificatesAndTimestamps(allSignatureList, validationContext);
 
-		final ListCRLSource signatureCRLSource = getSignatureCrlSource(allSignatureList);
-		certificateVerifier.setSignatureCRLSource(signatureCRLSource);
-
-		final ListOCSPSource signatureOCSPSource = getSignatureOcspSource(allSignatureList);
-		certificateVerifier.setSignatureOCSPSource(signatureOCSPSource);
-
-		validationContext.initialize(certificateVerifier);
 		validationContext.setCurrentTime(processExecutor.getCurrentTime());
 		validationContext.validate();
 
@@ -571,7 +570,10 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			for (final CertificateToken certificateToken : candidates) {
 				validationContext.addCertificateTokenForVerification(certificateToken);
 			}
-			signature.prepareTimestamps(validationContext);
+			final List<TimestampToken> timestampTokenList = signature.prepareTimestamps();
+			for (final TimestampToken timestampToken : timestampTokenList) {
+				validationContext.addTimestampTokenForVerification(timestampToken);
+			}
 		}
 	}
 

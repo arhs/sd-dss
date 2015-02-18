@@ -166,17 +166,20 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 	 */
 	public ValidationContext getSignatureValidationContext(final CertificateVerifier certificateVerifier) {
 
-		final ValidationContext validationContext = new SignatureValidationContext();
+		final CertificatePool validationPool = certificateVerifier.createValidationPool();
+		final ValidationContext validationContext = new SignatureValidationContext(certificateVerifier, validationPool);
 		final List<CertificateToken> certificates = getCertificates();
 		for (final CertificateToken certificate : certificates) {
 
 			validationContext.addCertificateTokenForVerification(certificate);
 		}
-		prepareTimestamps(validationContext);
+		final List<TimestampToken> timestampTokenList = prepareTimestamps();
+		for (final TimestampToken timestampToken : timestampTokenList) {
+			validationContext.addTimestampTokenForVerification(timestampToken);
+		}
 		certificateVerifier.setSignatureCRLSource(new ListCRLSource(getCRLSource()));
 		certificateVerifier.setSignatureOCSPSource(new ListOCSPSource(getOCSPSource()));
 		// certificateVerifier.setAdjunctCertSource(getCertificateSource());
-		validationContext.initialize(certificateVerifier);
 		validationContext.validate();
 		return validationContext;
 	}
@@ -322,47 +325,43 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 	}
 
 	/**
-	 * This method adds to the {@code ValidationContext} all timestamps to be validated.
-	 *
-	 * @param validationContext {@code ValidationContext} to which the timestamps must be added
+	 * @return the {@code List} of all {@code TimestampToken} present within the signature
 	 */
 	@Override
-	public void prepareTimestamps(final ValidationContext validationContext) {
+	public List<TimestampToken> prepareTimestamps() {
 
-        /*
-	     * This validates the signature timestamp tokens present in the signature.
+		final List<TimestampToken> timestampTokenList = new ArrayList<TimestampToken>();
+		/*
+		 * This validates the signature timestamp tokens present in the signature.
          */
 		for (final TimestampToken timestampToken : getContentTimestamps()) {
-			validationContext.addTimestampTokenForVerification(timestampToken);
+			timestampTokenList.add(timestampToken);
 		}
-
         /*
          * This validates the signature timestamp tokens present in the signature.
          */
 		for (final TimestampToken timestampToken : getSignatureTimestamps()) {
-			validationContext.addTimestampTokenForVerification(timestampToken);
+			timestampTokenList.add(timestampToken);
 		}
-
         /*
          * This validates the SigAndRefs timestamp tokens present in the signature.
          */
 		for (final TimestampToken timestampToken : getTimestampsX1()) {
-			validationContext.addTimestampTokenForVerification(timestampToken);
+			timestampTokenList.add(timestampToken);
 		}
-
         /*
          * This validates the RefsOnly timestamp tokens present in the signature.
          */
 		for (final TimestampToken timestampToken : getTimestampsX2()) {
-			validationContext.addTimestampTokenForVerification(timestampToken);
+			timestampTokenList.add(timestampToken);
 		}
-
         /*
          * This validates the archive timestamp tokens present in the signature.
          */
 		for (final TimestampToken timestampToken : getArchiveTimestamps()) {
-			validationContext.addTimestampTokenForVerification(timestampToken);
+			timestampTokenList.add(timestampToken);
 		}
+		return timestampTokenList;
 	}
 
 	/**

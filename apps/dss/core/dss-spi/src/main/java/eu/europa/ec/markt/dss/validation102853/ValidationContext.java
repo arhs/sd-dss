@@ -38,8 +38,6 @@ public interface ValidationContext {
 	 */
 	public void setCurrentTime(final Date currentTime);
 
-	void initialize(final CertificateVerifier certificateVerifier);
-
 	ExecutorService getExecutorService();
 
 	void setExecutorService(ExecutorService executorService);

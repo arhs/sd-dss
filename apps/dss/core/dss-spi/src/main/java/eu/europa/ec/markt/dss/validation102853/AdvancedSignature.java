@@ -376,7 +376,10 @@ public interface AdvancedSignature extends Serializable {
 	 */
 	SignatureLevel[] getSignatureLevels();
 
-	void prepareTimestamps(ValidationContext validationContext);
+	/**
+	 * @return the {@code List} of all {@code TimestampToken} present within the signature
+	 */
+	List<TimestampToken> prepareTimestamps();
 
 	void validateTimestamps();
 
