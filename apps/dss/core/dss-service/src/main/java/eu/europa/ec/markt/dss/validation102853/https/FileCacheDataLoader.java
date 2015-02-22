@@ -19,27 +19,17 @@
  */
 package eu.europa.ec.markt.dss.validation102853.https;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.ResourceLoader;
-import eu.europa.ec.markt.dss.exception.DSSCannotFetchDataException;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
 
@@ -111,13 +101,41 @@ public class FileCacheDataLoader extends CommonDataLoader {
 	}
 
 	@Override
-	public byte[] get(final String url, final boolean refresh) throws DSSCannotFetchDataException {
+	public byte[] get(final String url, final boolean refresh) throws DSSException {
 
 		if (toBeLoaded != null && !toBeLoaded.contains(url)) {
 			return null;
 		}
-		final String fileName = ResourceLoader.getNormalizedFileName(url);
-		final File file = getCacheFile(fileName);
+		final String cacheFileName = ResourceLoader.getNormalizedFileName(url);
+		final byte[] cachedFileContent = getCachedFileContent(cacheFileName, refresh);
+		if (cachedFileContent != null) {
+			return cachedFileContent;
+		}
+		final byte[] returnedBytes;
+		if (!isNetworkProtocol(url)) {
+			returnedBytes = getContentUsingNotNetworkProtocol(url);
+		} else {
+			returnedBytes = super.get(url);
+		}
+		if (returnedBytes != null && returnedBytes.length != 0) {
+
+			final File out = getCacheFile(cacheFileName);
+			DSSUtils.saveToFile(returnedBytes, out);
+		}
+		return returnedBytes;
+	}
+
+	private byte[] getContentUsingNotNetworkProtocol(String url) {
+
+		final String resourcePath = resourceLoader.getAbsoluteResourceFolder(url.trim());
+		final File fileResource = new File(resourcePath);
+		final byte[] bytes = DSSUtils.toByteArray(fileResource);
+		return bytes;
+	}
+
+	private byte[] getCachedFileContent(final String cacheFileName, final boolean refresh) {
+
+		final File file = getCacheFile(cacheFileName);
 		final boolean fileExists = file.exists();
 		if (fileExists && !refresh) {
 
@@ -131,26 +149,11 @@ public class FileCacheDataLoader extends CommonDataLoader {
 				LOG.debug("The refresh is forced!");
 			}
 		}
-		final byte[] bytes;
-		if (!isNetworkProtocol(url)) {
-
-			final String resourcePath = resourceLoader.getAbsoluteResourceFolder(url.trim());
-			final File fileResource = new File(resourcePath);
-			bytes = DSSUtils.toByteArray(fileResource);
-		} else {
-
-			bytes = super.get(url);
-		}
-		if (bytes != null && bytes.length != 0) {
-
-			final File out = getCacheFile(fileName);
-			DSSUtils.saveToFile(bytes, out);
-		}
-		return bytes;
+		return null;
 	}
 
 	@Override
-	public byte[] get(final String url) throws DSSCannotFetchDataException {
+	public byte[] get(final String url) throws DSSException {
 
 		return get(url, false);
 	}
@@ -203,75 +206,36 @@ public class FileCacheDataLoader extends CommonDataLoader {
 		DSSUtils.saveToFile(bytes, out);
 	}
 
+	// TODO-Bob (22/02/2015):  request id should be added (or something like this) to cope with nonce extension of the OCSP for example...
 	@Override
-	public byte[] post(final String urlString, final byte[] content) throws DSSException {
+	public byte[] post(final String urlString, final byte[] requestBytes, boolean refresh) throws DSSException {
 
 		final String fileName = ResourceLoader.getNormalizedFileName(urlString);
 
-		// The length for the InputStreamEntity is needed, because some receivers (on the other side) need this
-		// information.
-		// To determine the length, we cannot read the content-stream up to the end and re-use it afterwards.
-		// This is because, it may not be possible to reset the stream (= go to position 0).
-		// So, the solution is to cache temporarily the complete content data (as we do not expect much here) in a
-		// byte-array.
-		final byte[] digest = DSSUtils.digest(DigestAlgorithm.MD5, content);
+		final byte[] digest = DSSUtils.digest(DigestAlgorithm.MD5, requestBytes);
 		final String digestHexEncoded = DSSUtils.toHex(digest);
 		final String cacheFileName = fileName + "." + digestHexEncoded;
-		final File file = getCacheFile(cacheFileName);
-		if (file.exists()) {
-
-			LOG.debug("Cached file was used");
-			final byte[] byteArray = DSSUtils.toByteArray(file);
-			return byteArray;
-		} else {
-
-			LOG.debug("There is no cached file!");
+		final byte[] cachedFileContent = getCachedFileContent(cacheFileName, refresh);
+		if (cachedFileContent != null) {
+			return cachedFileContent;
 		}
-
-		final byte[] returnedBytes;
 		if (!isNetworkProtocol(urlString)) {
-
-			final String resourcePath = resourceLoader.getAbsoluteResourceFolder(urlString.trim());
-			final File fileResource = new File(resourcePath);
-			returnedBytes = DSSUtils.toByteArray(fileResource);
-			return returnedBytes;
+			return getContentUsingNotNetworkProtocol(urlString);
 		}
 
-		final URI uri = DSSUtils.toUri(urlString.trim());
-		HttpPost httpRequest = null;
-		HttpResponse httpResponse = null;
-		try {
+		final byte[] returnedBytes = super.post(urlString, requestBytes);
+		if (returnedBytes.length != 0) {
 
-			httpRequest = new HttpPost(uri);
-
-			final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(content);
-
-			final HttpEntity httpEntity = new InputStreamEntity(byteArrayInputStream, content.length);
-			final HttpEntity requestEntity = new BufferedHttpEntity(httpEntity);
-			httpRequest.setEntity(requestEntity);
-			if (contentType != null) {
-				httpRequest.setHeader(CONTENT_TYPE, contentType);
-			}
-
-			httpResponse = super.getHttpResponse(httpRequest, uri);
-
-			returnedBytes = readHttpResponse(uri, httpResponse);
-			if (returnedBytes.length != 0) {
-
-				final File cacheFile = getCacheFile(cacheFileName);
-				DSSUtils.saveToFile(returnedBytes, cacheFile);
-			}
-		} catch (IOException e) {
-			throw new DSSException(e);
-		} finally {
-			if (httpRequest != null) {
-				httpRequest.releaseConnection();
-			}
-			if (httpResponse != null) {
-				EntityUtils.consumeQuietly(httpResponse.getEntity());
-			}
+			final File cacheFile = getCacheFile(cacheFileName);
+			DSSUtils.saveToFile(returnedBytes, cacheFile);
 		}
 		return returnedBytes;
+	}
+
+	@Override
+	public byte[] post(final String urlString, final byte[] requestBytes) throws DSSException {
+
+		return post(urlString, requestBytes, false);
 	}
 
 	public List<String> getToBeLoaded() {

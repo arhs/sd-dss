@@ -20,14 +20,11 @@
 
 package eu.europa.ec.markt.dss.validation102853.ocsp;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.Security;
-import java.security.cert.X509Certificate;
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -37,8 +34,6 @@ import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.CertificateID;
 import org.bouncycastle.cert.ocsp.OCSPException;
@@ -50,6 +45,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.europa.ec.markt.dss.DSSASN1Utils;
 import eu.europa.ec.markt.dss.DSSRevocationUtils;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
@@ -57,8 +53,13 @@ import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.CertificatePool;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.OCSPToken;
+import eu.europa.ec.markt.dss.validation102853.RevocationToken;
 import eu.europa.ec.markt.dss.validation102853.https.OCSPDataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
+
+import static org.bouncycastle.asn1.x509.Extension.authorityInfoAccess;
+import static org.bouncycastle.asn1.x509.GeneralName.uniformResourceIdentifier;
+import static org.bouncycastle.asn1.x509.X509ObjectIdentifiers.ocspAccessMethod;
 
 /**
  * Online OCSP repository. This implementation will contact the OCSP Responder to retrieve the OCSP response.
@@ -84,7 +85,7 @@ public class OnlineOCSPSource implements OCSPSource {
 	/**
 	 * The data loader used to retrieve the OCSP response.
 	 */
-	private DataLoader dataLoader;
+	protected DataLoader dataLoader;
 
 	/**
 	 * Create an OCSP source The default constructor for OnlineOCSPSource. The default {@code OCSPDataLoader} is set. It is possible to change it with {@code
@@ -96,85 +97,121 @@ public class OnlineOCSPSource implements OCSPSource {
 	}
 
 	/**
+	 * This constructor allows to set a specific {@code DataLoader}.
+	 *
+	 * @param dataLoader the component that allows to retrieve the data using any protocol: HTTP, HTTPS, FTP, LDAP.
+	 * @throws DSSNullException in the case of {@code null} parameter value
+	 */
+	public OnlineOCSPSource(final DataLoader dataLoader) throws DSSNullException {
+		setDataLoader(dataLoader);
+	}
+
+	/**
 	 * Set the DataLoader to use for querying the OCSP server.
 	 *
 	 * @param dataLoader the component that allows to retrieve the OCSP response using HTTP.
+	 * @throws DSSNullException in the case of {@code null} parameter value
 	 */
-	public void setDataLoader(final DataLoader dataLoader) {
+	public void setDataLoader(final DataLoader dataLoader) throws DSSNullException {
 
+		if (dataLoader == null) {
+			throw new DSSNullException(DataLoader.class);
+		}
 		this.dataLoader = dataLoader;
 	}
 
 	@Override
 	public OCSPToken getOCSPToken(final CertificateToken certificateToken, final CertificatePool certificatePool) {
 
-		if (dataLoader == null) {
-
-			throw new DSSNullException(DataLoader.class);
+		if (certificateToken == null) {
+			return null;
 		}
-		try {
-
-			final String dssIdAsString = certificateToken.getDSSIdAsString();
-			if (LOG.isTraceEnabled()) {
-				LOG.trace("--> OnlineOCSPSource queried for " + dssIdAsString);
-			}
-			final X509Certificate x509Certificate = certificateToken.getCertificate();
-			final X509Certificate issuerX509Certificate = certificateToken.getIssuerToken().getCertificate();
-			final String ocspAccessLocation = getAccessLocation(x509Certificate);
-			if (ocspAccessLocation == null) {
-
-				if (LOG.isDebugEnabled()) {
-					LOG.info("OCSP response not found for " + dssIdAsString + " AccessLocation[" + ocspAccessLocation + "]");
-				}
-				certificateToken.extraInfo().infoNoOCSPResponse(ocspAccessLocation);
-				return null;
-			}
-
-			// The nonce extension is used to bind a request to a response to prevent replay attacks.
-			final NonceContainer nonceContainer = getNonceContainer();
-			final byte[] content = buildOCSPRequest(x509Certificate, issuerX509Certificate, nonceContainer);
-
-			final byte[] ocspRespBytes = dataLoader.post(ocspAccessLocation, content);
-
-			final OCSPResp ocspResp = new OCSPResp(ocspRespBytes);
-
-			final BasicOCSPResp basicOCSPResp = (BasicOCSPResp) ocspResp.getResponseObject();
-
-			checkNonce(dssIdAsString, basicOCSPResp, nonceContainer);
-
-			Date bestUpdate = null;
-			SingleResp bestSingleResp = null;
-			final CertificateID certId = DSSRevocationUtils.getOCSPCertificateID(x509Certificate, issuerX509Certificate);
-			for (final SingleResp singleResp : basicOCSPResp.getResponses()) {
-
-				if (DSSRevocationUtils.matches(certId, singleResp)) {
-
-					final Date thisUpdate = singleResp.getThisUpdate();
-					if (bestUpdate == null || thisUpdate.after(bestUpdate)) {
-
-						bestSingleResp = singleResp;
-						bestUpdate = thisUpdate;
-					}
-				}
-			}
-			if (bestSingleResp != null) {
-
-				final OCSPToken ocspToken = new OCSPToken(basicOCSPResp, bestSingleResp, certificatePool);
-				ocspToken.setSourceURI(ocspAccessLocation);
-				certificateToken.setRevocationToken(ocspToken);
-				return ocspToken;
-			}
-		} catch (NullPointerException e) {
-			throw new DSSException("OCSPResp is initialised with a null OCSP response... (and there is no nullity check in the OCSPResp implementation)", e);
-		} catch (OCSPException e) {
-			throw new DSSException(e);
-		} catch (IOException e) {
-			throw new DSSException(e);
+		if (certificateToken.getIssuerToken() == null) {
+			return null;
 		}
-		return null;
+		final String ocspAccessLocation = getAccessLocation(certificateToken);
+		if (DSSUtils.isEmpty(ocspAccessLocation)) {
+			return null;
+		}
+
+		final CertificateID certificateId = DSSRevocationUtils.getCertificateID(certificateToken);
+
+		// The nonce extension is used to bind the request to the response, to prevent replay attacks.
+		final NonceContainer nonceContainer = getNonceContainer();
+		final byte[] ocspRequest = buildOCSPRequest(certificateId, nonceContainer);
+		final boolean refresh = shouldCacheBeRefreshed(certificateId);
+		final BasicOCSPResp basicOCSPResp = buildBasicOCSPResp(ocspAccessLocation, ocspRequest, refresh);
+
+		checkNonce(certificateToken.getDSSIdAsString(), basicOCSPResp, nonceContainer);
+
+		final SingleResp bestSingleResp = getBestSingleResp(certificateId, basicOCSPResp);
+		if (bestSingleResp == null) {
+			return null;
+		}
+
+		final OCSPToken ocspToken = new OCSPToken(basicOCSPResp, bestSingleResp, certificatePool);
+		ocspToken.setSourceURI(ocspAccessLocation);
+		certificateToken.setRevocationToken(ocspToken);
+		updateCacheIfRefreshed(certificateId, refresh, ocspToken);
+		return ocspToken;
 	}
 
-	private NonceContainer getNonceContainer() {
+	/**
+	 * This method indicates if the {@code OCSPToken} for a given {@code CertificateToken} identified by its {@code CertificateID} should be refreshed or not.
+	 *
+	 * @param certificateId {@code CertificateID}
+	 * @return in the default implementation {@code false} is always returned
+	 */
+	protected boolean shouldCacheBeRefreshed(final CertificateID certificateId) {
+		return false;
+	}
+
+	/**
+	 * This method allows to update the cache information. Apply only to the implementations handling the cache information like {@see InMemoryCacheOnlineOCSPSource}
+	 *
+	 * @param certificateId {@code CertificateID}
+	 * @param refresh       indicates if the cached {@code OCSPToken} was refreshed or not
+	 * @param ocspToken     refreshed {@code OCSPToken}
+	 */
+	protected void updateCacheIfRefreshed(final CertificateID certificateId, final boolean refresh, final OCSPToken ocspToken) {
+
+	}
+
+	protected SingleResp getBestSingleResp(final CertificateID certificateId, final BasicOCSPResp basicOCSPResp) {
+
+		Date bestUpdate = null;
+		SingleResp bestSingleResp = null;
+		for (final SingleResp singleResp : basicOCSPResp.getResponses()) {
+
+			if (DSSRevocationUtils.matches(certificateId, singleResp)) {
+
+				final Date thisUpdate = singleResp.getThisUpdate();
+				if (bestUpdate == null || thisUpdate.after(bestUpdate)) {
+
+					bestSingleResp = singleResp;
+					bestUpdate = thisUpdate;
+				}
+			}
+		}
+		return bestSingleResp;
+	}
+
+	protected BasicOCSPResp buildBasicOCSPResp(final String ocspAccessLocation, final byte[] ocspRequest, boolean refresh) throws DSSException {
+
+		final byte[] ocspRespBytes = dataLoader.post(ocspAccessLocation, ocspRequest, refresh);
+		try {
+			final OCSPResp ocspResp = new OCSPResp(ocspRespBytes);
+			return (BasicOCSPResp) ocspResp.getResponseObject();
+		} catch (NullPointerException e) {
+			throw new DSSException("OCSPResp is initialised with a null OCSP response... (and there is no nullity check in the OCSPResp implementation)", e);
+		} catch (IOException e) {
+			throw new DSSException(e);
+		} catch (OCSPException e) {
+			throw new DSSException(e);
+		}
+	}
+
+	protected NonceContainer getNonceContainer() {
 
 		if (ADD_NONCE) {
 			return new NonceContainer();
@@ -182,7 +219,7 @@ public class OnlineOCSPSource implements OCSPSource {
 		return null;
 	}
 
-	private void checkNonce(String dssIdAsString, BasicOCSPResp basicOCSPResp, NonceContainer nonceContainer) {
+	protected void checkNonce(String dssIdAsString, BasicOCSPResp basicOCSPResp, NonceContainer nonceContainer) throws DSSException {
 
 		if (ADD_NONCE) {
 
@@ -196,13 +233,12 @@ public class OnlineOCSPSource implements OCSPSource {
 		}
 	}
 
-	private byte[] buildOCSPRequest(final X509Certificate x509Certificate, final X509Certificate issuerX509Certificate, final NonceContainer nonceContainer) throws DSSException {
+	protected byte[] buildOCSPRequest(final CertificateID certificateId, final NonceContainer nonceContainer) throws DSSException {
 
 		try {
 
-			final CertificateID certId = DSSRevocationUtils.getOCSPCertificateID(x509Certificate, issuerX509Certificate);
 			final OCSPReqBuilder ocspReqBuilder = new OCSPReqBuilder();
-			ocspReqBuilder.addRequest(certId);
+			ocspReqBuilder.addRequest(certificateId);
 			if (nonceContainer != null) {
 
 				final DEROctetString nonce = nonceContainer.nonce;
@@ -223,75 +259,47 @@ public class OnlineOCSPSource implements OCSPSource {
 	/**
 	 * Gives back the OCSP URI meta-data found within the given X509 cert.
 	 *
-	 * @param certificate the X509 cert.
-	 * @return the OCSP URI, or <code>null</code> if the extension is not present.
-	 * @throws DSSException
+	 * @param certificateToken {@code CertificateToken} to use.
+	 * @return the OCSP URI, or {@code null} if the extension is not present.
+	 * @throws DSSException in the case on any problems
 	 */
-	public String getAccessLocation(final X509Certificate certificate) throws DSSException {
+	public String getAccessLocation(final CertificateToken certificateToken) throws DSSException {
 
-		final ASN1ObjectIdentifier ocspAccessMethod = X509ObjectIdentifiers.ocspAccessMethod;
-		final byte[] authInfoAccessExtensionValue = certificate.getExtensionValue(X509Extension.authorityInfoAccess.getId());
+		final byte[] authInfoAccessExtensionValue = certificateToken.getExtensionValue(authorityInfoAccess);
 		if (null == authInfoAccessExtensionValue) {
-
-			return null;
-		}
-		ASN1InputStream ais1 = null;
-		ASN1InputStream ais2 = null;
-		try {
-
-			final ByteArrayInputStream bais = new ByteArrayInputStream(authInfoAccessExtensionValue);
-			ais1 = new ASN1InputStream(bais);
-			final DEROctetString oct = (DEROctetString) (ais1.readObject());
-			ais2 = new ASN1InputStream(oct.getOctets());
-			final AuthorityInformationAccess authorityInformationAccess = AuthorityInformationAccess.getInstance(ais2.readObject());
-
-			final AccessDescription[] accessDescriptions = authorityInformationAccess.getAccessDescriptions();
-			for (AccessDescription accessDescription : accessDescriptions) {
-
-				if (LOG.isDebugEnabled()) {
-					LOG.debug("Access method: " + accessDescription.getAccessMethod());
-				}
-				final boolean correctAccessMethod = accessDescription.getAccessMethod().equals(ocspAccessMethod);
-				if (!correctAccessMethod) {
-
-					continue;
-				}
-				final GeneralName gn = accessDescription.getAccessLocation();
-				if (gn.getTagNo() != GeneralName.uniformResourceIdentifier) {
-
-					if (LOG.isDebugEnabled()) {
-						LOG.debug("Not a uniform resource identifier");
-					}
-					continue;
-				}
-				final DERIA5String str = (DERIA5String) ((DERTaggedObject) gn.toASN1Primitive()).getObject();
-				final String accessLocation = str.getString();
-				if (LOG.isDebugEnabled()) {
-					LOG.debug("Access location: " + accessLocation);
-				}
-				return accessLocation;
+			if (LOG.isTraceEnabled()) {
+				LOG.trace("OCSP's URL(s) for {} : there is no authority info access extension!", certificateToken.getAbbreviation());
 			}
 			return null;
-		} catch (IOException e) {
-			throw new DSSException(e);
-		} finally {
-
-			DSSUtils.closeQuietly(ais1);
-			DSSUtils.closeQuietly(ais2);
 		}
+		final ASN1Sequence asn1Sequence = DSSASN1Utils.getAsn1SequenceFromDerOctetString(authInfoAccessExtensionValue);
+		final AuthorityInformationAccess authorityInformationAccess = AuthorityInformationAccess.getInstance(asn1Sequence);
+		final AccessDescription[] accessDescriptions = authorityInformationAccess.getAccessDescriptions();
+		for (final AccessDescription accessDescription : accessDescriptions) {
+
+			if (!ocspAccessMethod.equals(accessDescription.getAccessMethod())) {
+				continue;
+			}
+			final GeneralName gn = accessDescription.getAccessLocation();
+			if (uniformResourceIdentifier != gn.getTagNo()) {
+				LOG.warn("Not a uniform resource identifier!");
+				continue;
+			}
+			final DERIA5String str = (DERIA5String) ((DERTaggedObject) gn.toASN1Primitive()).getObject();
+			final String accessLocation = str.getString();
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("OCSP's URL(s) for {} : {}", certificateToken.getAbbreviation(), accessLocation);
+			}
+			return accessLocation;
+		}
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("OCSP's URL(s) for {} : there is no access location in AIA extension!", certificateToken.getAbbreviation());
+		}
+		return null;
 	}
 
-	private class NonceContainer {
-
-		/**
-		 * This variable is used to prevent the replay attack.
-		 */
-		private DEROctetString nonce;
-
-		public NonceContainer() {
-
-			final long currentTimeNonce = System.currentTimeMillis();
-			nonce = new DEROctetString(DSSUtils.toByteArray(currentTimeNonce));
-		}
+	@Override
+	public boolean isFresh(final RevocationToken revocationToken) {
+		return false;
 	}
 }

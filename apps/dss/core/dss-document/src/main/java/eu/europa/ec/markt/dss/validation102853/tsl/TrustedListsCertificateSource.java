@@ -54,8 +54,8 @@ import eu.europa.ec.markt.dss.signature.InMemoryDocument;
 import eu.europa.ec.markt.dss.validation102853.AdvancedSignature;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
-import eu.europa.ec.markt.dss.validation102853.CommonCertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.CommonTrustedCertificateSource;
+import eu.europa.ec.markt.dss.validation102853.CryptographicSourceProvider;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.https.FileCacheDataLoader;
@@ -408,7 +408,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 
 			commonTrustedCertificateSource.addCertificate(x509Certificate);
 		}
-		final CertificateVerifier certificateVerifier = new CommonCertificateVerifier(true);
+		final CertificateVerifier certificateVerifier = new CryptographicSourceProvider(true);
 		certificateVerifier.setTrustedCertSource(commonTrustedCertificateSource);
 
 		final DSSDocument dssDocument = new InMemoryDocument(bytes);

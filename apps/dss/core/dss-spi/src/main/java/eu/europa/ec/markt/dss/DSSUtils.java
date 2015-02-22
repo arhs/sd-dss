@@ -3215,7 +3215,7 @@ public final class DSSUtils {
 	 * @param date1    the oldest date
 	 * @param date2    the newest date
 	 * @param timeUnit the unit in which you want the diff
-	 * @return the difference value, in the provided unit
+	 * @return the difference value, in the provided {@code TimeUnit}
 	 */
 	public static long getDateDiff(final Date date1, final Date date2, final TimeUnit timeUnit) {
 
@@ -3248,6 +3248,10 @@ public final class DSSUtils {
 	 */
 	public static boolean isEmpty(final Collection collection) {
 		return collection == null || collection.isEmpty();
+	}
+
+	public static boolean isNotEmpty(final Collection collection) {
+		return !isEmpty(collection);
 	}
 
 	/**

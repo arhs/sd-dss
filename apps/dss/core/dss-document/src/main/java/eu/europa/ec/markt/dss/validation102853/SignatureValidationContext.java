@@ -46,6 +46,7 @@ import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.crl.CRLSource;
+import eu.europa.ec.markt.dss.validation102853.crl.CRLToken;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
 
@@ -93,11 +94,11 @@ public class SignatureValidationContext implements ValidationContext {
 	// External CRL source.
 	private CRLSource crlSource;
 
-	// CRLs from the signature.
-	private CRLSource signatureCRLSource;
-
 	// OCSP from the signature.
 	private OCSPSource signatureOCSPSource;
+
+	// CRLs from the signature.
+	private CRLSource signatureCRLSource;
 
 	// The digest value of the certification path references and the revocation status references.
 	private List<TimestampReference> timestampedReferences;
@@ -436,7 +437,6 @@ public class SignatureValidationContext implements ValidationContext {
 				}
 			}
 		} while (!exit);
-
 	}
 
 	class Task implements Runnable {
@@ -463,7 +463,23 @@ public class SignatureValidationContext implements ValidationContext {
 			}
 			if (token instanceof CertificateToken) {
 
-				final RevocationToken revocationToken = getRevocationData((CertificateToken) token);
+				final CertificateToken certificateToken = (CertificateToken) token;
+				final RevocationToken currentRevocationToken = certificateToken.getRevocationToken();
+				if (currentRevocationToken != null) {
+
+					if (currentRevocationToken instanceof OCSPToken && ocspSource != null) {
+						if (ocspSource.isFresh(currentRevocationToken)) {
+							LOG.debug("OCSP revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
+							return;
+						}
+					} else if (currentRevocationToken instanceof CRLToken && crlSource != null) {
+						if (crlSource.isFresh(currentRevocationToken)) {
+							LOG.debug("CRL revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
+							return;
+						}
+					}
+				}
+				final RevocationToken revocationToken = getRevocationData(certificateToken);
 				addRevocationTokenForVerification(revocationToken);
 			}
 			LOG.debug(">>> MT END [" + threadCount_ + "] DSS_ID: " + token.getDSSId());

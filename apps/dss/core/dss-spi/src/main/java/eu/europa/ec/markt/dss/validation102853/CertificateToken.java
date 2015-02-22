@@ -40,6 +40,7 @@ import java.util.Map;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.Extension;
@@ -637,7 +638,7 @@ public class CertificateToken extends Token {
 	}
 
 	/**
-	 * @return array of {@code byte}s representing the CRL distribution point of the wrapped certificate
+	 * @return array of {@code byte}s representing the value of the CRL distribution point(s) extension of the wrapped certificate or {@code null} if it is not present.
 	 */
 	public byte[] getCRLDistributionPoints() {
 
@@ -873,5 +874,18 @@ public class CertificateToken extends Token {
 			keyUsageBits.add(DECIPHER_ONLY);
 		}
 		return keyUsageBits;
+	}
+
+	/**
+	 * Gets the DER-encoded OCTET string for the extension value identified by the passed-in {@code oid}
+	 * The {@code oid} string is represented by a set of non-negative positive integer numbers separated by periods.
+	 *
+	 * @param oid {@code ASN1ObjectIdentifier} value of the extension
+	 * @return the DER-encoded octet string of the extension value or null if it is not present
+	 */
+	public byte[] getExtensionValue(final ASN1ObjectIdentifier oid) {
+
+		final byte[] extensionValue = x509Certificate.getExtensionValue(oid.getId());
+		return extensionValue;
 	}
 }

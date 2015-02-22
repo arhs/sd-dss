@@ -64,6 +64,10 @@ public interface CertificateVerifier extends Serializable {
 	 */
 	public void setOcspSource(final OCSPSource ocspSource);
 
+	CertificatePool getValidationPool();
+
+	void setValidationPool(CertificatePool validationPool);
+
 	/**
 	 * Returns the trusted certificates source associated with this verifier. This source is used to identify the trusted anchor.
 	 *
@@ -129,6 +133,7 @@ public interface CertificateVerifier extends Serializable {
 	 * @param signatureOCSPSource
 	 */
 	public void setSignatureOCSPSource(final ListOCSPSource signatureOCSPSource);
+
 
 	/**
 	 * This method creates the validation pool of certificates which is used during the validation process. It contains the certificates that compose the trusted and the adjunct

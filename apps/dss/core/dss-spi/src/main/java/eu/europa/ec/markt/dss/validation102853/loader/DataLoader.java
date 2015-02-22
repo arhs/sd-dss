@@ -52,6 +52,7 @@ public interface DataLoader extends Serializable {
 			this.urlString = urlString;
 		}
 	}
+
 	/**
 	 * Execute a HTTP GET operation.
 	 *
@@ -81,10 +82,21 @@ public interface DataLoader extends Serializable {
 	 * Executes a HTTP POST operation
 	 *
 	 * @param url     to access
-	 * @param content
+	 * @param requestBytes
 	 * @return {@code byte} array of obtained data
 	 */
-	byte[] post(final String url, final byte[] content);
+	byte[] post(final String url, final byte[] requestBytes);
+
+	/**
+	 * Executes a HTTP POST operation with indication concerning the mandatory nature of the operation.
+	 *
+	 * @param url          to access
+	 * @param requestBytes array of {@code byte}s representing the request
+	 * @param refresh      if true indicates that the cached data should be refreshed
+	 * @return {@code byte} array of obtained data
+	 */
+	byte[] post(final String url, final byte[] requestBytes, boolean refresh);
+
 
 	/**
 	 * This allows to set the content type. Example: Content-Type "application/ocsp-request"

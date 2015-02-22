@@ -10,7 +10,7 @@
 	<context:annotation-config/>
 	<context:component-scan base-package="eu.europa.ec.markt.dss"/>
 
-	<bean id="proxyDao" class="eu.europa.ec.markt.dss.dao.ProxyJdbcDao">
+	<bean id="proxyDao" class="eu.europa.ec.markt.dss.specific.ProxyJdbcDao">
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
 

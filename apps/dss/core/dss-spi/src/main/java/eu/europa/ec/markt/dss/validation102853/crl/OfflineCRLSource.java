@@ -60,17 +60,14 @@ public abstract class OfflineCRLSource extends CommonCRLSource {
 	final public CRLToken findCrl(final CertificateToken certificateToken) {
 
 		if (certificateToken == null) {
-
 			throw new DSSNullException(CertificateToken.class, "certificateToken");
 		}
 		final CRLToken validCRLToken = validCRLTokenList.get(certificateToken);
 		if (validCRLToken != null) {
-
 			return validCRLToken;
 		}
 		final CertificateToken issuerToken = certificateToken.getIssuerToken();
 		if (issuerToken == null) {
-
 			throw new DSSNullException(CertificateToken.class, "issuerToken");
 		}
 		final CRLValidity bestCRLValidity = getBestCrlValidity(certificateToken, issuerToken);
@@ -94,9 +91,10 @@ public abstract class OfflineCRLSource extends CommonCRLSource {
 		CRLValidity bestCRLValidity = null;
 		Date bestX509UpdateDate = null;
 
+		final List<String> dpUrlList = getCrlUrl(certificateToken, null);
 		for (final X509CRL x509CRL : x509CRLList) {
 
-			final CRLValidity crlValidity = getCrlValidity(issuerToken, x509CRL);
+			final CRLValidity crlValidity = getCrlValidity(x509CRL, issuerToken, dpUrlList);
 			if (crlValidity == null) {
 				continue;
 			}
@@ -124,16 +122,17 @@ public abstract class OfflineCRLSource extends CommonCRLSource {
 	/**
 	 * This method returns {@code CRLValidity} object based on the given {@code X509CRL}. The check of the validity of the CRL is performed.
 	 *
-	 * @param issuerToken {@code CertificateToken} issuer of the CRL
-	 * @param x509CRL     {@code X509CRL} the validity to be checked
+	 * @param x509CRL         {@code X509CRL} the validity to be checked
+	 * @param issuerToken     {@code CertificateToken} issuer of the CRL
+	 * @param dpUrlStringList {@code List} of {@code String} representation of the DP's url
 	 * @return returns updated {@code CRLValidity} object
 	 */
-	private synchronized CRLValidity getCrlValidity(final CertificateToken issuerToken, final X509CRL x509CRL) {
+	private synchronized CRLValidity getCrlValidity(final X509CRL x509CRL, final CertificateToken issuerToken, final List<String> dpUrlStringList) {
 
 		CRLValidity crlValidity = crlValidityMap.get(x509CRL);
 		if (crlValidity == null) {
 
-			crlValidity = isValidCRL(x509CRL, issuerToken);
+			crlValidity = isValidCRL(x509CRL, issuerToken, dpUrlStringList);
 			if (crlValidity.isValid()) {
 
 				crlValidityMap.put(x509CRL, crlValidity);

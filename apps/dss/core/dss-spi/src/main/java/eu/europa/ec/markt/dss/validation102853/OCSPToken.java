@@ -110,7 +110,7 @@ public class OCSPToken extends RevocationToken {
 			extractSigningCertificateFormResponderId(certificatePool);
 		}
 		if (LOG.isTraceEnabled()) {
-			LOG.trace("OCSP token, produced at '" + DSSUtils.formatInternal(issuingTime) + "' created.");
+			LOG.trace("+{} created.", getAbbreviation());
 		}
 	}
 
@@ -143,7 +143,6 @@ public class OCSPToken extends RevocationToken {
 			final X509Certificate x509Certificate = DSSUtils.loadCertificate(encoded);
 			final CertificateToken certToken = certificatePool.getInstance(x509Certificate, CertificateSourceType.OCSP_RESPONSE);
 			if (isSignedBy(certToken)) {
-
 				return true;
 			}
 		}

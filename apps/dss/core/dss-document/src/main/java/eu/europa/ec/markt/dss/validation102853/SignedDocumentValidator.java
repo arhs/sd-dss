@@ -259,6 +259,9 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		if (x509Certificate == null) {
 			throw new DSSNullException(X509Certificate.class);
 		}
+		if (validationCertPool == null) {
+			throw new DSSNullException(CertificatePool.class, "validationCertPool");
+		}
 		providedSigningCertificateToken = validationCertPool.getInstance(x509Certificate, CertificateSourceType.OTHER);
 	}
 

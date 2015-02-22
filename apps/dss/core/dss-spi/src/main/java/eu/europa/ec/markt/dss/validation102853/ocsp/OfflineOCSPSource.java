@@ -20,7 +20,6 @@
 
 package eu.europa.ec.markt.dss.validation102853.ocsp;
 
-import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.List;
 
@@ -34,6 +33,7 @@ import eu.europa.ec.markt.dss.DSSRevocationUtils;
 import eu.europa.ec.markt.dss.validation102853.CertificatePool;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.OCSPToken;
+import eu.europa.ec.markt.dss.validation102853.RevocationToken;
 
 /**
  * Abstract class that helps to implement an OCSPSource with an already loaded list of BasicOCSPResp
@@ -53,8 +53,6 @@ public abstract class OfflineOCSPSource implements OCSPSource {
 			final String dssIdAsString = certificateToken.getDSSIdAsString();
 			LOG.trace("--> OfflineOCSPSource queried for " + dssIdAsString + " contains: " + containedOCSPResponses.size() + " element(s).");
 		}
-		final X509Certificate x509Certificate = certificateToken.getCertificate();
-		final X509Certificate issuerX509Certificate = certificateToken.getIssuerToken().getCertificate();
 		/**
 		 * TODO: (Bob 2013.05.08) Does the OCSP responses always use SHA1?<br>
 		 * RFC 2560:<br>
@@ -70,7 +68,7 @@ public abstract class OfflineOCSPSource implements OCSPSource {
 		Date bestUpdate = null;
 		BasicOCSPResp bestBasicOCSPResp = null;
 		SingleResp bestSingleResp = null;
-		final CertificateID certId = DSSRevocationUtils.getOCSPCertificateID(x509Certificate, issuerX509Certificate);
+		final CertificateID certId = DSSRevocationUtils.getCertificateID(certificateToken);
 		for (final BasicOCSPResp basicOCSPResp : containedOCSPResponses) {
 
 			for (final SingleResp singleResp : basicOCSPResp.getResponses()) {
@@ -105,4 +103,9 @@ public abstract class OfflineOCSPSource implements OCSPSource {
 	 * @return {@code List} of {@code BasicOCSPResp}s
 	 */
 	public abstract List<BasicOCSPResp> getContainedOCSPResponses();
+
+	@Override
+	public boolean isFresh(final RevocationToken revocationToken) {
+		return false;
+	}
 }

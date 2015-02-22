@@ -34,8 +34,8 @@
 	</bean>
 
 	<bean id="crlSource"
-	      class="eu.europa.ec.markt.dss.validation102853.crl.JdbcCacheCRLSource">
-		<property name="cachedSource" ref="cacheCrlSource"/>
+	      class="eu.europa.ec.markt.dss.specific.JdbcCacheCRLSource">
+		<property name="onlineCRLSource" ref="cacheCrlSource"/>
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
 

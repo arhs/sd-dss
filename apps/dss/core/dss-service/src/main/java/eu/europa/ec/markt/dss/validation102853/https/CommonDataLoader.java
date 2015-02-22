@@ -124,7 +124,7 @@ public class CommonDataLoader implements DataLoader, DSSNotifier {
 	/**
 	 * The  constructor for CommonsDataLoader with defined content-type.
 	 *
-	 * @param contentType The content type of each request
+	 * @param contentType The requestBytes type of each request
 	 */
 	public CommonDataLoader(final String contentType) {
 		this.contentType = contentType;
@@ -401,9 +401,10 @@ public class CommonDataLoader implements DataLoader, DSSNotifier {
 	 * This method retrieves data using HTTP or HTTPS protocol and 'get' method.
 	 *
 	 * @param urlString to access
-	 * @return {@code byte} array of obtained data or null
+	 * @return {@code byte} array of obtained data or {@code null}
+	 * @throws DSSException in case of any exception
 	 */
-	protected byte[] httpGet(final String urlString) {
+	protected byte[] httpGet(final String urlString) throws DSSException {
 
 		final URI uri = DSSUtils.toUri(urlString.trim());
 		HttpGet httpGet = null;
@@ -426,20 +427,22 @@ public class CommonDataLoader implements DataLoader, DSSNotifier {
 		}
 	}
 
-	private void defineContentTransferEncoding(final AbstractHttpMessage httpMessage) {
+	protected void defineContentTransferEncoding(final AbstractHttpMessage httpMessage) {
+
 		if (contentTransferEncoding != null) {
 			httpMessage.setHeader(CONTENT_TRANSFER_ENCODING, contentTransferEncoding);
 		}
 	}
 
-	private void defineContentType(final AbstractHttpMessage httpMessage) {
+	protected void defineContentType(final AbstractHttpMessage httpMessage) {
+
 		if (contentType != null) {
 			httpMessage.setHeader(CONTENT_TYPE, contentType);
 		}
 	}
 
 	@Override
-	public byte[] post(final String url, final byte[] content) throws DSSException {
+	public byte[] post(final String url, final byte[] requestBytes) throws DSSException {
 
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("Fetching data via POST from url " + url);
@@ -448,16 +451,17 @@ public class CommonDataLoader implements DataLoader, DSSNotifier {
 		HttpResponse httpResponse = null;
 		try {
 
-			final URI uri = URI.create(url.trim());
+			final URI uri = DSSUtils.toUri(url.trim());
 			httpPost = new HttpPost(uri);
 
 			// The length for the InputStreamEntity is needed, because some receivers (on the other side) need this information.
 			// To determine the length, we cannot read the content-stream up to the end and re-use it afterwards.
 			// This is because, it may not be possible to reset the stream (= go to position 0).
 			// So, the solution is to cache temporarily the complete content data (as we do not expect much here) in a byte-array.
-			final ByteArrayInputStream bis = new ByteArrayInputStream(content);
 
-			final HttpEntity httpEntity = new InputStreamEntity(bis, content.length);
+			final ByteArrayInputStream bis = new ByteArrayInputStream(requestBytes);
+
+			final HttpEntity httpEntity = new InputStreamEntity(bis, requestBytes.length);
 			final HttpEntity requestEntity = new BufferedHttpEntity(httpEntity);
 			httpPost.setEntity(requestEntity);
 			defineContentType(httpPost);
@@ -475,6 +479,12 @@ public class CommonDataLoader implements DataLoader, DSSNotifier {
 				EntityUtils.consumeQuietly(httpResponse.getEntity());
 			}
 		}
+	}
+
+	@Override
+	public byte[] post(String url, byte[] requestBytes, boolean refresh) {
+
+		return post(url, requestBytes);
 	}
 
 	protected HttpResponse getHttpResponse(final HttpUriRequest httpRequest, final URI uri) throws DSSException {

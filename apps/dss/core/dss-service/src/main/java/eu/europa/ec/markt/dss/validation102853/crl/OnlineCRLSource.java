@@ -24,21 +24,12 @@ import java.security.cert.X509CRL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.x509.CRLDistPoint;
-import org.bouncycastle.asn1.x509.DistributionPoint;
-import org.bouncycastle.asn1.x509.DistributionPointName;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.ec.markt.dss.DSSASN1Utils;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
@@ -64,7 +55,7 @@ public class OnlineCRLSource extends CommonCRLSource {
 	/**
 	 * The component that allows to retrieve the data using any protocol: HTTP, HTTPS, FTP, LDAP.
 	 */
-	private DataLoader dataLoader;
+	protected DataLoader dataLoader;
 
 	/**
 	 * The default constructor. A {@code CommonsDataLoader is created}.
@@ -79,10 +70,11 @@ public class OnlineCRLSource extends CommonCRLSource {
 	 * This constructor allows to set a specific {@code DataLoader}.
 	 *
 	 * @param dataLoader the component that allows to retrieve the data using any protocol: HTTP, HTTPS, FTP, LDAP.
+	 * @throws DSSNullException in the case of {@code null} parameter value
 	 */
-	public OnlineCRLSource(final DataLoader dataLoader) {
+	public OnlineCRLSource(final DataLoader dataLoader) throws DSSNullException {
 
-		this.dataLoader = dataLoader;
+		setDataLoader(dataLoader);
 		LOG.trace("+OnlineCRLSource with the specific data loader.");
 	}
 
@@ -101,9 +93,13 @@ public class OnlineCRLSource extends CommonCRLSource {
 	 * Set the DataLoader to use for querying the CRL server
 	 *
 	 * @param dataLoader the component that allows to retrieve the data using any protocol: HTTP, HTTPS, FTP, LDAP.
+	 * @throws DSSNullException in the case of {@code null} parameter value
 	 */
-	public void setDataLoader(final DataLoader dataLoader) {
+	public void setDataLoader(final DataLoader dataLoader) throws DSSNullException {
 
+		if (dataLoader == null) {
+			throw new DSSNullException(DataLoader.class);
+		}
 		this.dataLoader = dataLoader;
 	}
 
@@ -117,8 +113,7 @@ public class OnlineCRLSource extends CommonCRLSource {
 		if (issuerToken == null) {
 			return null;
 		}
-		final List<String> crlUrls = getCrlUrl(certificateToken);
-		LOG.info("CRL's URL for " + certificateToken.getAbbreviation() + " : " + crlUrls);
+		final List<String> crlUrls = getCrlUrl(certificateToken, preferredProtocol);
 		if (DSSUtils.isEmpty(crlUrls)) {
 			return null;
 		}
@@ -126,30 +121,37 @@ public class OnlineCRLSource extends CommonCRLSource {
 		if (dataAndUrl == null) {
 			return null;
 		}
-		final X509CRL crl;
+		final X509CRL x509CRL = buildX509Crl(dataAndUrl.data);
+		if (x509CRL == null) {
+			return null;
+		}
+		final List<String> dpUrlList = new ArrayList<String>();
+		dpUrlList.add(dataAndUrl.urlString);
+		final CRLValidity crlValidity = isValidCRL(x509CRL, issuerToken, dpUrlList);
+		final CRLToken crlToken = new CRLToken(certificateToken, crlValidity);
+		crlToken.setSourceURL(dataAndUrl.urlString);
+		return crlToken;
+	}
+
+	protected X509CRL buildX509Crl(byte[] data) {
 		try {
-			crl = DSSUtils.loadCRL(dataAndUrl.data);
+
+			final X509CRL x509CRL = DSSUtils.loadCRL(data);
+			return x509CRL;
 		} catch (Exception e) {
 			LOG.warn("", e);
 			return null;
 		}
-		final CRLValidity crlValidity = isValidCRL(crl, issuerToken);
-		final CRLToken crlToken = new CRLToken(certificateToken, crlValidity);
-		crlToken.setSourceURL(dataAndUrl.urlString);
-		return crlToken;
 	}
 
 	/**
 	 * Download a CRL from any location with any protocol.
 	 *
 	 * @param downloadUrls the {@code List} of urls to be used to obtain the revocation data through the CRL canal.
-	 * @return {@code X509CRL} or null if it was not possible to download the CRL
+	 * @return {@code X509CRL} or {@code null} if it was not possible to download the CRL
 	 */
 	private DataLoader.DataAndUrl downloadCrl(final List<String> downloadUrls) {
 
-		if (DSSUtils.isEmpty(downloadUrls)) {
-			return null;
-		}
 		try {
 
 			final DataLoader.DataAndUrl dataAndUrl = dataLoader.get(downloadUrls);
@@ -158,84 +160,5 @@ public class OnlineCRLSource extends CommonCRLSource {
 			LOG.warn("", e);
 		}
 		return null;
-	}
-
-	/**
-	 * Gives back the {@code List} of CRL URI meta-data found within the given X509 certificate.
-	 *
-	 * @param certificateToken the X509 certificate
-	 * @return the {@code List} of CRL URI, or {@code null} if the extension is not present
-	 * @throws DSSException
-	 */
-	public List<String> getCrlUrl(final CertificateToken certificateToken) throws DSSException {
-
-		final byte[] crlDistributionPointsBytes = certificateToken.getCRLDistributionPoints();
-		if (null == crlDistributionPointsBytes) {
-
-			return null;
-		}
-		try {
-
-			final List<String> urls = new ArrayList<String>();
-			final ASN1Sequence asn1Sequence = DSSASN1Utils.getAsn1SequenceFromDerOctetString(crlDistributionPointsBytes);
-			final CRLDistPoint distPoint = CRLDistPoint.getInstance(asn1Sequence);
-			final DistributionPoint[] distributionPoints = distPoint.getDistributionPoints();
-			for (final DistributionPoint distributionPoint : distributionPoints) {
-
-				final DistributionPointName distributionPointName = distributionPoint.getDistributionPoint();
-				if (DistributionPointName.FULL_NAME != distributionPointName.getType()) {
-					continue;
-				}
-				final GeneralNames generalNames = (GeneralNames) distributionPointName.getName();
-				final GeneralName[] names = generalNames.getNames();
-				for (final GeneralName name : names) {
-
-					if (name.getTagNo() != GeneralName.uniformResourceIdentifier) {
-
-						LOG.debug("Not a uniform resource identifier");
-						continue;
-					}
-					ASN1Primitive asn1Primitive = name.toASN1Primitive();
-					if (asn1Primitive instanceof DERTaggedObject) {
-
-						final DERTaggedObject taggedObject = (DERTaggedObject) asn1Primitive;
-						asn1Primitive = taggedObject.getObject();
-					}
-					final DERIA5String derStr = DERIA5String.getInstance(asn1Primitive);
-					final String urlStr = derStr.getString();
-					urls.add(urlStr);
-				}
-			}
-			prioritize(urls);
-			return urls;
-		} catch (Exception e) {
-			if (e instanceof DSSException) {
-				throw (DSSException) e;
-			}
-			throw new DSSException(e);
-		}
-	}
-
-	/**
-	 * if {@code preferredProtocol} is set then the list of urls is prioritize.
-	 * NOTE: This is not standard conformant! However in the major number of cases LDAP is much slower then HTTP!
-	 *
-	 * @param urls {@code List} of urls to prioritize
-	 */
-	private void prioritize(final List<String> urls) {
-
-		if (preferredProtocol != null) {
-
-			final List<String> priorityUrls = new ArrayList<String>();
-			for (final String url : urls) {
-				if (preferredProtocol.isTheSame(url)) {
-					priorityUrls.add(url);
-				}
-			}
-			urls.removeAll(priorityUrls);
-			for (int ii = priorityUrls.size() - 1; ii >= 0; ii--) {
-				urls.add(0, priorityUrls.get(ii));
-			}
-		}
 	}
 }
