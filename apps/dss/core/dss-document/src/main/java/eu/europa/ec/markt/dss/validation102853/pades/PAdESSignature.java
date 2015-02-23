@@ -448,6 +448,7 @@ public class PAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	public boolean isDataForSignatureLevelPresent(SignatureLevel signatureLevel) {
+
 		boolean dataForLevelPresent = true;
 		final List<TimestampToken> signatureTimestamps = getSignatureTimestamps();
 		switch (signatureLevel) {
@@ -475,8 +476,89 @@ public class PAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
+	public Set<SignatureLevel> getSignatureLevels_() {
+
+		Set<SignatureLevel> levels = new HashSet<SignatureLevel>();
+		levels.add(SignatureLevel.PDF_NOT_ETSI);
+		if (hasLTAProfile()) {
+			levels.add(SignatureLevel.PAdES_BASELINE_LTA);
+		}
+		if (hasLTVProfile()) {
+			levels.add(SignatureLevel.PAdES_102778_LTV);
+		}
+		if (hasLTProfile()) {
+			levels.add(SignatureLevel.PAdES_BASELINE_LT);
+		}
+		if (hasTProfile()) {
+			levels.add(SignatureLevel.CAdES_BASELINE_T);
+		}
+		if (hasBProfile()) {
+			levels.add(SignatureLevel.CAdES_BASELINE_B);
+		}
+		return levels;
+	}
+
+	/**
+	 * Checks the presence of ... segment in the signature, what is the proof -B profile existence
+	 *
+	 * @return
+	 */
+	public boolean hasBProfile() {
+
+		final boolean dataForProfilePresent = (pdfSignatureInfo != null);
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of SignatureTimeStamp segment in the signature, what is the proof -T profile existence
+	 *
+	 * @return
+	 */
+	public boolean hasTProfile() {
+
+		final boolean dataForProfilePresent = (((signatureTimestamps != null) && (!signatureTimestamps.isEmpty())));
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of CertificateValues and RevocationValues segments in the signature, what is the proof -LTA profile existence
+	 *
+	 * @return true if -LTA extension is present
+	 */
+	public boolean hasLTAProfile() {
+
+		boolean dataForProfilePresent = hasDocumentTimestampOnTopOfDSSDict();
+		dataForProfilePresent &= (((signatureTimestamps != null) && (!signatureTimestamps.isEmpty())));
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of CertificateValues and RevocationValues segments in the signature, what is the proof -LT profile existence
+	 *
+	 * @return true if -LT extension is present
+	 */
+	public boolean hasLTProfile() {
+
+		final boolean dataForProfilePresent = hasDSSDictionary();
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of CertificateValues and RevocationValues segments in the signature, what is the proof -LTV profile existence
+	 *
+	 * @return true if -LTV extension is present
+	 */
+	public boolean hasLTVProfile() {
+
+		final boolean dataForProfilePresent = hasDocumentTimestampOnTopOfDSSDict();
+		return dataForProfilePresent;
+	}
+
+	@Override
 	public SignatureLevel[] getSignatureLevels() {
-		return new SignatureLevel[]{SignatureLevel.PAdES_BASELINE_B, SignatureLevel.PAdES_BASELINE_T, SignatureLevel.PAdES_BASELINE_LT, SignatureLevel.PAdES_102778_LTV, SignatureLevel.PAdES_BASELINE_LTA};
+		return new SignatureLevel[]{
+
+			  SignatureLevel.PAdES_102778_LTV, SignatureLevel.PDF_NOT_ETSI, SignatureLevel.PAdES_BASELINE_LTA, SignatureLevel.PAdES_BASELINE_LT, SignatureLevel.PAdES_BASELINE_T, SignatureLevel.PAdES_BASELINE_B};
 	}
 
 	private boolean hasDSSDictionary() {

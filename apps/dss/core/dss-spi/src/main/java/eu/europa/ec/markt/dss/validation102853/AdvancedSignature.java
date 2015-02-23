@@ -369,6 +369,8 @@ public interface AdvancedSignature extends Serializable {
 	 */
 	boolean isDataForSignatureLevelPresent(final SignatureLevel signatureLevel);
 
+	Set<SignatureLevel> getSignatureLevels_();
+
 	SignatureLevel getDataFoundUpToLevel();
 
 	/**

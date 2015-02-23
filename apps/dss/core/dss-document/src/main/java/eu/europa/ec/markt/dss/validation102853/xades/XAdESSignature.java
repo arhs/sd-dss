@@ -21,8 +21,6 @@
 package eu.europa.ec.markt.dss.validation102853.xades;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
@@ -114,7 +112,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	 * This array contains all the XAdES signatures levels
 	 * TODO: do not return redundant levels.
 	 */
-	private static SignatureLevel[] signatureLevels = new SignatureLevel[]{SignatureLevel.XML_NOT_ETSI, SignatureLevel.XAdES_BASELINE_B, SignatureLevel.XAdES_BASELINE_T, SignatureLevel.XAdES_C, SignatureLevel.XAdES_X, SignatureLevel.XAdES_XL, SignatureLevel.XAdES_BASELINE_LT, SignatureLevel.XAdES_BASELINE_LTA, SignatureLevel.XAdES_A};
+	private static SignatureLevel[] signatureLevels = new SignatureLevel[]{SignatureLevel.XAdES_A, SignatureLevel.XAdES_XL, SignatureLevel.XAdES_X, SignatureLevel.XAdES_C, SignatureLevel.XAdES_BASELINE_LTA, SignatureLevel.XAdES_BASELINE_LT, SignatureLevel.XAdES_BASELINE_T, SignatureLevel.XAdES_BASELINE_B, SignatureLevel.XML_NOT_ETSI};
 
 	/**
 	 * This variable contains the list of {@code XPathQueryHolder} adapted to the specific signature schema.
@@ -774,8 +772,9 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	 */
 	public boolean hasBProfile() {
 
-		final int count = DSSXMLUtils.count(signatureElement, xPathQueryHolder.XPATH_COUNT_SIGNED_SIGNATURE_PROPERTIES);
-		return count > 0;
+		final int signedSignaturePropertiesCount = DSSXMLUtils.count(signatureElement, xPathQueryHolder.XPATH_COUNT_SIGNED_SIGNATURE_PROPERTIES);
+		final int referenceSignedPropertiesCount = DSSXMLUtils.count(signatureElement, xPathQueryHolder.XPATH_COUNT_REFERENCE_SIGNED_PROPERTIES);
+		return signedSignaturePropertiesCount > 0 && referenceSignedPropertiesCount > 0;
 	}
 
 	/**
@@ -1970,6 +1969,34 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				throw new IllegalArgumentException("Unknown level " + signatureLevel);
 		}
 		return dataForLevelPresent;
+	}
+
+	@Override
+	public Set<SignatureLevel> getSignatureLevels_() {
+
+		Set<SignatureLevel> levels = new HashSet<SignatureLevel>();
+		levels.add(SignatureLevel.XML_NOT_ETSI);
+		if (hasLTAProfile()) {
+			levels.add(SignatureLevel.XAdES_BASELINE_LTA);
+			levels.add(SignatureLevel.XAdES_A);
+		}
+		if (hasLTProfile()) {
+			levels.add(SignatureLevel.XAdES_BASELINE_LT);
+			levels.add(SignatureLevel.XAdES_XL);
+		}
+		if (hasTProfile()) {
+			levels.add(SignatureLevel.XAdES_BASELINE_T);
+		}
+		if (hasBProfile()) {
+			levels.add(SignatureLevel.XAdES_BASELINE_B);
+		}
+		if (hasXProfile()) {
+			levels.add(SignatureLevel.XAdES_X);
+		}
+		if (hasCProfile()) {
+			levels.add(SignatureLevel.XAdES_C);
+		}
+		return levels;
 	}
 
 	@Override

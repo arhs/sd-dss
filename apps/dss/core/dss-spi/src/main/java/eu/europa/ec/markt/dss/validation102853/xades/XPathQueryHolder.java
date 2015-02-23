@@ -135,6 +135,7 @@ public class XPathQueryHolder implements Serializable {
 
 	// Level -B
 	public String XPATH_COUNT_SIGNED_SIGNATURE_PROPERTIES = "count(" + XPATH_SIGNED_SIGNATURE_PROPERTIES + ")";
+	public String XPATH_COUNT_REFERENCE_SIGNED_PROPERTIES = "count(" + XPATH_REFERENCE + "[@Type='" + XADES_SIGNED_PROPERTIES + "'])";
 	// Level -T
 	public final String XPATH_COUNT_SIGNATURE_TIMESTAMP = "count(" + XPATH_SIGNATURE_TIMESTAMP + ")";
 	// Level -C

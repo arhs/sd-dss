@@ -1945,7 +1945,140 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
+	public Set<SignatureLevel> getSignatureLevels_() {
+
+		Set<SignatureLevel> levels = new HashSet<SignatureLevel>();
+		levels.add(SignatureLevel.CMS_NOT_ETSI);
+		if (hasLTAProfile()) {
+			levels.add(SignatureLevel.CAdES_BASELINE_LTA);
+		}
+		if (hasLTProfile()) {
+			levels.add(SignatureLevel.CAdES_BASELINE_LT);
+			levels.add(SignatureLevel.CAdES_101733_XL);
+		}
+		if (hasTProfile()) {
+			levels.add(SignatureLevel.CAdES_BASELINE_T);
+		}
+		if (hasBProfile()) {
+			levels.add(SignatureLevel.CAdES_BASELINE_B);
+		}
+		if (hasAProfile()) {
+			levels.add(SignatureLevel.CAdES_101733_A);
+		}
+		if (hasXProfile()) {
+			levels.add(SignatureLevel.CAdES_101733_X);
+		}
+		if (hasCProfile()) {
+			levels.add(SignatureLevel.CAdES_101733_C);
+		}
+		return levels;
+	}
+
+	/**
+	 * Checks the presence of ... segment in the signature, what is the proof -B profile existence
+	 *
+	 * @return
+	 */
+	public boolean hasBProfile() {
+
+		final AttributeTable signedAttributes = getSignedAttributes(signerInformation);
+		final boolean dataForProfilePresent = ((signedAttributes.get(id_aa_signingCertificate) != null) || (signedAttributes.get(id_aa_signingCertificateV2) != null));
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of SignatureTimeStamp segment in the signature, what is the proof -T profile existence
+	 *
+	 * @return
+	 */
+	public boolean hasTProfile() {
+
+		final AttributeTable unsignedAttributes = getUnsignedAttributes(signerInformation);
+		final boolean dataForProfilePresent = unsignedAttributes.get(id_aa_signatureTimeStampToken) != null;
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of CompleteCertificateRefs & CompleteRevocationRefs segments in the signature, what is the proof -C profile existence
+	 *
+	 * @return
+	 */
+	public boolean hasCProfile() {
+
+		final AttributeTable unsignedAttributes = getUnsignedAttributes(signerInformation);
+		boolean dataForProfilePresent = unsignedAttributes.get(id_aa_ets_certificateRefs) != null;
+		dataForProfilePresent &= isDataForSignatureLevelPresent(SignatureLevel.CAdES_BASELINE_T);
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of SigAndRefsTimeStamp segment in the signature, what is the proof -X profile existence
+	 *
+	 * @return true if the -X extension is present
+	 */
+	public boolean hasXProfile() {
+
+		final AttributeTable unsignedAttributes = getUnsignedAttributes(signerInformation);
+		final boolean dataForProfilePresent = (unsignedAttributes.get(id_aa_ets_certCRLTimestamp) != null || unsignedAttributes.get(id_aa_ets_escTimeStamp) != null);
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of CertificateValues and RevocationValues segments in the signature, what is the proof -XL profile existence
+	 *
+	 * @return true if -XL extension is present
+	 */
+	public boolean hasXLProfile() {
+
+		return hasLTProfile();
+	}
+
+	/**
+	 * Checks the presence of CertificateValues and RevocationValues segments in the signature, what is the proof -LT profile existence
+	 *
+	 * @return true if -LT extension is present
+	 */
+	public boolean hasLTProfile() {
+
+		final List<CertificateToken> encapsulatedCertificates = getCertificateSource().getEncapsulatedCertificates();
+		final int certificateStoreSize = encapsulatedCertificates.size();
+		final Store crlStore = cmsSignedData.getCRLs();
+		final int crlStoreSize = crlStore.getMatches(null).size();
+		final Store ocspStore = cmsSignedData.getOtherRevocationInfo(id_ri_ocsp_response);
+		final int ocspStoreSize = ocspStore.getMatches(null).size();
+		final Store ocspBasicStore = cmsSignedData.getOtherRevocationInfo(id_pkix_ocsp_basic);
+		final int basicOcspStoreSize = ocspBasicStore.getMatches(null).size();
+		final int ltInfoSize = certificateStoreSize + crlStoreSize + ocspStoreSize + basicOcspStoreSize;
+		final boolean dataForProfilePresent = (ltInfoSize > 0);
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of CertificateValues and RevocationValues segments in the signature, what is the proof -LTA profile existence
+	 *
+	 * @return true if -LTA extension is present
+	 */
+	public boolean hasLTAProfile() {
+
+		final AttributeTable unsignedAttributes = getUnsignedAttributes(signerInformation);
+		final boolean dataForProfilePresent = unsignedAttributes.get(id_aa_ets_archiveTimestampV3) != null;
+		return dataForProfilePresent;
+	}
+
+	/**
+	 * Checks the presence of CertificateValues and RevocationValues segments in the signature, what is the proof -A profile existence
+	 *
+	 * @return true if -A extension is present
+	 */
+	public boolean hasAProfile() {
+
+		final AttributeTable unsignedAttributes = getUnsignedAttributes(signerInformation);
+		final boolean dataForProfilePresent = unsignedAttributes.get(id_aa_ets_archiveTimestampV2) != null;
+		return dataForProfilePresent;
+	}
+
+	@Override
 	public SignatureLevel[] getSignatureLevels() {
-		return new SignatureLevel[]{SignatureLevel.CMS_NOT_ETSI, SignatureLevel.CAdES_BASELINE_B, SignatureLevel.CAdES_BASELINE_T, SignatureLevel.CAdES_101733_C, SignatureLevel.CAdES_101733_X, SignatureLevel.CAdES_BASELINE_LT, SignatureLevel.CAdES_101733_A, SignatureLevel.CAdES_BASELINE_LTA};
+		return new SignatureLevel[]{SignatureLevel.CAdES_101733_A, SignatureLevel.CAdES_101733_XL, SignatureLevel.CAdES_101733_X, SignatureLevel.CAdES_101733_C, SignatureLevel.CMS_NOT_ETSI, SignatureLevel.CAdES_BASELINE_LTA, SignatureLevel.CAdES_BASELINE_LT, SignatureLevel.CAdES_BASELINE_T, SignatureLevel.CAdES_BASELINE_B};
 	}
 }

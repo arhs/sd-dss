@@ -136,24 +136,24 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 	@Override
 	public SignatureLevel getDataFoundUpToLevel() {
 
-		final SignatureLevel[] signatureLevels = getSignatureLevels();
-		final SignatureLevel dataFoundUpToProfile = getDataFoundUpToProfile(signatureLevels);
-		return dataFoundUpToProfile;
-	}
-
-	/**
-	 * This method returns the {@code SignatureLevel} which was reached.
-	 *
-	 * @param signatureLevels the array of the all levels associated with the given signature type
-	 * @return {@code SignatureLevel}
-	 */
-	private SignatureLevel getDataFoundUpToProfile(final SignatureLevel... signatureLevels) {
-
-		for (int ii = signatureLevels.length - 1; ii >= 0; ii--) {
+		final SignatureLevel[] signatureLevels = getSignatureLevels(); // the array of the all levels associated with the given signature type
+		final Set<SignatureLevel> signatureLevels_ = getSignatureLevels_();
+		for (int ii = 0; ii < signatureLevels.length; ii++) {
 
 			final SignatureLevel signatureLevel = signatureLevels[ii];
-			if (isDataForSignatureLevelPresent(signatureLevel)) {
-				return signatureLevel;
+			if (signatureLevels_.contains(signatureLevel)) {
+
+				SignatureLevel upperLevel = signatureLevel.upperLevel;
+				while (upperLevel != null) {
+
+					if (!signatureLevels_.contains(upperLevel)) {
+						break;
+					}
+					upperLevel = upperLevel.upperLevel;
+				}
+				if (upperLevel == null) {
+					return signatureLevel;
+				}
 			}
 		}
 		return null;
@@ -337,14 +337,14 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 		for (final TimestampToken timestampToken : getContentTimestamps()) {
 			timestampTokenList.add(timestampToken);
 		}
-        /*
-         * This validates the signature timestamp tokens present in the signature.
+		/*
+		 * This validates the signature timestamp tokens present in the signature.
          */
 		for (final TimestampToken timestampToken : getSignatureTimestamps()) {
 			timestampTokenList.add(timestampToken);
 		}
-        /*
-         * This validates the SigAndRefs timestamp tokens present in the signature.
+		/*
+	     * This validates the SigAndRefs timestamp tokens present in the signature.
          */
 		for (final TimestampToken timestampToken : getTimestampsX1()) {
 			timestampTokenList.add(timestampToken);
