@@ -27,8 +27,8 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Enumerated;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
@@ -44,6 +44,7 @@ import org.bouncycastle.cert.ocsp.OCSPResp;
 import org.bouncycastle.cert.ocsp.SingleResp;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
@@ -140,23 +141,14 @@ public final class DSSRevocationUtils {
 
 		final String reasonId = Extension.reasonCode.getId();
 		final byte[] extensionBytes = crlEntry.getExtensionValue(reasonId);
-		ASN1InputStream asn1InputStream = null;
 		try {
 
-			asn1InputStream = new ASN1InputStream(extensionBytes);
-			final ASN1Enumerated asn1Enumerated = ASN1Enumerated.getInstance(asn1InputStream.readObject());
+			final ASN1Primitive asn1Primitive = X509ExtensionUtil.fromExtensionValue(extensionBytes);
+			final ASN1Enumerated asn1Enumerated = ASN1Enumerated.getInstance(asn1Primitive);
 			final CRLReason reason = CRLReason.getInstance(asn1Enumerated);
 			return reason.toString();
-		} catch (IllegalArgumentException e) {
-			// In the test case XAdESTest003 testTRevoked() there is an error in the revocation reason.
-			//LOG.warn("Error when revocation reason decoding from CRL: " + e.toString());
-			final CRLReason reason = CRLReason.lookup(7); // 7 -> unknown
-			return reason.toString(); // unknown
 		} catch (IOException e) {
 			throw new DSSException(e);
-		} finally {
-
-			DSSUtils.closeQuietly(asn1InputStream);
 		}
 	}
 
