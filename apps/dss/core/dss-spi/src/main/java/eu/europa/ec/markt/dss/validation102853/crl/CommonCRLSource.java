@@ -40,6 +40,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
@@ -53,7 +54,6 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.RevocationToken;
 import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
-import sun.security.x509.PKIXExtensions;
 
 import static org.bouncycastle.asn1.x509.DistributionPointName.FULL_NAME;
 import static org.bouncycastle.asn1.x509.GeneralName.uniformResourceIdentifier;
@@ -213,7 +213,7 @@ public abstract class CommonCRLSource implements CRLSource {
 			crlValidity.unknownCriticalExtension = false;
 			return;
 		}
-		final String issuingDistributionPointOid = PKIXExtensions.IssuingDistributionPoint_Id.toString();
+		final String issuingDistributionPointOid = Extension.issuingDistributionPoint.toString();
 		for (final String criticalExtensionOID : criticalExtensionOIDs) {
 
 			if (issuingDistributionPointOid.equals(criticalExtensionOID)) {
