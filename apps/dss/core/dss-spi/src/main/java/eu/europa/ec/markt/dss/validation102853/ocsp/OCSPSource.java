@@ -25,6 +25,7 @@ import java.io.Serializable;
 import eu.europa.ec.markt.dss.validation102853.CertificatePool;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.OCSPToken;
+import eu.europa.ec.markt.dss.validation102853.RevocationToken;
 
 /**
  * The validation of a certificate may require the use of OCSP information. Theses information can be provided by multiple sources
@@ -43,4 +44,11 @@ public interface OCSPSource extends Serializable {
 	 * @return {@code OCSPToken} containing information about the validity of the cert
 	 */
 	OCSPToken getOCSPToken(final CertificateToken certificateToken, final CertificatePool certificatePool);
+
+	/**
+	 *
+	 * @param revocationToken
+	 * @return
+	 */
+	boolean isFresh(final RevocationToken revocationToken);
 }

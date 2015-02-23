@@ -15,7 +15,7 @@
 		<!--<property name="proxyDao" ref="proxyFile"/>-->
 	</bean>
 
-	<bean id="dataLoader" class="eu.europa.ec.markt.dss.validation102853.https.CommonsDataLoader">
+	<bean id="dataLoader" class="eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader">
 		<property name="proxyPreferenceManager" ref="proxyPreferenceManager"/>
 	</bean>
 
@@ -34,8 +34,8 @@
 	</bean>
 
 	<bean id="crlSource"
-	      class="eu.europa.ec.markt.dss.validation102853.crl.JdbcCacheCRLSource">
-		<property name="cachedSource" ref="cacheCrlSource"/>
+	      class="eu.europa.ec.markt.dss.specific.JdbcCacheCRLSource">
+		<property name="onlineCRLSource" ref="cacheCrlSource"/>
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
 
@@ -53,7 +53,7 @@
 	</bean>
 
 	<bean id="tspSource" class="eu.europa.ec.markt.dss.validation102853.tsp.OnlineTSPSource">
-		<property name="tspServer" value="http://tsa.belgium.be/connect"/>
+		<property name="tspServerUrl" value="http://tsa.belgium.be/connect"/>
 	</bean>
 
 </beans>

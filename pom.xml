@@ -7,7 +7,7 @@
 
 	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 	<artifactId>sd-dss</artifactId>
-	<version>4.3.0</version>
+	<version>4.3.1</version>
 	<packaging>pom</packaging>
 	<name>Digital Signature Services</name>
 
@@ -268,7 +268,7 @@
 			<dependency>
 				<groupId>com.sun.xml.bind</groupId>
 				<artifactId>jaxb-impl</artifactId>
-				<version>2.2.10-b140310.1920</version>
+				<version>2.2.11</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jvnet.jaxb2.maven2</groupId>
@@ -463,17 +463,14 @@
 		</repository>
 		<repository>
 			<id>jboss-public</id>
-			<name>JBoss Public Maven repository</name>
 			<url>https://repository.jboss.org/nexus/</url>
 		</repository>
 		<repository>
 			<id>netbeans</id>
-			<name>Maven Repository for org.openide</name>
 			<url>http://bits.netbeans.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>java.net</id>
-			<name>Maven Repository of java.net</name>
 			<url>http://download.java.net/maven/2/</url>
 		</repository>
 	</repositories>
@@ -490,7 +487,7 @@
 	<distributionManagement>
 		<repository>
 			<id>deployment</id>
-			<name>4.1.0</name>
+			<name>SD-DSS 4.3.0</name>
 			<url>https://joinup.ec.europa.eu/nexus/content/repositories/releases/</url>
 			<!-- bad URL <url>https://joinup.ec.europa.eu/nexus/content/repositories/releases/eu/europa/ec/joinup/sd-dss/</url>-->
 		</repository>

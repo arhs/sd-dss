@@ -24,6 +24,7 @@ import java.io.Serializable;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
+import eu.europa.ec.markt.dss.validation102853.RevocationToken;
 
 /**
  * The validation of a certificate requires the access to some CRLs. This information can be found online, in a cache or even in
@@ -34,15 +35,25 @@ import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 public interface CRLSource extends Serializable {
 
 	/**
-	 * Finds the CRL(s) for the requested certificate. If found:<br />
+	 * Finds the CRL(s) for the requested certificate token. If found:<br />
 	 * - the CRL's signature is checked;<br />
 	 * - the key usage of the CRL's signing certificate is verified;<br />
 	 * <p/>
-	 * The most recent CRL is returned. If the parameter is <code>null</code> than <code>null</code> is returned.
+	 * The most recent CRL is returned.
+	 * - If the parameter {@code certificateToken} is {@code null} than {@code null} is returned.
+	 * - If the issuer of the parameter {@code certificateToken} is {@code null} than {@code null} is returned.
+	 * - If the value of the CRLDistributionPoints of the {@code certificateToken} is {@code null} than {@code null} is returned.
 	 *
 	 * @param certificateToken the certificate token for which the CRL need to be found.
 	 * @return {@code CRLToken}, null if not found.
 	 * @throws DSSException
 	 */
 	CRLToken findCrl(final CertificateToken certificateToken) throws DSSException;
+
+	/**
+	 *
+	 * @param revocationToken
+	 * @return
+	 */
+	boolean isFresh(final RevocationToken revocationToken);
 }

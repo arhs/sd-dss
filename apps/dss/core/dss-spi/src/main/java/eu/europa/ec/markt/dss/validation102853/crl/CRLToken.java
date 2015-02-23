@@ -76,7 +76,9 @@ public class CRLToken extends RevocationToken {
 		this.crlValidity = crlValidity;
 		setDefaultValues();
 		setRevocationStatus(certificateToken);
-		LOG.debug("+CRLToken");
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("+{} created.", getAbbreviation());
+		}
 	}
 
 	private void ensureNotNull(final CRLValidity crlValidity) {

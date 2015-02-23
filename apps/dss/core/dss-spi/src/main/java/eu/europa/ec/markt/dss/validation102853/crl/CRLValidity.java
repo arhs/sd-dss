@@ -1,11 +1,11 @@
 /*
- * DSS - Digital Signature Services
+ * SD-DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
+ * Copyright (C) 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
+ * Developed by: 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * This file is part of the "DSS - Digital Signature Services" project.
+ * This file is part of the "https://github.com/arhs/sd-dss" project.
  *
  * "DSS - Digital Signature Services" is free software: you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation, either version 2.1 of the
@@ -15,7 +15,7 @@
  * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License along with
- * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
+ * "SD-DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 package eu.europa.ec.markt.dss.validation102853.crl;
 
@@ -26,10 +26,8 @@ import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 /**
  * This class encapsulates all information related to the validity of a CRL. It exposes the method {@code isValid} to check the validity.
  * <p/>
- * <p/>
- * DISCLAIMER: Project owner DG-MARKT.
  *
- * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
+ * @author Robert Bielecki
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
 public class CRLValidity {
@@ -61,7 +59,8 @@ public class CRLValidity {
 	@Override
 	public String toString() {
 		return "CRLValidity{" +
-			  "issuerX509PrincipalMatches=" + issuerX509PrincipalMatches +
+			  "x509CRL=" + x509CRL +
+			  ", issuerX509PrincipalMatches=" + issuerX509PrincipalMatches +
 			  ", signatureIntact=" + signatureIntact +
 			  ", crlSignKeyUsage=" + crlSignKeyUsage +
 			  ", unknownCriticalExtension=" + unknownCriticalExtension +

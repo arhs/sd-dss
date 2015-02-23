@@ -36,12 +36,27 @@ import eu.europa.ec.markt.dss.validation102853.report.Reports;
  */
 public interface ProcessExecutor {
 
+
 	/**
 	 * This method returns the {@code Date} against which the validation process is carried out.
 	 *
 	 * @return
 	 */
 	Date getCurrentTime();
+
+	/**
+	 * This method returns the number of concurrent threads to use during the validation process.
+	 *
+	 * @return {@code int } the number of concurrent threads
+	 */
+	int getConcurrentThreadNumber();
+
+	/**
+	 * This method allows to set the number of concurrent threads to be used durring the validation process.
+	 *
+	 * @param concurrentThreadNumber the number of concurrent threads
+	 */
+	void setConcurrentThreadNumber(int concurrentThreadNumber);
 
 	/**
 	 * This method allows to set the {@code eu.europa.ec.markt.dss.validation102853.report.DiagnosticData} that is used during the validation process execution.
@@ -69,7 +84,7 @@ public interface ProcessExecutor {
 	/**
 	 * @return {@code ValidationPolicy} which is used to validate the signatures
 	 */
-	ValidationPolicy  getValidationPolicy();
+	ValidationPolicy getValidationPolicy();
 
 	/**
 	 * This method allows to set the validation policy that is used during the validation process execution to validate the countersignatures.

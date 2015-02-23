@@ -378,7 +378,7 @@ public final class DSSASN1Utils {
 			final ASN1Sequence seq = (ASN1Sequence) input.readObject();
 			return seq;
 		} catch (IOException e) {
-			throw new DSSException("Error when computing certificate's extensions.", e);
+			throw new DSSException("Error when converting byte array to ASN1Sequence!", e);
 		} finally {
 			DSSUtils.closeQuietly(input);
 		}

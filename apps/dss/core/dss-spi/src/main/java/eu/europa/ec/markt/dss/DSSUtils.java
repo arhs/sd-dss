@@ -36,6 +36,9 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
@@ -115,6 +118,9 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.tsp.TSPException;
+import org.bouncycastle.tsp.TimeStampRequest;
+import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,6 +133,9 @@ import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
 
+/**
+ * This class is a collection (grouping) of utility methods.
+ */
 public final class DSSUtils {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DSSUtils.class);
@@ -175,7 +184,6 @@ public final class DSSUtils {
 	private static final Date deterministicDate = DSSUtils.getUtcDate(1970, 04, 23);
 
 	public static final String DEFAULT_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
 	/**
 	 * The default date pattern: "yyyy-MM-dd"
 	 */
@@ -1396,6 +1404,21 @@ public final class DSSUtils {
 	}
 
 	/**
+	 * Returns the encoded (as ASN.1 DER) form of this {@code TimeStampRequest}.
+	 *
+	 * @param timeStampRequest {@code TimeStampToken}
+	 * @return encoded array of bytes
+	 */
+	public static byte[] getEncoded(final TimeStampRequest timeStampRequest) {
+
+		try {
+			return timeStampRequest.getEncoded();
+		} catch (IOException e) {
+			throw new DSSException(e);
+		}
+	}
+
+	/**
 	 * Returns the encoded (as ASN.1 DER) form of this {@code TimeStampToken}.
 	 *
 	 * @param timeStamp {@code TimeStampToken}
@@ -1550,7 +1573,6 @@ public final class DSSUtils {
 	public static byte[] toByteArray(final File file) throws DSSException {
 
 		if (file == null) {
-
 			throw new DSSNullException(File.class);
 		}
 		try {
@@ -1618,10 +1640,10 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * Get the contents of an {@code InputStream} as a {@code byte[]}.
+	 * Get the contents of an {@code InputStream} as a {@code byte[]}. The {@code inputStream} is closed.
 	 *
-	 * @param inputStream
-	 * @return
+	 * @param inputStream {@code InputStream} (cannot be {@code null})
+	 * @return array of {@code byte}s
 	 */
 	public static byte[] toByteArray(final InputStream inputStream) {
 
@@ -1633,7 +1655,60 @@ public final class DSSUtils {
 			return bytes;
 		} catch (IOException e) {
 			throw new DSSException(e);
+		} finally {
+			closeQuietly(inputStream);
 		}
+	}
+
+	/**
+	 * This method Creates a {@code URL} object from the {@code String} representation..
+	 *
+	 * @param urlString {@code String} to parse as a URL
+	 * @return {@code URL} or {@code null}
+	 */
+	public static URL toUrlQuietly(final String urlString) {
+
+		try {
+			return new URL(urlString);
+		} catch (MalformedURLException e) {
+			LOG.warn(e.toString(), e);
+		}
+		return null;
+	}
+
+	/**
+	 * This method creates a {@code URI} object from the {@code String} representation.
+	 *
+	 * @param urlString {@code String} to parse as a URI
+	 * @return {@code URI}
+	 */
+	public static URI toUri(final String urlString) {
+
+		try {
+			return new URI(urlString);
+		} catch (URISyntaxException e) {
+			throw new DSSException(e);
+		}
+	}
+
+	/**
+	 * This method returns the content of a file referenced by its URL. All exceptions are caught.
+	 *
+	 * @param url {@code URL} representing a file
+	 * @return array of {@code byte}s or null
+	 */
+	public static byte[] toByteArrayQuietly(final URL url) {
+
+		if (url == null) {
+			return null;
+		}
+		try {
+			final InputStream inputStream = url.openStream();
+			return DSSUtils.toByteArray(inputStream);
+		} catch (IOException e) {
+			LOG.warn(e.toString(), e);
+		}
+		return null;
 	}
 
 	/**
@@ -1680,15 +1755,16 @@ public final class DSSUtils {
 	public static void saveToFile(final byte[] bytes, final File file) throws DSSException {
 
 		file.getParentFile().mkdirs();
+		FileOutputStream fileOutputStream = null;
 		try {
 
-			final FileOutputStream fileOutputStream = new FileOutputStream(file);
-			final ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-			copy(inputStream, fileOutputStream);
-			closeQuietly(inputStream);
-			closeQuietly(fileOutputStream);
+			final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+			fileOutputStream = new FileOutputStream(file);
+			copy(byteArrayInputStream, fileOutputStream);
 		} catch (IOException e) {
 			throw new DSSException(e);
+		} finally {
+			closeQuietly(fileOutputStream);
 		}
 	}
 
@@ -1701,8 +1777,11 @@ public final class DSSUtils {
 	public static void saveToFile(final InputStream inputStream, final String path) {
 
 		final FileOutputStream fileOutputStream = toFileOutputStream(path);
-		copy(inputStream, fileOutputStream);
-		closeQuietly(fileOutputStream);
+		try {
+			copy(inputStream, fileOutputStream);
+		} finally {
+			closeQuietly(fileOutputStream);
+		}
 	}
 
 	/**
@@ -2495,7 +2574,8 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * This method compares two {@code X500Principal}s. {@code X500Principal.CANONICAL} and {@code X500Principal.RFC2253} forms are compared.
+	 * This method compares two {@code X500Principal}s. {@code X500Principal.CANONICAL} and {@code X500Principal.RFC2253} forms are compared. The {@code X500Principal}s are broken
+	 * down into individual elements.
 	 * TODO: (Bob: 2014 Feb 20) To be investigated why the standard equals does not work!?
 	 *
 	 * @param firstX500Principal
@@ -2518,15 +2598,14 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * @param x509SubjectName
-	 * @return
+	 * @param x500PrincipalString {@code String} representation of the {@code X500Principal}
+	 * @return {@code X500Principal} built from a given {@code String}
 	 */
-	public static X500Principal getX500Principal(String x509SubjectName) throws DSSException {
+	public static X500Principal getX500Principal(final String x500PrincipalString) throws DSSException {
 
 		try {
-			final X500Principal x500Principal = new X500Principal(x509SubjectName);
-			final String utf8String = getUtf8String(x500Principal);
-			final X500Principal normalizedX500Principal = new X500Principal(utf8String);
+			final X500Principal x500Principal = new X500Principal(x500PrincipalString);
+			final X500Principal normalizedX500Principal = getX500Principal(x500Principal);
 			return normalizedX500Principal;
 		} catch (IllegalArgumentException e) {
 			throw new DSSException(e);
@@ -2534,33 +2613,37 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * @param x509Certificate
-	 * @return
+	 * This method transcodes {@code X500Principal} related to the subject name of a given {@code X509Certificate}.
+	 *
+	 * @param x509Certificate for which the subject name must be transcoded
+	 * @return {@code X500Principal} transcoded
 	 */
 	public static X500Principal getSubjectX500Principal(final X509Certificate x509Certificate) {
 
 		final X500Principal x500Principal = x509Certificate.getSubjectX500Principal();
-		final String utf8Name = getUtf8String(x500Principal);
-		// System.out.println(">>> " + x500Principal.getName() + "-------" + utf8Name);
-		final X500Principal x500PrincipalNormalized = new X500Principal(utf8Name);
-		return x500PrincipalNormalized;
+		final X500Principal normalizedX500Principal = getX500Principal(x500Principal);
+		return normalizedX500Principal;
 	}
 
-
 	/**
-	 * @param x500Principal to be normalized
-	 * @return {@code X500Principal} normalized
+	 * This method transcodes {@code X500Principal}.
+	 *
+	 * @param x500Principal to be transcoded
+	 * @return {@code X500Principal} transcoded
 	 */
 	public static X500Principal getX500Principal(final X500Principal x500Principal) {
 
 		final String utf8Name = getUtf8String(x500Principal);
-		final X500Principal x500PrincipalNormalized = new X500Principal(utf8Name);
-		return x500PrincipalNormalized;
+		final X500Principal normalizedX500Principal = new X500Principal(utf8Name);
+		return normalizedX500Principal;
 	}
 
 	/**
-	 * @param x509Certificate
-	 * @return
+	 * For a given {@code X509Certificate} this method returns its subject name as string representation of the X.500 distinguished name using the format defined in RFC 2253. The
+	 * {@code X500Principal} is transcoded first.
+	 *
+	 * @param x509Certificate for which the string representation of the subject name must be returned
+	 * @return {@code String} representation of the certificate's subject name using the format defined in RFC 2253
 	 */
 	public static String getSubjectX500PrincipalName(final X509Certificate x509Certificate) {
 
@@ -2568,22 +2651,24 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * The distinguished name is regenerated to avoid problems related to the {@code X500Principal} encoding.
+	 * This method transcodes {@code X500Principal} related to the issuer name of a given {@code X509Certificate}.
 	 *
-	 * @param x509Certificate
-	 * @return
+	 * @param x509Certificate for which the issuer subject name must be transcoded
+	 * @return {@code X500Principal} transcoded
 	 */
 	public static X500Principal getIssuerX500Principal(final X509Certificate x509Certificate) {
 
 		final X500Principal x500Principal = x509Certificate.getIssuerX500Principal();
-		final String utf8Name = getUtf8String(x500Principal);
-		final X500Principal x500PrincipalNormalized = new X500Principal(utf8Name);
+		final X500Principal x500PrincipalNormalized = getX500Principal(x500Principal);
 		return x500PrincipalNormalized;
 	}
 
 	/**
-	 * @param x509Certificate
-	 * @return
+	 * For a given {@code X509Certificate} this method returns its issuer name as string representation of the X.500 distinguished name using the format defined in RFC 2253. The
+	 * {@code X500Principal} is transcoded first.
+	 *
+	 * @param x509Certificate for which the string representation of the issuer name must be returned
+	 * @return {@code String} representation of the certificate's issuer name using the format defined in RFC 2253
 	 */
 	public static String getIssuerX500PrincipalName(final X509Certificate x509Certificate) {
 
@@ -3130,7 +3215,7 @@ public final class DSSUtils {
 	 * @param date1    the oldest date
 	 * @param date2    the newest date
 	 * @param timeUnit the unit in which you want the diff
-	 * @return the difference value, in the provided unit
+	 * @return the difference value, in the provided {@code TimeUnit}
 	 */
 	public static long getDateDiff(final Date date1, final Date date2, final TimeUnit timeUnit) {
 
@@ -3165,6 +3250,10 @@ public final class DSSUtils {
 		return collection == null || collection.isEmpty();
 	}
 
+	public static boolean isNotEmpty(final Collection collection) {
+		return !isEmpty(collection);
+	}
+
 	/**
 	 * Concatenates all the arrays into a new array. The new array contains all of the element of each array followed by all of the elements of the next array. When an array is
 	 * returned, it is always a new array.
@@ -3196,5 +3285,21 @@ public final class DSSUtils {
 			}
 		}
 		return joinedArray;
+	}
+
+	/**
+	 * Creates a new instance of {@code TimeStampResponse} based on an array of bytes. The underlying exceptions are encapsulated into a {@code DSSException}.
+	 *
+	 * @param respBytes array of bytes
+	 * @return {@code TimeStampResponse}
+	 */
+	public static TimeStampResponse newTimeStampResponse(final byte[] respBytes) {
+		try {
+			return new TimeStampResponse(respBytes);
+		} catch (TSPException e) {
+			throw new DSSException(e);
+		} catch (IOException e) {
+			throw new DSSException(e);
+		}
 	}
 }

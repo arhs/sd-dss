@@ -27,8 +27,8 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Enumerated;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
@@ -44,8 +44,10 @@ import org.bouncycastle.cert.ocsp.OCSPResp;
 import org.bouncycastle.cert.ocsp.SingleResp;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.OCSPToken;
 import eu.europa.ec.markt.dss.validation102853.RevocationToken;
 
@@ -139,34 +141,25 @@ public final class DSSRevocationUtils {
 
 		final String reasonId = Extension.reasonCode.getId();
 		final byte[] extensionBytes = crlEntry.getExtensionValue(reasonId);
-		ASN1InputStream asn1InputStream = null;
 		try {
 
-			asn1InputStream = new ASN1InputStream(extensionBytes);
-			final ASN1Enumerated asn1Enumerated = ASN1Enumerated.getInstance(asn1InputStream.readObject());
+			final ASN1Primitive asn1Primitive = X509ExtensionUtil.fromExtensionValue(extensionBytes);
+			final ASN1Enumerated asn1Enumerated = ASN1Enumerated.getInstance(asn1Primitive);
 			final CRLReason reason = CRLReason.getInstance(asn1Enumerated);
 			return reason.toString();
-		} catch (IllegalArgumentException e) {
-			// In the test case XAdESTest003 testTRevoked() there is an error in the revocation reason.
-			//LOG.warn("Error when revocation reason decoding from CRL: " + e.toString());
-			final CRLReason reason = CRLReason.lookup(7); // 7 -> unknown
-			return reason.toString(); // unknown
 		} catch (IOException e) {
 			throw new DSSException(e);
-		} finally {
-
-			DSSUtils.closeQuietly(asn1InputStream);
 		}
 	}
 
 	/**
-	 * fix for certId.equals methods that doesn't work very well.
+	 * fix for certificateId.equals methods that doesn't work very well.
 	 *
-	 * @param certId     {@code CertificateID}
-	 * @param singleResp {@code SingleResp}
+	 * @param certificateId {@code CertificateID}
+	 * @param singleResp    {@code SingleResp}
 	 * @return true if the certificate matches this included in {@code SingleResp}
 	 */
-	public static boolean matches(final CertificateID certId, final SingleResp singleResp) {
+	public static boolean matches(final CertificateID certificateId, final SingleResp singleResp) {
 
 		final CertificateID singleRespCertID = singleResp.getCertID();
 		final ASN1ObjectIdentifier singleRespCertIDHashAlgOID = singleRespCertID.getHashAlgOID();
@@ -174,12 +167,12 @@ public final class DSSRevocationUtils {
 		final byte[] singleRespCertIDIssuerNameHash = singleRespCertID.getIssuerNameHash();
 		final BigInteger singleRespCertIDSerialNumber = singleRespCertID.getSerialNumber();
 
-		final ASN1ObjectIdentifier certIdHashAlgOID = certId.getHashAlgOID();
-		final byte[] certIdIssuerKeyHash = certId.getIssuerKeyHash();
-		final byte[] certIdIssuerNameHash = certId.getIssuerNameHash();
-		final BigInteger certIdSerialNumber = certId.getSerialNumber();
+		final ASN1ObjectIdentifier certIdHashAlgOID = certificateId.getHashAlgOID();
+		final byte[] certIdIssuerKeyHash = certificateId.getIssuerKeyHash();
+		final byte[] certIdIssuerNameHash = certificateId.getIssuerNameHash();
+		final BigInteger certIdSerialNumber = certificateId.getSerialNumber();
 
-		// certId.equals fails in comparing the algoIdentifier because AlgoIdentifier params in null in one case and DERNull in another case
+		// certificateId.equals fails in comparing the algoIdentifier because AlgoIdentifier params in null in one case and DERNull in another case
 		return singleRespCertIDHashAlgOID.equals(certIdHashAlgOID) && Arrays.areEqual(singleRespCertIDIssuerKeyHash, certIdIssuerKeyHash) && Arrays
 			  .areEqual(singleRespCertIDIssuerNameHash, certIdIssuerNameHash) &&
 			  singleRespCertIDSerialNumber.equals(certIdSerialNumber);
@@ -188,18 +181,17 @@ public final class DSSRevocationUtils {
 	/**
 	 * Returns the {@code CertificateID} for the given certificate and its issuer's certificate.
 	 *
-	 * @param cert       {@code X509Certificate} for which the id is created
-	 * @param issuerCert {@code X509Certificate} issuer certificate of the {@code cert}
+	 * @param certificateToken {@code CertificateToken} for which the id is created
 	 * @return {@code CertificateID}
 	 * @throws eu.europa.ec.markt.dss.exception.DSSException
 	 */
-	public static CertificateID getOCSPCertificateID(final X509Certificate cert, final X509Certificate issuerCert) throws DSSException {
+	public static CertificateID getCertificateID(final CertificateToken certificateToken) throws DSSException {
 
 		try {
-
-			final BigInteger serialNumber = cert.getSerialNumber();
+			final BigInteger serialNumber = certificateToken.getCertificate().getSerialNumber();
 			final DigestCalculator digestCalculator = DSSUtils.getSHA1DigestCalculator();
-			final X509CertificateHolder x509CertificateHolder = DSSUtils.getX509CertificateHolder(issuerCert);
+			final X509Certificate issuerX509Certificate = certificateToken.getIssuerToken().getCertificate();
+			final X509CertificateHolder x509CertificateHolder = DSSUtils.getX509CertificateHolder(issuerX509Certificate);
 			final CertificateID certificateID = new CertificateID(digestCalculator, x509CertificateHolder, serialNumber);
 			return certificateID;
 		} catch (OCSPException e) {

@@ -1004,7 +1004,7 @@ public final class DSSXMLUtils {
 	 * This method allows to validate an XML against the XAdES XSD schema.
 	 *
 	 * @param streamSource {@code InputStream} XML to validate
-	 * @return null if the XSD validates the XML, error message otherwise
+	 * @return empty {@code String} if the XSD validates the XML, error message otherwise
 	 */
 	public static String validateAgainstXSD(final StreamSource streamSource) {
 

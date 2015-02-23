@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.x500.X500Principal;
@@ -257,6 +259,9 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		if (x509Certificate == null) {
 			throw new DSSNullException(X509Certificate.class);
 		}
+		if (validationCertPool == null) {
+			throw new DSSNullException(CertificatePool.class, "validationCertPool");
+		}
 		providedSigningCertificateToken = validationCertPool.getInstance(x509Certificate, CertificateSourceType.OTHER);
 	}
 
@@ -454,12 +459,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 		prepareDiagnosticData();
 
-		final ValidationContext validationContext = new SignatureValidationContext(validationCertPool);
-
 		final List<AdvancedSignature> allSignatureList = getAllSignatures();
-
-		// The list of all signing certificates is created to allow a parallel validation.
-		prepareCertificatesAndTimestamps(allSignatureList, validationContext);
 
 		final ListCRLSource signatureCRLSource = getSignatureCrlSource(allSignatureList);
 		certificateVerifier.setSignatureCRLSource(signatureCRLSource);
@@ -467,9 +467,19 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		final ListOCSPSource signatureOCSPSource = getSignatureOcspSource(allSignatureList);
 		certificateVerifier.setSignatureOCSPSource(signatureOCSPSource);
 
-		validationContext.initialize(certificateVerifier);
+		final ValidationContext validationContext = new SignatureValidationContext(certificateVerifier, validationCertPool);
+		final ProcessExecutor processExecutor = provideProcessExecutorInstance();
+		final int concurrentThreadNumber = processExecutor.getConcurrentThreadNumber();
+		if (concurrentThreadNumber > 0) {
 
-		validationContext.setCurrentTime(provideProcessExecutorInstance().getCurrentTime());
+			final ExecutorService executorService = Executors.newFixedThreadPool(concurrentThreadNumber);
+			validationContext.setExecutorService(executorService);
+		}
+
+		// The list of all signing certificates is created to allow a parallel validation.
+		prepareCertificatesAndTimestamps(allSignatureList, validationContext);
+
+		validationContext.setCurrentTime(processExecutor.getCurrentTime());
 		validationContext.validate();
 
 		// For each validated signature present in the document to be validated the extraction of diagnostic data is launched.
@@ -563,7 +573,10 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			for (final CertificateToken certificateToken : candidates) {
 				validationContext.addCertificateTokenForVerification(certificateToken);
 			}
-			signature.prepareTimestamps(validationContext);
+			final List<TimestampToken> timestampTokenList = signature.prepareTimestamps();
+			for (final TimestampToken timestampToken : timestampTokenList) {
+				validationContext.addTimestampTokenForVerification(timestampToken);
+			}
 		}
 	}
 
@@ -1297,7 +1310,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 	private void performStructuralValidation(final AdvancedSignature signature, final XmlSignature xmlSignature) {
 
-		final ValidationPolicy validationPolicy = processExecutor.getValidationPolicy();
+		final ValidationPolicy validationPolicy = provideProcessExecutorInstance().getValidationPolicy();
 		if (validationPolicy == null || validationPolicy.getStructuralValidationConstraint() == null) {
 			return;
 		}

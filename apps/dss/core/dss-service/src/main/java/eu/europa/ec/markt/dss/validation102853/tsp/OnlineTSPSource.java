@@ -20,13 +20,9 @@
 
 package eu.europa.ec.markt.dss.validation102853.tsp;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
-import java.net.URLConnection;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampRequestGenerator;
 import org.bouncycastle.tsp.TimeStampResponse;
@@ -37,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 
 /**
@@ -49,51 +46,76 @@ public class OnlineTSPSource implements TSPSource {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OnlineTSPSource.class);
 
-	private String tspServer;
+	public static final String CONTENT_TYPE = "application/timestamp-query";
+	public static final String ACCEPT = "application/timestamp-reply";
 
-	private ASN1ObjectIdentifier policyOid;
+	/**
+	 * A {@code String} representation of a URL of the timestamp server.
+	 */
+	protected String tspServerUrl;
 
-	private DataLoader dataLoader;
+	/**
+	 * The reqPolicy field, if included, indicates the TSA policy under which the TimeStampToken SHOULD be provided.
+	 */
+	protected ASN1ObjectIdentifier reqPolicyOid;
 
-	private TSPNonceSource tspNonceSource;
+	/**
+	 * If the certReq field is present and set to true, the TSA's public key certificate that is referenced by the ESSCertID identifier inside a
+	 * SigningCertificate attribute in the response MUST be provided by the TSA in the certificates field from the SignedData structure in that response.
+	 */
+	protected boolean certReq = true;
+
+	/**
+	 * Replay attack detection: large random number with a high probability that it is generated only once.
+	 */
+	protected TSPNonceSource tspNonceSource;
+
+	/**
+	 * The data loader used to retrieve the timestamp.
+	 */
+	protected DataLoader dataLoader;
 
 	/**
 	 * The default constructor for OnlineTSPSource.
 	 */
 	public OnlineTSPSource() {
-
-		this(null);
 	}
 
 	/**
 	 * Build a OnlineTSPSource that will query the specified URL
 	 *
-	 * @param tspServer
+	 * @param tspServerUrl
 	 */
-	public OnlineTSPSource(final String tspServer) {
-
-		this.tspServer = tspServer;
+	public OnlineTSPSource(final String tspServerUrl) {
+		this.tspServerUrl = tspServerUrl;
 	}
 
 	/**
-	 * Set the URL of the TSA
+	 * Set the URL to access the TSA
 	 *
-	 * @param tspServer
+	 * @param tspServerUrl
 	 */
-	public void setTspServer(final String tspServer) {
-
-		this.tspServer = tspServer;
+	public void setTspServerUrl(final String tspServerUrl) {
+		this.tspServerUrl = tspServerUrl;
 	}
 
 	/**
-	 * Set the request policy
-	 *
-	 * @param policyOid
+	 * @return the URL to access the TSA
 	 */
-	public void setPolicyOid(final String policyOid) {
+	public String getTspServerUrl() {
+		return tspServerUrl;
+	}
 
-		this.policyOid = new ASN1ObjectIdentifier(policyOid);
+	@Override
+	public void setReqPolicyOid(final String reqPolicyOid) {
+		this.reqPolicyOid = new ASN1ObjectIdentifier(reqPolicyOid);
+	}
 
+	/**
+	 * @return the request policy OID
+	 */
+	public String getReqPolicyOid() {
+		return reqPolicyOid.toString();
 	}
 
 	@Override
@@ -103,110 +125,117 @@ public class OnlineTSPSource implements TSPSource {
 		return DSSUtils.encodeHexString(digest);
 	}
 
-	public DataLoader getDataLoader() {
-		return dataLoader;
-	}
-
-	public void setDataLoader(final DataLoader dataLoader) {
-		this.dataLoader = dataLoader;
+	public void setTspNonceSource(final TSPNonceSource tspNonceSource) {
+		this.tspNonceSource = tspNonceSource;
 	}
 
 	public TSPNonceSource getTspNonceSource() {
 		return tspNonceSource;
 	}
 
-	public void setTspNonceSource(final TSPNonceSource tspNonceSource) {
-		this.tspNonceSource = tspNonceSource;
+	/**
+	 * Allows to indicate if the signing certificate MUST be provided by the TSA in the response.
+	 *
+	 * @param certReq if true the signing certificate is provided in the response
+	 */
+	public void setCertReq(boolean certReq) {
+		this.certReq = certReq;
+	}
+
+	/**
+	 * @return indicates if the signing certificate MUST be provided by the TSA in the response
+	 */
+	public boolean isCertReq() {
+		return certReq;
+	}
+
+	/**
+	 * This method allows to set the {@code DataLoader} to be used to communicate with the TSA.
+	 *
+	 * @param dataLoader {@code DataLoader}
+	 */
+	public void setDataLoader(final DataLoader dataLoader) {
+		this.dataLoader = dataLoader;
+	}
+
+	/**
+	 * This method returns the underlying {@code DataLoader}. Note that when the loader is not set an instance of a default loader is created.
+	 *
+	 * @return {@code DataLoader}
+	 */
+	public DataLoader getDataLoader() {
+		if (dataLoader == null) {
+			dataLoader = getDefaultDataLoader();
+		}
+		return dataLoader;
+	}
+
+	/**
+	 * This method provides a default {@code DataLoader} to be used when communicating with the timestamp server. This method can be overloaded.
+	 *
+	 * @return {@code CommonsDataLoader}
+	 */
+	protected CommonDataLoader getDefaultDataLoader() {
+
+		final CommonDataLoader commonDataLoader = new CommonDataLoader(CONTENT_TYPE);
+		return commonDataLoader;
 	}
 
 	@Override
 	public TimeStampToken getTimeStampResponse(final DigestAlgorithm digestAlgorithm, final byte[] digest) throws DSSException {
 
-		try {
-
-			if (LOG.isTraceEnabled()) {
-
-				LOG.trace("Timestamp digest algorithm: " + digestAlgorithm.getName());
-				LOG.trace("Timestamp digest value    : " + DSSUtils.toHex(digest));
-			}
-
-			// Setup the time stamp request
-			final TimeStampRequestGenerator tsqGenerator = new TimeStampRequestGenerator();
-			tsqGenerator.setCertReq(true);
-			if (policyOid != null) {
-				tsqGenerator.setReqPolicy(policyOid);
-			}
-			final ASN1ObjectIdentifier asn1ObjectIdentifier = digestAlgorithm.getOid();
-			if (tspNonceSource == null) {
-				tspNonceSource = new TSPNonceSource();
-			}
-			final BigInteger nonce = tspNonceSource.getNonce();
-			final TimeStampRequest request = tsqGenerator.generate(asn1ObjectIdentifier, digest, nonce);
-			final byte[] requestBytes = request.getEncoded();
-
-			// Call the communications layer
-			byte[] respBytes;
-			if (dataLoader != null) {
-
-				respBytes = dataLoader.post(tspServer, requestBytes);
-				//if ("base64".equalsIgnoreCase(encoding)) {
-				//respBytes = DSSUtils.base64Decode(respBytes);
-				//}
-			} else {
-
-				respBytes = getTSAResponse(requestBytes);
-			}
-			// Handle the TSA response
-			final TimeStampResponse timeStampResponse = new TimeStampResponse(respBytes);
-			LOG.info("Status: " + timeStampResponse.getStatusString());
-			final TimeStampToken timeStampToken = timeStampResponse.getTimeStampToken();
-			if (timeStampToken != null) {
-
-				LOG.info("SID: " + timeStampToken.getSID());
-			}
-			return timeStampToken;
-		} catch (TSPException e) {
-			throw new DSSException("Invalid TSP response", e);
-		} catch (IOException e) {
-			throw new DSSException(e);
-		}
+		traceTimestampRequest(digestAlgorithm, digest);
+		final byte[] requestBytes = generateTimestampRequest(digestAlgorithm, digest);
+		final DataLoader currentDataLoader = getDataLoader();
+		final byte[] respBytes = currentDataLoader.post(tspServerUrl, requestBytes);
+		final TimeStampResponse timeStampResponse = DSSUtils.newTimeStampResponse(respBytes);
+		traceTimestampResponse(timeStampResponse);
+		final TimeStampToken timeStampToken = timeStampResponse.getTimeStampToken();
+		return timeStampToken;
 	}
 
 	/**
-	 * Get timestamp token - communications layer
+	 * Setup the time stamp request
 	 *
-	 * @return - byte[] - TSA response, raw bytes (RFC 3161 encoded)
+	 * @param digestAlgorithm {@code DigestAlgorithm} used to generate the message imprint
+	 * @param digest          digest value as byte array
+	 * @return array of bytes representing the {@code TimeStampRequest}
+	 * @throws DSSException
 	 */
-	protected byte[] getTSAResponse(final byte[] requestBytes) throws DSSException {
+	private byte[] generateTimestampRequest(final DigestAlgorithm digestAlgorithm, final byte[] digest) throws DSSException {
 
-		// Setup the TSA connection
-		final URLConnection tsaConnection = DSSUtils.openURLConnection(tspServer);
-
-		tsaConnection.setDoInput(true);
-		tsaConnection.setDoOutput(true);
-		tsaConnection.setUseCaches(false);
-		tsaConnection.setRequestProperty("Content-Type", "application/timestamp-query");
-		tsaConnection.setRequestProperty("Content-Transfer-Encoding", "binary");
-
-		DSSUtils.writeToURLConnection(tsaConnection, requestBytes);
-
-		// Get TSA response as a byte array
-		byte[] respBytes = getReadFromURLConnection(tsaConnection);
-		final String encoding = tsaConnection.getContentEncoding();
-		if ("base64".equalsIgnoreCase(encoding)) {
-
-			respBytes = DSSUtils.base64Decode(respBytes);
+		final TimeStampRequestGenerator tsqGenerator = new TimeStampRequestGenerator();
+		tsqGenerator.setCertReq(certReq);
+		if (reqPolicyOid != null) {
+			tsqGenerator.setReqPolicy(reqPolicyOid);
 		}
-		return respBytes;
+		final ASN1ObjectIdentifier asn1ObjectIdentifier = digestAlgorithm.getOid();
+		final BigInteger nonce = getNonce();
+		final TimeStampRequest request = tsqGenerator.generate(asn1ObjectIdentifier, digest, nonce);
+		return DSSUtils.getEncoded(request);
 	}
 
-	private byte[] getReadFromURLConnection(final URLConnection tsaConnection) throws DSSException {
+	private static void traceTimestampResponse(final TimeStampResponse timeStampResponse) {
 
-		try {
-			final InputStream inputStream = tsaConnection.getInputStream();
-			return DSSUtils.toByteArray(inputStream);
-		} catch (IOException e) {
-			throw new DSSException(e);
+		if (LOG.isTraceEnabled()) {
+			final int status = timeStampResponse.getStatus();
+			LOG.trace("Status: " + (status == 0 ? "granted (0) --> you got exactly what you asked for." : timeStampResponse.getStatusString()));
 		}
+	}
+
+	private static void traceTimestampRequest(final DigestAlgorithm digestAlgorithm, final byte[] digest) {
+
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("Timestamp digest algorithm: " + digestAlgorithm.getName());
+			LOG.trace("Timestamp digest value    : " + DSSUtils.toHex(digest));
+		}
+	}
+
+	private BigInteger getNonce() {
+
+		if (tspNonceSource == null) {
+			tspNonceSource = new TSPNonceSource();
+		}
+		return tspNonceSource.getNonce();
 	}
 }

@@ -46,6 +46,7 @@ import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.crl.CRLSource;
+import eu.europa.ec.markt.dss.validation102853.crl.CRLToken;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
 
@@ -93,11 +94,11 @@ public class SignatureValidationContext implements ValidationContext {
 	// External CRL source.
 	private CRLSource crlSource;
 
-	// CRLs from the signature.
-	private CRLSource signatureCRLSource;
-
 	// OCSP from the signature.
 	private OCSPSource signatureOCSPSource;
+
+	// CRLs from the signature.
+	private CRLSource signatureCRLSource;
 
 	// The digest value of the certification path references and the revocation status references.
 	private List<TimestampReference> timestampedReferences;
@@ -108,49 +109,48 @@ public class SignatureValidationContext implements ValidationContext {
 	protected Date currentTime = new Date();
 
 	/**
-	 * A unique thread can be used to disable the parallel fetching:
+	 * This variable :
 	 */
-	//	private final ExecutorService executorService = Executors.newFixedThreadPool(1);
-	private final ExecutorService executorService = Executors.newCachedThreadPool();
-
-	/**
-	 * This constructor is used during the signature creation process. The certificate pool is created within initialize method.
-	 */
-	public SignatureValidationContext() {
-
-	}
+	protected ExecutorService executorService;
 
 	/**
 	 * This constructor is used when a signature need to be validated.
 	 *
+	 * @param certificateVerifier       The certificates verifier (eg: using the TSL as list of trusted certificates).
 	 * @param validationCertificatePool The pool of certificates used during the validation process
 	 */
-	public SignatureValidationContext(final CertificatePool validationCertificatePool) {
-
-		if (validationCertificatePool == null) {
-			throw new DSSNullException(CertificatePool.class);
-		}
-		this.validationCertificatePool = validationCertificatePool;
-	}
-
-	/**
-	 * @param certificateVerifier The certificates verifier (eg: using the TSL as list of trusted certificates).
-	 */
-	@Override
-	public void initialize(final CertificateVerifier certificateVerifier) {
+	public SignatureValidationContext(final CertificateVerifier certificateVerifier, final CertificatePool validationCertificatePool) {
 
 		if (certificateVerifier == null) {
 			throw new DSSNullException(CertificateVerifier.class);
 		}
 		if (validationCertificatePool == null) {
-
-			validationCertificatePool = certificateVerifier.createValidationPool();
+			throw new DSSNullException(CertificatePool.class);
 		}
+		this.validationCertificatePool = validationCertificatePool;
 		this.crlSource = certificateVerifier.getCrlSource();
 		this.ocspSource = certificateVerifier.getOcspSource();
 		this.dataLoader = certificateVerifier.getDataLoader();
 		this.signatureCRLSource = certificateVerifier.getSignatureCRLSource();
 		this.signatureOCSPSource = certificateVerifier.getSignatureOCSPSource();
+	}
+
+	@Override
+	public ExecutorService getExecutorService() {
+		return executorService;
+	}
+
+	@Override
+	public void setExecutorService(final ExecutorService executorService) {
+		this.executorService = executorService;
+	}
+
+	private ExecutorService provideExecutorService() {
+
+		if (executorService == null) {
+			executorService = Executors.newCachedThreadPool();
+		}
+		return executorService;
 	}
 
 	public Date getCurrentTime() {
@@ -377,6 +377,7 @@ public class SignatureValidationContext implements ValidationContext {
 		try {
 
 			LOG.debug(">>> MT ***DONE***");
+			final ExecutorService executorService = provideExecutorService();
 			executorService.shutdown();
 			executorService.awaitTermination(5, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
@@ -388,6 +389,7 @@ public class SignatureValidationContext implements ValidationContext {
 
 		int threshold = 0;
 		int max_timeout = 0;
+		final ExecutorService executorService = provideExecutorService();
 		final ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executorService;
 		boolean exit = false;
 		boolean checkAgain = true;
@@ -435,7 +437,6 @@ public class SignatureValidationContext implements ValidationContext {
 				}
 			}
 		} while (!exit);
-
 	}
 
 	class Task implements Runnable {
@@ -462,7 +463,23 @@ public class SignatureValidationContext implements ValidationContext {
 			}
 			if (token instanceof CertificateToken) {
 
-				final RevocationToken revocationToken = getRevocationData((CertificateToken) token);
+				final CertificateToken certificateToken = (CertificateToken) token;
+				final RevocationToken currentRevocationToken = certificateToken.getRevocationToken();
+				if (currentRevocationToken != null) {
+
+					if (currentRevocationToken instanceof OCSPToken && ocspSource != null) {
+						if (ocspSource.isFresh(currentRevocationToken)) {
+							LOG.debug("OCSP revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
+							return;
+						}
+					} else if (currentRevocationToken instanceof CRLToken && crlSource != null) {
+						if (crlSource.isFresh(currentRevocationToken)) {
+							LOG.debug("CRL revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
+							return;
+						}
+					}
+				}
+				final RevocationToken revocationToken = getRevocationData(certificateToken);
 				addRevocationTokenForVerification(revocationToken);
 			}
 			LOG.debug(">>> MT END [" + threadCount_ + "] DSS_ID: " + token.getDSSId());

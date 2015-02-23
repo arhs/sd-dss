@@ -18,17 +18,47 @@
  * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package eu.europa.ec.markt.dss.validation102853.https;
+package eu.europa.ec.markt.dss.specific;
 
 /**
- * Implementation of DataLoader for any protocol.<p/>
- * HTTP & HTTPS: using HttpClient which is more flexible for HTTPS without having to add the certificate to the JVM TrustStore. It takes into account a proxy management through
- * {@code ProxyPreferenceManager}. The authentication is also supported.<p/>
+ * Represent CRL stored in the cache.
+ * 
  *
  * @version $Revision$ - $Date$
- * @deprecated since 4.3.1 use {@link eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader}
  */
-@Deprecated
-public class CommonsDataLoader extends CommonDataLoader {
+
+public class CachedCRL {
+
+    private byte[] crl;
+
+    private String key;
+
+    /**
+     * @return the byte representing crl
+     */
+    public byte[] getCrl() {
+        return crl;
+    }
+
+    /**
+     * @param crl the byte representing crl
+     */
+    public void setCrl(byte[] crl) {
+        this.crl = crl;
+    }
+
+    /**
+     * @return the key
+     */
+    public String getKey() {
+        return key;
+    }
+
+    /**
+     * @param key the key to set
+     */
+    public void setKey(String key) {
+        this.key = key;
+    }
 
 }

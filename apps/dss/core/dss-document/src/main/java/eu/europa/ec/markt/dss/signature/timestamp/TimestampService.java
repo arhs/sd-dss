@@ -45,7 +45,7 @@ import eu.europa.ec.markt.dss.signature.SignaturePackaging;
 import eu.europa.ec.markt.dss.signature.xades.XAdESLevelBaselineB;
 import eu.europa.ec.markt.dss.validation102853.AdvancedSignature;
 import eu.europa.ec.markt.dss.validation102853.CertificatePool;
-import eu.europa.ec.markt.dss.validation102853.CommonCertificateVerifier;
+import eu.europa.ec.markt.dss.validation102853.CryptographicSourceProvider;
 import eu.europa.ec.markt.dss.validation102853.SignedDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.TimestampInclude;
 import eu.europa.ec.markt.dss.validation102853.TimestampToken;
@@ -65,7 +65,7 @@ public class TimestampService {
 	private final TSPSource tspSource;
 	private final CertificatePool certificatePool;
 	private final XPathQueryHolder xPathQueryHolder;
-	private final CommonCertificateVerifier commonCertificateVerifier = new CommonCertificateVerifier(true);
+	private final CryptographicSourceProvider cryptographicSourceProvider = new CryptographicSourceProvider(true);
 
 
 	// TODO (12/09/2014): To be replaced for the new release (4.2.0)
@@ -153,7 +153,7 @@ public class TimestampService {
 		final SignatureParameters signatureParameters = setSignatureParameters(externalParameters);
 
 		//2. Build temporary signature structure
-		final XAdESLevelBaselineB levelBaselineB = new XAdESLevelBaselineB(commonCertificateVerifier);
+		final XAdESLevelBaselineB levelBaselineB = new XAdESLevelBaselineB(cryptographicSourceProvider);
 
 		byte[] signatureValueBytes = DSSUtils.base64Decode(fakeSignatureValue);
 		final DSSDocument fullSignature = levelBaselineB.signDocument(toSignDocument, signatureParameters, signatureValueBytes);
@@ -286,7 +286,7 @@ public class TimestampService {
 	private SignedDocumentValidator validateTemporarySignature(final DSSDocument toSignDocument, final DSSDocument signature) {
 
 		final SignedDocumentValidator validator = XMLDocumentValidator.fromDocument(signature);
-		validator.setCertificateVerifier(commonCertificateVerifier);
+		validator.setCertificateVerifier(cryptographicSourceProvider);
 		final List<DSSDocument> detachedContents = new ArrayList<DSSDocument>();
 		detachedContents.add(toSignDocument);
 		validator.setDetachedContents(detachedContents);

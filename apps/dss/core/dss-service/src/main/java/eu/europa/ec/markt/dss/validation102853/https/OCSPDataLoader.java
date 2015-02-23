@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  *
  * @version $Revision$ - $Date$
  */
-public class OCSPDataLoader extends CommonsDataLoader {
+public class OCSPDataLoader extends CommonDataLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger(OCSPDataLoader.class);
 

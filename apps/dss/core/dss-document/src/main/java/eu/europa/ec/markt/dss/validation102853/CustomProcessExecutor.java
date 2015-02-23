@@ -83,10 +83,25 @@ public class CustomProcessExecutor implements ProcessExecutor {
 	protected Date currentTime = new Date();
 
 	/**
+	 * This variable indicates the number of concurrent threads to use during the validation. {@code 0} means that there is no limit.
+	 */
+	protected int concurrentThreadNumber = 0;
+
+	/**
 	 * This is the default constructor. The process parameters must be initialised wih setters: {@code setDiagnosticDataDom} and {@code setValidationPolicyDom}
 	 */
 	public CustomProcessExecutor() {
 
+	}
+
+	@Override
+	public int getConcurrentThreadNumber() {
+		return concurrentThreadNumber;
+	}
+
+	@Override
+	public void setConcurrentThreadNumber(int concurrentThreadNumber) {
+		this.concurrentThreadNumber = concurrentThreadNumber;
 	}
 
 	@Override

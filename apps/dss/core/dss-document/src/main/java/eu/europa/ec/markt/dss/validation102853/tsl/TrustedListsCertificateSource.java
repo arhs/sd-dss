@@ -54,11 +54,11 @@ import eu.europa.ec.markt.dss.signature.InMemoryDocument;
 import eu.europa.ec.markt.dss.validation102853.AdvancedSignature;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
-import eu.europa.ec.markt.dss.validation102853.CommonCertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.CommonTrustedCertificateSource;
+import eu.europa.ec.markt.dss.validation102853.CryptographicSourceProvider;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
-import eu.europa.ec.markt.dss.validation102853.https.CommonsDataLoader;
+import eu.europa.ec.markt.dss.validation102853.https.FileCacheDataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.report.Reports;
 import eu.europa.ec.markt.dss.validation102853.report.SimpleReport;
@@ -67,7 +67,8 @@ import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder;
 
 /**
- * This class allows to extract all the trust anchors defined by the trusted lists. The LOTL is used as the entry point of the process.
+ * This class allows to extract all the trust anchors defined within the trusted lists. The LOTL is used as the entry point of the process. Note that the SHA2 files are used to
+ * check the necessity of the refresh of the TSL.
  *
  * @version $Revision: 1845 $ - $Date: 2013-04-04 17:46:25 +0200 (Thu, 04 Apr 2013) $
  */
@@ -88,8 +89,6 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	private Properties tslNextUpdates = null;
 
 	protected TSLRefreshPolicy tslRefreshPolicy = TSLRefreshPolicy.ALWAYS;
-
-	private CommonsDataLoader commonsDataLoader = new CommonsDataLoader();
 
 	protected String lotlUrl;
 
@@ -132,7 +131,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	}
 
 	@Override
-	protected CertificateSourceType getCertificateSourceType() {
+	public CertificateSourceType getCertificateSourceType() {
 
 		return CertificateSourceType.TRUSTED_LIST;
 	}
@@ -329,6 +328,37 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		}
 	}
 
+	/**
+	 * This method allows to automatically define at the level of {@code FileCacheDataLoader} the same behaviour for SHA2 files as for the related TSLs.
+	 */
+	public void defineSHA2Files() {
+
+		if (dataLoader instanceof FileCacheDataLoader) {
+
+			final FileCacheDataLoader fileCacheDataLoader = (FileCacheDataLoader) dataLoader;
+			List<String> urls = fileCacheDataLoader.getToBeLoaded();
+			if (urls != null) {
+
+				final List<String> toBeLoaded = new ArrayList<String>(urls);
+				for (final String url : toBeLoaded) {
+
+					final String sha2Url = getSha2Url(url);
+					fileCacheDataLoader.addToBeLoaded(sha2Url);
+				}
+			}
+			urls = fileCacheDataLoader.getToIgnored();
+			if (urls != null) {
+
+				final List<String> toIgnored = new ArrayList<String>(urls);
+				for (final String url : toIgnored) {
+
+					final String sha2Url = getSha2Url(url);
+					fileCacheDataLoader.addToBeIgnored(sha2Url);
+				}
+			}
+		}
+	}
+
 	private boolean shouldRefresh(final String url) {
 
 		if (tslRefreshPolicy == TSLRefreshPolicy.ALWAYS) {
@@ -339,10 +369,10 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		}
 		// ETSI TS 119 612 V1.1.1 (2013-06)
 		// 6.1 TL publication
-		final String urlSha2 = url.substring(0, url.lastIndexOf(".")) + ".sha2";
+		final String sha2Url = getSha2Url(url);
 		boolean refresh = false;
 		try {
-			final byte[] sha2Bytes = commonsDataLoader.get(urlSha2);
+			final byte[] sha2Bytes = dataLoader.get(sha2Url);
 			final String currentHashValue = new String(sha2Bytes).trim();
 			if (DSSUtils.isBlank(currentHashValue)) {
 				throw new DSSException("SHA256 does not exist!");
@@ -367,6 +397,10 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		return refresh;
 	}
 
+	private String getSha2Url(String url) {
+		return url.substring(0, url.lastIndexOf(".")) + ".sha2";
+	}
+
 	private XMLDocumentValidator prepareSignatureValidation(final List<X509Certificate> signingCertList, final byte[] bytes) {
 
 		final CommonTrustedCertificateSource commonTrustedCertificateSource = new CommonTrustedCertificateSource();
@@ -374,7 +408,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 
 			commonTrustedCertificateSource.addCertificate(x509Certificate);
 		}
-		final CertificateVerifier certificateVerifier = new CommonCertificateVerifier(true);
+		final CertificateVerifier certificateVerifier = new CryptographicSourceProvider(true);
 		certificateVerifier.setTrustedCertSource(commonTrustedCertificateSource);
 
 		final DSSDocument dssDocument = new InMemoryDocument(bytes);
@@ -636,14 +670,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	 * @param dataLoader the dataLoader to set
 	 */
 	public void setDataLoader(final DataLoader dataLoader) {
-
 		this.dataLoader = dataLoader;
-		if (dataLoader instanceof CommonsDataLoader) {
-
-			CommonsDataLoader commonsDataLoader1 = (CommonsDataLoader) dataLoader;
-			commonsDataLoader.setProxyPreferenceManager(commonsDataLoader1.getProxyPreferenceManager());
-			commonsDataLoader1.propagateAuthentication(commonsDataLoader);
-		}
 	}
 
 	/**

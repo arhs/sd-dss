@@ -18,17 +18,27 @@
  * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package eu.europa.ec.markt.dss.validation102853.https;
-
+package eu.europa.ec.markt.dss.specific;
 /**
- * Implementation of DataLoader for any protocol.<p/>
- * HTTP & HTTPS: using HttpClient which is more flexible for HTTPS without having to add the certificate to the JVM TrustStore. It takes into account a proxy management through
- * {@code ProxyPreferenceManager}. The authentication is also supported.<p/>
- *
+ * 
+ * Exception thrown for errors in the ProxyDao
+ *  
+ * <p>
+ * DISCLAIMER: Project owner DG-MARKT.
+ * 
  * @version $Revision$ - $Date$
- * @deprecated since 4.3.1 use {@link eu.europa.ec.markt.dss.validation102853.https.CommonDataLoader}
+ * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  */
-@Deprecated
-public class CommonsDataLoader extends CommonDataLoader {
+public class ProxyDaoException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 
+     * The constructor for ProxyDaoException.
+     * @param cause the underlying cause.
+     */
+    public ProxyDaoException (Throwable cause){
+        super(cause);
+    }
 }

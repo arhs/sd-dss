@@ -31,8 +31,7 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 /**
  * This class is used to obtain a unique DSS certificate's id. It is very helpful to follow the relationships between
  * certificates, CRLs, OCSPs and signatures. This DSS unique id is a simple integer number.
- *
- * <p>
+ * <p/>
  * DISCLAIMER: Project owner DG-MARKT.
  *
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
@@ -40,120 +39,123 @@ import eu.europa.ec.markt.dss.exception.DSSException;
  */
 public final class CertificateIdentifier {
 
-    /**
-     * This is the id which is given to a new certificate.
-     */
-    private static int nextCertificateIdentifier = 1;
+	/**
+	 * This is the id which is given to a new certificate.
+	 */
+	private static int nextCertificateIdentifier = 1;
 
 
-    /**
-     * This boolean is used in testing context, to keep consistent ids for certificates between various test launches
-     */
-    private static boolean UNIQUE_IDENTIFIER = false;
+	/**
+	 * This boolean is used in testing context, to keep consistent ids for certificates between various test launches
+	 */
+	private static boolean UNIQUE_IDENTIFIER = false;
 
-    /**
-     * This {@link LinkedHashMap} represents the association between the certificate unique identifier (certificate's
-     * issuer distinguished name + "|" + certificate's serial number) and the DSS certificate's id.
-     */
-    private static LinkedHashMap<String, Integer> ids = new LinkedHashMap<String, Integer>();
+	/**
+	 * This {@link LinkedHashMap} represents the association between the certificate unique identifier (certificate's
+	 * issuer distinguished name + "|" + certificate's serial number) and the DSS certificate's id.
+	 */
+	private static LinkedHashMap<String, Integer> ids = new LinkedHashMap<String, Integer>();
 
-    private CertificateIdentifier() {
-    }
+	private CertificateIdentifier() {
+	}
 
-    public static boolean isUniqueIdentifier() {
-        return UNIQUE_IDENTIFIER;
-    }
+	public static boolean isUniqueIdentifier() {
+		return UNIQUE_IDENTIFIER;
+	}
 
-    /**
-     * This method is used to keep consistent ids for certificates between various test launches
-     * @param uniqueIdentifier
-     */
-    public static void setUniqueIdentifier(boolean uniqueIdentifier) {
-        UNIQUE_IDENTIFIER = uniqueIdentifier;
-    }
-    /**
-     * Return the DSS certificate's unique id for a given {@link X509Certificate}. If the {@code cert} parameter is
-     * null 0 is returned.
-     *
-     * @param cert
-     * @return
-     */
-    public static int getId(final X509Certificate cert) {
-        if (cert == null) {
-            throw new DSSException("The certificate cannot be null!");
-        }
-        final String certKey = getKey(cert);
-        Integer id = ids.get(certKey);
-        if (id == null) {
+	/**
+	 * This method is used to keep consistent ids for certificates between various test launches
+	 *
+	 * @param uniqueIdentifier
+	 */
+	public static void setUniqueIdentifier(boolean uniqueIdentifier) {
+		UNIQUE_IDENTIFIER = uniqueIdentifier;
+	}
 
-            id = add(certKey);
-        }
-        return id;
-    }
+	/**
+	 * Returns the DSS certificate's unique id for a given {@link X509Certificate}. If the certificate is unknown then its identifier is created.
+	 *
+	 * @param x509Certificate {@code X509Certificate} for which the dss id is looking for
+	 * @return dss unique certificate identifier
+	 */
+	public static int getId(final X509Certificate x509Certificate) {
+		if (x509Certificate == null) {
+			throw new DSSException("The certificate cannot be null!");
+		}
+		synchronized (ids) {
 
-    /**
-     * This method returns the DSS certificate's id based on the certificate's key: ( issuer distinguished name + "|" +
-     * serial number). If the certificate is not yet stored it is added to the {@code ids}.
-     *
-     * @param key the key is composed of issuer distinguished name + "|" + serial number
-     * @return DSS certificate's id
-     */
-    private static int add(final String key) {
+			final String certKey = getKey(x509Certificate);
+			Integer id = ids.get(certKey);
+			if (id == null) {
+				id = add(certKey);
+			}
+			return id;
+		}
+	}
 
-        Integer id = ids.get(key);
-        if (id == null) {
-            if (UNIQUE_IDENTIFIER) {
-                id = key.hashCode();
-                ids.put(key, id);
-            } else {
-                id = nextCertificateIdentifier;
-                ids.put(key, id);
-                nextCertificateIdentifier++;
-            }
-        }
-        return id;
-    }
+	/**
+	 * This method returns the DSS certificate's id based on the certificate's key: ( issuer distinguished name + "|" +
+	 * serial number). If the certificate is not yet stored it is added to the {@code ids}.
+	 *
+	 * @param key the key is composed of issuer distinguished name + "|" + serial number
+	 * @return DSS certificate's id
+	 */
+	private static int add(final String key) {
 
-    /**
-     * This method returns the unique identifier of a given {@link X509Certificate}. This identifier is used to obtain
-     * the DSS certificate's unique id. The CANONICAL form of the {@code X500Principal} is used.
-     *
-     * @param cert
-     * @return
-     */
-    private static String getKey(final X509Certificate cert) {
+		Integer id = ids.get(key);
+		if (id == null) {
+			if (UNIQUE_IDENTIFIER) {
+				id = key.hashCode();
+				ids.put(key, id);
+			} else {
+				id = nextCertificateIdentifier;
+				ids.put(key, id);
+				nextCertificateIdentifier++;
+			}
+		}
+		return id;
+	}
 
-        final String canonicalIssuerX500Principal = cert.getIssuerX500Principal().getName(X500Principal.CANONICAL);
-        final String serialNumber = cert.getSerialNumber().toString();
-        return canonicalIssuerX500Principal + "|" + serialNumber;
-    }
+	/**
+	 * This method returns the unique identifier of a given {@link X509Certificate}. This identifier is used to obtain
+	 * the DSS certificate's unique id. The CANONICAL form of the {@code X500Principal} is used.
+	 *
+	 * @param cert
+	 * @return
+	 */
+	private static String getKey(final X509Certificate cert) {
 
-    /**
-     * This method resets the list of certificates.
-     */
-    public static void clear() {
-        ids.clear();
-        nextCertificateIdentifier = 1;
-    }
+		final String canonicalIssuerX500Principal = cert.getIssuerX500Principal().getName(X500Principal.CANONICAL);
+		final String serialNumber = cert.getSerialNumber().toString();
+		return canonicalIssuerX500Principal + "|" + serialNumber;
+	}
 
-    /**
-     * Returns the text representation of all certificates and their internal DSS number. The text is indented with the
-     * given {@code indentStr} string.
-     *
-     * @param indentStr
-     * @return
-     */
-    public static String toString(String indentStr) {
+	/**
+	 * This method resets the list of certificates.
+	 */
+	public static void clear() {
+		ids.clear();
+		nextCertificateIdentifier = 1;
+	}
 
-        StringBuilder sb = new StringBuilder();
+	/**
+	 * Returns the text representation of all certificates and their internal DSS number. The text is indented with the
+	 * given {@code indentStr} string.
+	 *
+	 * @param indentStr
+	 * @return
+	 */
+	public static String toString(String indentStr) {
 
-        sb.append(indentStr).append("List of certificates:\n");
-        for (Entry<String, Integer> entry : ids.entrySet()) {
+		StringBuilder sb = new StringBuilder();
 
-            Integer id = entry.getValue();
-            String key = entry.getKey();
-            sb.append(indentStr).append(String.format("[%s] : %s\n", id, key));
-        }
-        return sb.toString();
-    }
+		sb.append(indentStr).append("List of certificates:\n");
+		for (Entry<String, Integer> entry : ids.entrySet()) {
+
+			Integer id = entry.getValue();
+			String key = entry.getKey();
+			sb.append(indentStr).append(String.format("[%s] : %s\n", id, key));
+		}
+		return sb.toString();
+	}
 }
