@@ -774,7 +774,9 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 
 		final int signedSignaturePropertiesCount = DSSXMLUtils.count(signatureElement, xPathQueryHolder.XPATH_COUNT_SIGNED_SIGNATURE_PROPERTIES);
 		final int referenceSignedPropertiesCount = DSSXMLUtils.count(signatureElement, xPathQueryHolder.XPATH_COUNT_REFERENCE_SIGNED_PROPERTIES);
-		return signedSignaturePropertiesCount > 0 && referenceSignedPropertiesCount > 0;
+		final int numberOfReferences = getReferences().size();
+		final int dataObjectFormatMimeTypeCount = DSSXMLUtils.count(signatureElement, xPathQueryHolder.XPATH_COUNT_DATA_OBJECT_FORMAT_MIME_TYPE);
+		return signedSignaturePropertiesCount == 1 && referenceSignedPropertiesCount == 1 && numberOfReferences == (dataObjectFormatMimeTypeCount + 1);
 	}
 
 	/**
