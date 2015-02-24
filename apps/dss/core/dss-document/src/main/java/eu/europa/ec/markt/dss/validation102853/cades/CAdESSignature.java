@@ -2079,6 +2079,6 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 
 	@Override
 	public SignatureLevel[] getSignatureLevels() {
-		return new SignatureLevel[]{SignatureLevel.CAdES_101733_A, SignatureLevel.CAdES_101733_XL, SignatureLevel.CAdES_101733_X, SignatureLevel.CAdES_101733_C, SignatureLevel.CMS_NOT_ETSI, SignatureLevel.CAdES_BASELINE_LTA, SignatureLevel.CAdES_BASELINE_LT, SignatureLevel.CAdES_BASELINE_T, SignatureLevel.CAdES_BASELINE_B};
+		return new SignatureLevel[]{SignatureLevel.CAdES_101733_A, SignatureLevel.CAdES_101733_XL, SignatureLevel.CAdES_101733_X, SignatureLevel.CAdES_101733_C, SignatureLevel.CAdES_BASELINE_LTA, SignatureLevel.CAdES_BASELINE_LT, SignatureLevel.CAdES_BASELINE_T, SignatureLevel.CAdES_BASELINE_B, SignatureLevel.CMS_NOT_ETSI};
 	}
 }

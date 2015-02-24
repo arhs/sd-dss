@@ -490,10 +490,10 @@ public class PAdESSignature extends DefaultAdvancedSignature {
 			levels.add(SignatureLevel.PAdES_BASELINE_LT);
 		}
 		if (hasTProfile()) {
-			levels.add(SignatureLevel.CAdES_BASELINE_T);
+			levels.add(SignatureLevel.PAdES_BASELINE_T);
 		}
 		if (hasBProfile()) {
-			levels.add(SignatureLevel.CAdES_BASELINE_B);
+			levels.add(SignatureLevel.PAdES_BASELINE_B);
 		}
 		return levels;
 	}
@@ -556,9 +556,7 @@ public class PAdESSignature extends DefaultAdvancedSignature {
 
 	@Override
 	public SignatureLevel[] getSignatureLevels() {
-		return new SignatureLevel[]{
-
-			  SignatureLevel.PAdES_102778_LTV, SignatureLevel.PDF_NOT_ETSI, SignatureLevel.PAdES_BASELINE_LTA, SignatureLevel.PAdES_BASELINE_LT, SignatureLevel.PAdES_BASELINE_T, SignatureLevel.PAdES_BASELINE_B};
+		return new SignatureLevel[]{SignatureLevel.PAdES_102778_LTV, SignatureLevel.PAdES_BASELINE_LTA, SignatureLevel.PAdES_BASELINE_LT, SignatureLevel.PAdES_BASELINE_T, SignatureLevel.PAdES_BASELINE_B, SignatureLevel.PDF_NOT_ETSI,};
 	}
 
 	private boolean hasDSSDictionary() {
