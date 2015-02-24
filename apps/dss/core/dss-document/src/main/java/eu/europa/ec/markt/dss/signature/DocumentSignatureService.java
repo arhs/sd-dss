@@ -29,6 +29,7 @@ import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
 /**
  * This interface {@code DocumentSignatureService} provides operations for the signature creation and for its extension.
  *
+ * @author Robert Bielecki
  * @version $Revision$ - $Date$
  */
 public interface DocumentSignatureService extends Serializable {

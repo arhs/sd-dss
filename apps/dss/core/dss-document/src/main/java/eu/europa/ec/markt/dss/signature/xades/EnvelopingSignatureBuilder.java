@@ -126,7 +126,6 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 	public DSSDocument signDocument(final byte[] signatureValue) throws DSSException {
 
 		if (!built) {
-
 			build();
 		}
 

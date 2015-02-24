@@ -94,15 +94,8 @@ public class XAdESService extends AbstractSignatureService {
 		}
 		assertSigningDateInCertificateValidityRange(parameters);
 		parameters.getContext().setOperationKind(Operation.SIGNING);
-		final XAdESLevelBaselineB profile;
 		final ProfileParameters context = parameters.getContext();
-		if (context.getProfile() != null) {
-
-			profile = context.getProfile();
-		} else {
-
-			profile = new XAdESLevelBaselineB(certificateVerifier);
-		}
+		final XAdESLevelBaselineB profile = context.getProfile() != null ? context.getProfile() : new XAdESLevelBaselineB(certificateVerifier);
 		final DSSDocument signedDoc = profile.signDocument(toSignDocument, parameters, signatureValue);
 		final SignatureExtension extension = getExtensionProfile(parameters);
 		if (extension != null) {

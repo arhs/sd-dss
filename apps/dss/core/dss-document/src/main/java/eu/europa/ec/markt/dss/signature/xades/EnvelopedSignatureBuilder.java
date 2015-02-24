@@ -50,17 +50,17 @@ import eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder;
 /**
  * This class handles the specifics of the enveloped XML signature
  * <p/>
- * <p> DISCLAIMER: Project owner DG-MARKT.
  *
- * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
+ * @author Robert Bielecki
  * @version $Revision: 672 $ - $Date: 2011-05-12 11:59:21 +0200 (Thu, 12 May 2011) $
  */
 class EnvelopedSignatureBuilder extends SignatureBuilder {
 
 	/**
 	 * The default constructor for EnvelopedSignatureBuilder. The enveloped signature uses by default the exclusive method of canonicalization.
-	 *  @param params  The set of parameters relating to the structure and process of the creation or extension of the electronic signature.
-	 * @param origDoc The original document to sign.
+	 *
+	 * @param params              The set of parameters relating to the structure and process of the creation or extension of the electronic signature.
+	 * @param origDoc             The original document to sign.
 	 * @param certificateVerifier
 	 */
 	public EnvelopedSignatureBuilder(final SignatureParameters params, final DSSDocument origDoc, final CertificateVerifier certificateVerifier) {
@@ -69,6 +69,27 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 		// Inclusive method does not work with the enveloped signature. This limitation comes from the mechanism used by the framework to build the signature.
 		// Ditto: "http://www.w3.org/2006/12/xml-c14n11"
 		setCanonicalizationMethods(params, CanonicalizationMethod.EXCLUSIVE);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	protected Document getDomDocumentForSignature() {
+
+		return DSSXMLUtils.buildDOM(detachedDocument);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected Node getNodeToIncludeSignature() {
+
+		final String xPathLocationString = params.getXPathLocationString();
+		if (DSSUtils.isNotEmpty(xPathLocationString)) {
+			return DSSXMLUtils.getElement(documentDom, xPathLocationString);
+		}
+		return documentDom.getDocumentElement();
 	}
 
 	/**
@@ -229,35 +250,22 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 	}
 
 	/**
-	 * Adds signature value to the signature and returns XML signature (InMemoryDocument)
-	 *
-	 * @param signatureValue
-	 * @return
-	 * @throws DSSException
+	 * {@inheritDoc}
 	 */
 	@Override
 	public DSSDocument signDocument(final byte[] signatureValue) throws DSSException {
 
 		if (!built) {
-
 			build();
 		}
 		final EncryptionAlgorithm encryptionAlgorithm = params.getEncryptionAlgorithm();
 		final byte[] signatureValueBytes = DSSSignatureUtils.convertToXmlDSig(encryptionAlgorithm, signatureValue);
 		final String signatureValueBase64Encoded = DSSUtils.base64Encode(signatureValueBytes);
+
 		final Text signatureValueNode = documentDom.createTextNode(signatureValueBase64Encoded);
 		signatureValueDom.appendChild(signatureValueNode);
 
-		final Document originalDocumentDom = DSSXMLUtils.buildDOM(detachedDocument);
-		final Node copiedNode = originalDocumentDom.importNode(signatureDom, true);
-
-		if (params.getXPathLocationString() != null) {
-			DSSXMLUtils.getElement(originalDocumentDom, params.getXPathLocationString()).appendChild(copiedNode);
-		} else {
-			originalDocumentDom.getDocumentElement().appendChild(copiedNode);
-		}
-
-		byte[] documentBytes = DSSXMLUtils.transformDomToByteArray(originalDocumentDom);
+		byte[] documentBytes = DSSXMLUtils.transformDomToByteArray(documentDom);
 		final InMemoryDocument inMemoryDocument = new InMemoryDocument(documentBytes);
 		inMemoryDocument.setMimeType(MimeType.XML);
 		return inMemoryDocument;

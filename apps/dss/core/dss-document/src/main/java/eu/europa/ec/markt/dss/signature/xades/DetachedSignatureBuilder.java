@@ -122,12 +122,12 @@ class DetachedSignatureBuilder extends SignatureBuilder {
 	public DSSDocument signDocument(final byte[] signatureValue) throws DSSException {
 
 		if (!built) {
-
 			build();
 		}
 		final EncryptionAlgorithm encryptionAlgorithm = params.getEncryptionAlgorithm();
 		final byte[] signatureValueBytes = DSSSignatureUtils.convertToXmlDSig(encryptionAlgorithm, signatureValue);
 		final String signatureValueBase64Encoded = DSSUtils.base64Encode(signatureValueBytes);
+
 		final Text signatureValueNode = documentDom.createTextNode(signatureValueBase64Encoded);
 		signatureValueDom.appendChild(signatureValueNode);
 

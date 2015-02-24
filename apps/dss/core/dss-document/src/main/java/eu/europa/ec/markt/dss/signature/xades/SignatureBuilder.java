@@ -29,6 +29,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 import eu.europa.ec.markt.dss.DSSUtils;
@@ -102,10 +103,11 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 	/**
 	 * Creates the signature according to the packaging
 	 *
-	 * @param params              The set of parameters relating to the structure and process of the creation or extension of the electronic signature.
-	 * @param document            The original document to sign.
-	 * @param certificateVerifier
-	 * @return
+	 * @param params              {@code SignatureParameters} representing the set of parameters relating to the structure and process of the creation or extension of the
+	 *                            electronic signature.
+	 * @param document            {@code DSSDocument} representing the original document to sign.
+	 * @param certificateVerifier {@code CryptographicSourceProvider}
+	 * @return {@code SignatureBuilder}  created according to the packaging
 	 */
 	public static SignatureBuilder getSignatureBuilder(final SignatureParameters params, final DSSDocument document, final CertificateVerifier certificateVerifier) {
 
@@ -124,9 +126,10 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 	/**
 	 * The default constructor for SignatureBuilder.
 	 *
-	 * @param params              The set of parameters relating to the structure and process of the creation or extension of the electronic signature.
-	 * @param detachedDocument    The original document to sign.
-	 * @param certificateVerifier
+	 * @param params              {@code SignatureParameters} representing the set of parameters relating to the structure and process of the creation or extension of the
+	 *                            electronic signature.
+	 * @param detachedDocument    {@code DSSDocument} representing the original document to sign.
+	 * @param certificateVerifier {@code CryptographicSourceProvider}
 	 */
 	public SignatureBuilder(final SignatureParameters params, final DSSDocument detachedDocument, final CertificateVerifier certificateVerifier) {
 
@@ -156,31 +159,48 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 	 *
 	 * @return A byte array is returned with XML that represents the canonicalized <ds:SignedInfo> segment of signature. This data are used to define the <ds:SignatureValue>
 	 * element.
-	 * @throws DSSException
+	 * @throws DSSException in the case of any Exception
 	 */
 	public byte[] build() throws DSSException {
 
-		documentDom = DSSXMLUtils.buildDOM();
+		documentDom = getDomDocumentForSignature();
 
 		deterministicId = params.getDeterministicId();
 
+		prepareReferences();
 
-		final List<DSSReference> references = params.getReferences();
-		if (references == null || references.size() == 0) {
+		createSignatureDom();
 
-			final List<DSSReference> defaultReferences = createDefaultReferences();
-			// The SignatureParameters object is updated with the default references.
-			params.setReferences(defaultReferences);
+		final byte[] canonicalizedSignedInfo = canonicalizeSignedInfo();
+		built = true;
+		return canonicalizedSignedInfo;
+	}
+
+	/**
+	 * @return the {@code Document} where the signature should be incorporated
+	 */
+	protected Document getDomDocumentForSignature() {
+
+		return DSSXMLUtils.buildDOM();
+	}
+
+	private byte[] canonicalizeSignedInfo() {
+
+		final byte[] canonicalizedSignedInfo = DSSXMLUtils.canonicalizeSubtree(signedInfoCanonicalizationMethod, signedInfoDom);
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("Canonicalized SignedInfo         --> {}", new String(canonicalizedSignedInfo));
+			final byte[] digest = DSSUtils.digest(DigestAlgorithm.SHA256, canonicalizedSignedInfo);
+			LOG.trace("Canonicalized SignedInfo SHA256  --> {}", DSSUtils.base64Encode(digest));
 		}
+		return canonicalizedSignedInfo;
+	}
+
+	private void createSignatureDom() {
 
 		incorporateSignatureDom();
-
 		incorporateSignedInfo();
-
 		incorporateSignatureValue();
-
 		incorporateKeyInfo();
-
 		incorporateObject();
 
 		/**
@@ -189,16 +209,17 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		 */
 		incorporateReferences();
 		incorporateReferenceSignedProperties();
+	}
 
-		// Preparation of SignedInfo
-		byte[] canonicalizedSignedInfo = DSSXMLUtils.canonicalizeSubtree(signedInfoCanonicalizationMethod, signedInfoDom);
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("Canonicalized SignedInfo         --> {}", new String(canonicalizedSignedInfo));
-			final byte[] digest = DSSUtils.digest(DigestAlgorithm.SHA256, canonicalizedSignedInfo);
-			LOG.trace("Canonicalized SignedInfo SHA256  --> {}", DSSUtils.base64Encode(digest));
+	private void prepareReferences() {
+
+		final List<DSSReference> references = params.getReferences();
+		if (DSSUtils.isEmpty(references)) {
+
+			final List<DSSReference> defaultReferences = createDefaultReferences();
+			// The SignatureParameters object is updated with the default references.
+			params.setReferences(defaultReferences);
 		}
-		built = true;
-		return canonicalizedSignedInfo;
 	}
 
 	/**
@@ -209,7 +230,16 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		signatureDom = documentDom.createElementNS(XMLNS, DS_SIGNATURE);
 		signatureDom.setAttribute(XMLNS_DS, XMLNS);
 		signatureDom.setAttribute(ID, deterministicId);
-		documentDom.appendChild(signatureDom);
+		final Node nodeToIncludeSignature = getNodeToIncludeSignature();
+		nodeToIncludeSignature.appendChild(signatureDom);
+	}
+
+	/**
+	 * @return the {@code Element} that will contain the signature
+	 */
+	protected Node getNodeToIncludeSignature() {
+
+		return documentDom;
 	}
 
 	public void incorporateSignedInfo() {
@@ -454,7 +484,7 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 			final Element signaturePolicyIdDom = DSSXMLUtils.addElement(documentDom, signaturePolicyIdentifierDom, XAdES, XADES_SIGNATURE_POLICY_ID);
 			if ("".equals(signaturePolicy.getId())) { // implicit
 
-				final Element signaturePolicyImpliedDom = DSSXMLUtils.addElement(documentDom, signaturePolicyIdDom, XAdES, XADES_SIGNATURE_POLICY_IMPLIED);
+				DSSXMLUtils.addElement(documentDom, signaturePolicyIdDom, XAdES, XADES_SIGNATURE_POLICY_IMPLIED);
 			} else { // explicit
 
 				final Element sigPolicyIdDom = DSSXMLUtils.addElement(documentDom, signaturePolicyIdDom, XAdES, XADES_SIG_POLICY_ID);
@@ -673,33 +703,34 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 			}
 			//final Element objectReferenceDom = DSSXMLUtils.addElement(documentDom, commitmentTypeIndicationDom, XADES, "ObjectReference");
 			// or
-			final Element allSignedDataObjectsDom = DSSXMLUtils.addElement(documentDom, commitmentTypeIndicationDom, XAdES, XADES_ALL_SIGNED_DATA_OBJECTS);
+			DSSXMLUtils.addElement(documentDom, commitmentTypeIndicationDom, XAdES, XADES_ALL_SIGNED_DATA_OBJECTS);
 
 			//final Element commitmentTypeQualifiersDom = DSSXMLUtils.addElement(documentDom, commitmentTypeIndicationDom, XADES, "CommitmentTypeQualifiers");
 		}
 	}
 
 	/**
-	 * Adds signature value to the signature and returns XML signature (InMemoryDocument)
+	 * Adds signature value to the signature and returns XML signature {@code DSSDocument} (InMemoryDocument)
 	 *
 	 * @param signatureValue - Encoded value of the signature
-	 * @return
+	 * @return {@code DSSDocument}
 	 * @throws DSSException
 	 */
 	public abstract DSSDocument signDocument(final byte[] signatureValue) throws DSSException;
 
 	/**
-	 * Adds the content of a timestamp into a given timestamp element
+	 * Adds the content of a timestamp into the given timestamp element
 	 *
-	 * @param timestampElement
+	 * @param timestampElement {@code Element} where the timestamp should be incorporated
+	 * @param timestampToken   {@code TimestampToken} to be incorporated
 	 */
-	protected void addTimestamp(final Element timestampElement, final TimestampToken token) {
+	protected void addTimestamp(final Element timestampElement, final TimestampToken timestampToken) {
 
 		//List<TimestampInclude> includes, String canonicalizationMethod, TimestampToken encapsulatedTimestamp) {
 		//add includes: URI + referencedData = "true"
 		//add canonicalizationMethod: Algorithm
 		//add encapsulatedTimestamp: Encoding, Id, while its textContent is the base64 encoding of the data to digest
-		final List<TimestampInclude> includes = token.getTimestampIncludes();
+		final List<TimestampInclude> includes = timestampToken.getTimestampIncludes();
 		if (includes != null) {
 
 			for (final TimestampInclude include : includes) {
@@ -711,12 +742,12 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 			}
 		}
 		final Element canonicalizationMethodElement = documentDom.createElementNS(XMLNS, DS_CANONICALIZATION_METHOD);
-		canonicalizationMethodElement.setAttribute(ALGORITHM, token.getCanonicalizationMethod());
+		canonicalizationMethodElement.setAttribute(ALGORITHM, timestampToken.getCanonicalizationMethod());
 
 		timestampElement.appendChild(canonicalizationMethodElement);
 
 		Element encapsulatedTimestampElement = documentDom.createElementNS(XAdES, XADES_ENCAPSULATED_TIME_STAMP);
-		encapsulatedTimestampElement.setTextContent(DSSUtils.base64Encode(token.getEncoded()));
+		encapsulatedTimestampElement.setTextContent(DSSUtils.base64Encode(timestampToken.getEncoded()));
 
 		timestampElement.appendChild(encapsulatedTimestampElement);
 	}

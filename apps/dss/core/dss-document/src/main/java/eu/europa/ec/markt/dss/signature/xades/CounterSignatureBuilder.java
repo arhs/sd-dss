@@ -58,6 +58,23 @@ public class CounterSignatureBuilder extends EnvelopedSignatureBuilder {
 		this.toCounterSignXadesSignature = toCounterSignXadesSignature;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	protected Document getDomDocumentForSignature() {
+
+		return DSSXMLUtils.buildDOM();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected Node getNodeToIncludeSignature() {
+
+		return documentDom;
+	}
+
 	@Override
 	protected List<DSSReference> createDefaultReferences() {
 
@@ -112,6 +129,7 @@ public class CounterSignatureBuilder extends EnvelopedSignatureBuilder {
 
 		final Element counterSignatureElement = DSSXMLUtils.addElement(ownerDocument, unsignedSignaturePropertiesDom, XAdES, XADES_COUNTER_SIGNATURE);
 		final String signatureValueBase64Encoded = DSSUtils.base64Encode(counterSignatureValue);
+
 		final Text signatureValueNode = documentDom.createTextNode(signatureValueBase64Encoded);
 		signatureValueDom.appendChild(signatureValueNode);
 
