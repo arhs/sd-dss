@@ -80,6 +80,7 @@ import eu.europa.ec.markt.dss.validation102853.data.diagnostic.ObjectFactory;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlBasicSignatureType;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertificate;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertificateChainType;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertificatePolicies;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertifiedRolesType;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlChainCertificate;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlClaimedRoles;
@@ -790,17 +791,17 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		for (final CertificateToken certToken : usedCertTokens) {
 
 			final XmlCertificate xmlCert = dealCertificateDetails(usedCertificatesDigestAlgorithms, certToken);
-			// !!! Log the certificate
-			if (LOG.isTraceEnabled()) {
-				LOG.trace("PEM for certificate: " + certToken.getAbbreviation() + "--->");
-				final String pem = DSSUtils.convertToPEM(certToken.getCertificate());
-				LOG.trace("\n" + pem);
-			}
 			dealQCStatement(certToken, xmlCert);
 			dealTrustedService(certToken, xmlCert);
 			dealRevocationData(certToken, xmlCert);
 			dealCertificateValidationInfo(certToken, xmlCert);
 			xmlUsedCerts.getCertificate().add(xmlCert);
+			if (LOG.isTraceEnabled()) {
+
+				LOG.trace("PEM for certificate: " + certToken.getAbbreviation() + "--->");
+				final String pem = DSSUtils.convertToPEM(certToken.getCertificate());
+				LOG.trace("\n" + pem);
+			}
 		}
 	}
 
@@ -893,6 +894,8 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 		xmlForKeyUsageBits(certToken, xmlCert);
 
+		xmlForCertificatePolicies(certToken, xmlCert);
+
 		if (certToken.isOCSPSigning()) {
 
 			xmlCert.setIdKpOCSPSigning(true);
@@ -933,7 +936,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		return xmlCert;
 	}
 
-	private void xmlForKeyUsageBits(CertificateToken certToken, XmlCertificate xmlCert) {
+	private void xmlForKeyUsageBits(final CertificateToken certToken, final XmlCertificate xmlCert) {
 
 		final List<String> keyUsageBits = certToken.getKeyUsageBits();
 		if (DSSUtils.isEmpty(keyUsageBits)) {
@@ -945,6 +948,20 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			xmlKeyUsageBitItems.add(keyUsageBit);
 		}
 		xmlCert.setKeyUsageBits(xmlKeyUsageBits);
+	}
+
+	private void xmlForCertificatePolicies(final CertificateToken certToken, final XmlCertificate xmlCert) {
+
+		final List<String> certTokenPolicyIdentifiers = certToken.getPolicyIdentifiers();
+		if (DSSUtils.isEmpty(certTokenPolicyIdentifiers)) {
+			return;
+		}
+		final XmlCertificatePolicies xmlCertificatePolicies = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlCertificatePolicies();
+		final List<String> xmlCertificatePolicyItems = xmlCertificatePolicies.getCertificatePolicy();
+		for (final String certificatePolicy : certTokenPolicyIdentifiers) {
+			xmlCertificatePolicyItems.add(certificatePolicy);
+		}
+		xmlCert.setCertificatePolicies(xmlCertificatePolicies);
 	}
 
 	private XmlDistinguishedName xmlForDistinguishedName(final String x500PrincipalFormat, final X500Principal X500PrincipalName) {

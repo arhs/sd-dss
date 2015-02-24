@@ -102,7 +102,6 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.asn1.x509.PolicyInformation;
-import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x509.qualified.QCStatement;
 import org.bouncycastle.cert.X509CRLHolder;
@@ -1066,9 +1065,15 @@ public final class DSSUtils {
 		}
 	}
 
-	public static List<String> getPolicyIdentifiers(final X509Certificate cert) {
+	/**
+	 * This method returns the list of certificate policies. Extension "2.5.29.32"
+	 *
+	 * @param x509Certificate {@code X509Certificate} to analyse
+	 * @return the {@code List} of certificate policies as {@code String}
+	 */
+	public static List<String> getPolicyIdentifiers(final X509Certificate x509Certificate) {
 
-		final byte[] certificatePolicies = cert.getExtensionValue(X509Extension.certificatePolicies.getId());
+		final byte[] certificatePolicies = x509Certificate.getExtensionValue(Extension.certificatePolicies.getId());
 		if (certificatePolicies == null) {
 
 			return Collections.emptyList();
@@ -1326,7 +1331,7 @@ public final class DSSUtils {
 	 * Returns the {@code CertificateID} for the given certificate and its issuer's certificate.
 	 *
 	 * @param cert       {@code X509Certificate} for which the id is created
-	 * @param issuerCert {@code X509Certificate} issuer certificate of the {@code cert}
+	 * @param issuerCert {@code X509Certificate} issuer certificate of the {@code x509Certificate}
 	 * @return {@code CertificateID}
 	 * @throws org.bouncycastle.cert.ocsp.OCSPException
 	 */

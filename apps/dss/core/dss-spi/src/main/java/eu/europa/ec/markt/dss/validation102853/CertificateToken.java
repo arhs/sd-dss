@@ -132,6 +132,11 @@ public class CertificateToken extends Token {
 	private X500Principal subjectX500PrincipalNormalized = null;
 
 	/**
+	 * This variable represents the {@code List} of certificate policies as {@code String}
+	 */
+	private List<String> policyIdentifiers = null;
+
+	/**
 	 * In the case of the XML signature this is the Id associated with the certificate if any.
 	 */
 	private String xmlId;
@@ -798,8 +803,12 @@ public class CertificateToken extends Token {
 		}
 	}
 
-	private List<String> policyIdentifiers = null;
-
+	/**
+	 * This method returns the list of certificate policies of the encapsulated {@code X509Certificate}.<br>
+	 * Extension "2.5.29.32"
+	 *
+	 * @return the {@code List} of certificate policies as {@code String}
+	 */
 	public List<String> getPolicyIdentifiers() {
 
 		if (policyIdentifiers == null) {

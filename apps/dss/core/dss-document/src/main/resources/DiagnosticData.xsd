@@ -104,6 +104,13 @@
 												</xs:sequence>
 											</xs:complexType>
 										</xs:element>
+										<xs:element name="CertificatePolicies" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element type="xs:string" name="CertificatePolicy" minOccurs="0" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
 										<xs:element type="xs:boolean" name="IdKpOCSPSigning" minOccurs="0"/>
 										<xs:element type="xs:boolean" name="IdPkixOcspNoCheck" minOccurs="0"/>
 										<xs:element type="xs:boolean" name="ExpiredCertOnCRL" minOccurs="0"/>
