@@ -77,8 +77,11 @@ class DetachedSignatureBuilder extends SignatureBuilder {
 			//<ds:Reference Id="detached-ref-id" URI="xml_example.xml">
 			final DSSReference reference = new DSSReference();
 			reference.setId("r-id-" + referenceIndex++);
-			final String fileURI = currentDetachedDocument.getName() != null ? currentDetachedDocument.getName() : "";
-			reference.setUri(fileURI);
+			final String currentDetachedDocumentName = currentDetachedDocument.getName();
+			if (currentDetachedDocumentName == null) {
+				throw new DSSException("The name of a detached document cannot be null!");
+			}
+			reference.setUri(currentDetachedDocumentName);
 			reference.setContents(currentDetachedDocument);
 			reference.setDigestMethodAlgorithm(params.getDigestAlgorithm());
 
