@@ -24,10 +24,12 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
+import eu.europa.ec.markt.dss.exception.SigningCertificateRevokedException;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -187,6 +189,7 @@ public class OCSPToken extends RevocationToken {
 			}
 			final CRLReason crlReason = CRLReason.lookup(reasonId);
 			reason = crlReason.toString();
+
 		} else if (certStatus instanceof UnknownStatus) {
 
 			if (LOG.isInfoEnabled()) {
@@ -329,4 +332,8 @@ public class OCSPToken extends RevocationToken {
 			throw new DSSException("CRL encoding error: " + e.getMessage(), e);
 		}
 	}
+
+    public boolean isRevoked() {
+        return revocationDate != null && revocationDate.before(new Date());
+    }
 }

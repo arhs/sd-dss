@@ -663,8 +663,6 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		}
 		constraint.create(validationDataXmlNode, BBB_XCV_ISCR);
 		final boolean revoked = !revocationStatus && !revocationReason.equals(CRL_REASON_CERTIFICATE_HOLD);
-		if (revoked)
-			throw new SigningCertificateRevokedException();
 		constraint.setValue(String.valueOf(revoked));
 		constraint.setIndications(INDETERMINATE, REVOKED_NO_POE, BBB_XCV_ISCR_ANS);
 		constraint.setAttribute(CERTIFICATE_ID, certificateId);
