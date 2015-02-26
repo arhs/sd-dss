@@ -61,7 +61,7 @@ public class OCSPAndCRLCertificateVerifier implements CertificateStatusVerifier 
 	public RevocationToken check(final CertificateToken certificateToken) {
 
 		if (LOG.isTraceEnabled()) {
-			LOG.trace(certificateToken.toString());
+			LOG.trace("Revocation check: {}", certificateToken.getAbbreviation());
 		}
 		final boolean debugEnabled = LOG.isDebugEnabled();
 		final String dssIdAsString = certificateToken.getDSSIdAsString();

@@ -280,7 +280,7 @@ public class OCSPToken extends RevocationToken {
 		out.append(indentStr).append("OCSPToken[");
 		out.append("ProductionTime: ").append(DSSUtils.formatInternal(issuingTime)).append("; ");
 		out.append("ThisUpdate: ").append(DSSUtils.formatInternal(singleResp.getThisUpdate())).append("; ");
-		out.append("NextUpdate: ").append(DSSUtils.formatInternal(singleResp.getNextUpdate())).append('\n');
+		out.append("NextUpdate: ").append("N/A").append('\n');
 		out.append("SignedBy: ").append(issuerToken != null ? issuerToken.getDSSIdAsString() : null).append('\n');
 		indentStr += "\t";
 		out.append(indentStr).append("Signature algorithm: ").append(algorithmUsedToSignToken == null ? "?" : algorithmUsedToSignToken.getJCEId()).append('\n');

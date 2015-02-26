@@ -22,88 +22,95 @@ package eu.europa.ec.markt.dss.validation102853;
 
 import java.util.Date;
 
-import eu.europa.ec.markt.dss.DSSUtils;
-
 public class CertificateTokenValidationExtraInfo extends TokenValidationExtraInfo {
 
-    /**
-     *
-     */
-    public void infoOCSPSourceIsNull() {
+	private static final String THE_OCSP_SOURCE_IS_NULL = "The OCSP source is null!";
+	private static final String AN_EXCEPTION_OCCURRED_DURING_THE_OCSP_RETRIEVAL_PROCESS = "An exception occurred during the OCSP retrieval process: ";
+	private static final String THE_CRL_SOURCE_IS_NULL = "The CRL source is null!";
+	private static final String THE_CRL_IS_NOT_VALID = "The CRL is not valid!";
+	private static final String AN_EXCEPTION_OCCURRED_DURING_THE_CRL_RETRIEVAL_PROCESS = "An exception occurred during the CRL retrieval process: ";
+	private static final String OCSP_CHECK_NOT_NEEDED_ID_PKIX_OCSP_NOCHECK_EXTENSION_PRESENT = "OCSP check not needed: id-pkix-ocsp-nocheck extension present.";
+	private static final String CERTIFICATE_IS_EXPIRED_BUT_THE_ISSUER_CERTIFICATE_HAS_EXPIRED_CERT_ON_CRL_EXTENSION = "Certificate is expired but the issuer certificate has ExpiredCertOnCRL extension.";
+	private static final String CERTIFICATE_IS_EXPIRED_BUT_THE_TSL_EXTENSION_EXPIRED_CERTS_REVOCATION_INFO_IS_PRESENT = "Certificate is expired but the TSL extension 'expiredCertsRevocationInfo' is present: ";
 
-        validationInfo.add("The OCSP source is null!");
-    }
+	/**
+	 *
+	 */
+	public void infoOCSPSourceIsNull() {
 
-    /**
-     *
-     */
-    public void infoNoOCSPResponse(final String uri) {
+		if (!validationInfo.contains(THE_OCSP_SOURCE_IS_NULL)) {
+			validationInfo.add(THE_OCSP_SOURCE_IS_NULL);
+		}
+	}
 
-        validationInfo.add("There is no OCSP response! (uri: " + uri + ")");
-    }
+	/**
+	 *
+	 */
+	public void infoOCSPException(final Exception e) {
 
-    /**
-     *
-     */
-    public void infoOCSPException(final Exception e) {
+		if (!validationInfo.contains(AN_EXCEPTION_OCCURRED_DURING_THE_OCSP_RETRIEVAL_PROCESS)) {
+			validationInfo.add(AN_EXCEPTION_OCCURRED_DURING_THE_OCSP_RETRIEVAL_PROCESS + e.getMessage());
+		}
+	}
 
-        validationInfo.add("An exception occurred during the OCSP retrieval process: " + e.getMessage());
-    }
+	/**
+	 *
+	 */
+	public void infoCRLSourceIsNull() {
 
-    /**
-     *
-     */
-    public void infoCRLSourceIsNull() {
+		if (!validationInfo.contains(THE_CRL_SOURCE_IS_NULL)) {
+			validationInfo.add(THE_CRL_SOURCE_IS_NULL);
+		}
+	}
 
-        validationInfo.add("The CRL source is null!");
-    }
+	/**
+	 *
+	 */
+	public void infoCRLIsNotValid() {
 
-    /**
-     *
-     */
-    public void infoNoCRLInfoFound(final String uri) {
+		if (!validationInfo.contains(THE_CRL_IS_NOT_VALID)) {
+			validationInfo.add(THE_CRL_IS_NOT_VALID);
+		}
+	}
 
-        validationInfo.add("No CRL info found! (" + uri + ")");
-    }
+	/**
+	 *
+	 */
+	public void infoCRLException(final Exception e) {
 
-    /**
-     *
-     */
-    public void infoCRLSignatureIsNotValid(final String message) {
+		if (!validationInfo.contains(AN_EXCEPTION_OCCURRED_DURING_THE_CRL_RETRIEVAL_PROCESS)) {
+			validationInfo.add(AN_EXCEPTION_OCCURRED_DURING_THE_CRL_RETRIEVAL_PROCESS + e.getMessage());
+		}
+	}
 
-        validationInfo.add("The CRL signature is not valid: " + message);
-    }
+	/**
+	 *
+	 */
+	public void infoOCSPCheckNotNeeded() {
 
-    /**
-     *
-     */
-    public void infoCRLIsNotValid() {
+		if (!validationInfo.contains(OCSP_CHECK_NOT_NEEDED_ID_PKIX_OCSP_NOCHECK_EXTENSION_PRESENT)) {
+			validationInfo.add(OCSP_CHECK_NOT_NEEDED_ID_PKIX_OCSP_NOCHECK_EXTENSION_PRESENT);
+		}
+	}
 
-        validationInfo.add("The CRL is not valid!");
-    }
+	/**
+	 *
+	 */
+	public void infoExpiredCertOnCRL() {
 
-    /**
-     *
-     */
-    public void infoCRLException(final Exception e) {
+		if (!validationInfo.contains(CERTIFICATE_IS_EXPIRED_BUT_THE_ISSUER_CERTIFICATE_HAS_EXPIRED_CERT_ON_CRL_EXTENSION)) {
+			validationInfo.add(CERTIFICATE_IS_EXPIRED_BUT_THE_ISSUER_CERTIFICATE_HAS_EXPIRED_CERT_ON_CRL_EXTENSION);
+		}
+	}
 
-        validationInfo.add("An exception occurred during the CRL retrieval process: " + e.getMessage());
-    }
+	/**
+	 *
+	 */
+	public void infoExpiredCertsRevocationFromDate(final Date expiredCertsRevocationFromDate) {
 
-    public void infoTheCertNotValidYet(final Date validationDate, final Date notAfter, final Date notBefore) {
-
-        final String endDate = DSSUtils.formatInternal(notAfter);
-        final String startDate = DSSUtils.formatInternal(notBefore);
-        final String valDate = DSSUtils.formatInternal(validationDate);
-        validationInfo.add("The certificate is not valid yet! [" + startDate + "-" + endDate + "] on " + valDate);
-    }
-
-    public void infoTheCertIsExpired(final Date validationDate, final Date notAfter, final Date notBefore) {
-
-        final String endDate = DSSUtils.formatInternal(notAfter);
-        final String startDate = DSSUtils.formatInternal(notBefore);
-        final String valDate = DSSUtils.formatInternal(validationDate);
-        validationInfo.add("The certificate is expired! [" + startDate + "-" + endDate + "] on " + valDate);
-    }
-
+		final String string = CERTIFICATE_IS_EXPIRED_BUT_THE_TSL_EXTENSION_EXPIRED_CERTS_REVOCATION_INFO_IS_PRESENT + expiredCertsRevocationFromDate;
+		if (!validationInfo.contains(string)) {
+			validationInfo.add(string);
+		}
+	}
 }
