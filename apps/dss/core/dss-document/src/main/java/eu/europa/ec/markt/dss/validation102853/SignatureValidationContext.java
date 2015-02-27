@@ -24,15 +24,14 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.x500.X500Principal;
@@ -56,7 +55,10 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
  * <p/>
  * The validate method is multi-threaded, using an CachedThreadPool from ExecutorService, to parallelize fetching of the certificates from AIA and of the revocation information
  * from online sources.
+ * <p/>
+ * NOTE: An instance of this class can be used only once!
  *
+ * @author Robert Bielecki
  * @version $Revision: 1839 $ - $Date: 2013-04-04 17:40:51 +0200 (Thu, 04 Apr 2013) $
  */
 
@@ -64,17 +66,34 @@ public class SignatureValidationContext implements ValidationContext {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SignatureValidationContext.class);
 
+	// just for convenience
+	private final boolean logEnabled = LOG.isTraceEnabled();
+
+	/**
+	 * The delay used to wait for the thread execution in the loop
+	 */
+	private static final int WAIT_DELAY = 5;
+
 	/**
 	 * Each unit is approximately 5 seconds
 	 */
 	public static int MAX_TIMEOUT = 5;
 
-	private final Set<CertificateToken> processedCertificates = new HashSet<CertificateToken>();
-	private final Set<RevocationToken> processedRevocations = new HashSet<RevocationToken>();
+	private final Map<CertificateToken, Boolean> processedCertificates = new ConcurrentHashMap<CertificateToken, Boolean>();
+	private final Map<RevocationToken, Boolean> processedRevocations = new ConcurrentHashMap<RevocationToken, Boolean>();
+	private final Map<TimestampToken, Boolean> processedTimestamps = new ConcurrentHashMap<TimestampToken, Boolean>();
 
-	private final Set<TimestampToken> processedTimestamps = new HashSet<TimestampToken>();
+	private final TokensToProcess tokensToProcess = new TokensToProcess();
 
-	static int threadCount = 0;
+	/**
+	 * This variable indicates the number of threads being used
+	 */
+	int threadCount = 0;
+
+	/**
+	 * This variable indicates if the instance has been already used
+	 */
+	private Boolean validated = false;
 
 	/**
 	 * The data loader used to access AIA certificate source.
@@ -85,8 +104,6 @@ public class SignatureValidationContext implements ValidationContext {
 	 * The certificate pool which encapsulates all certificates used during the validation process and extracted from all used sources
 	 */
 	protected CertificatePool validationCertificatePool;
-
-	private final Map<Token, Boolean> tokensToProcess = new HashMap<Token, Boolean>();
 
 	// External OCSP source.
 	private OCSPSource ocspSource;
@@ -100,9 +117,6 @@ public class SignatureValidationContext implements ValidationContext {
 	// CRLs from the signature.
 	private CRLSource signatureCRLSource;
 
-	// The digest value of the certification path references and the revocation status references.
-	private List<TimestampReference> timestampedReferences;
-
 	/**
 	 * This is the time at what the validation is carried out. It is used only for test purpose.
 	 */
@@ -112,6 +126,9 @@ public class SignatureValidationContext implements ValidationContext {
 	 * This variable :
 	 */
 	protected ExecutorService executorService;
+
+	private int threshold = 0;
+	private int max_timeout = 0;
 
 	/**
 	 * This constructor is used when a signature need to be validated.
@@ -153,38 +170,18 @@ public class SignatureValidationContext implements ValidationContext {
 		return executorService;
 	}
 
+	@Override
 	public Date getCurrentTime() {
 		return currentTime;
 	}
 
+	@Override
 	public void setCurrentTime(final Date currentTime) throws DSSException {
 
 		if (currentTime == null) {
 			throw new DSSNullException(Date.class, "currentTime");
 		}
 		this.currentTime = currentTime;
-	}
-
-	/**
-	 * This method returns a token to verify. If there is no more tokens to verify null is returned.
-	 *
-	 * @return token to verify or null
-	 */
-	private Token getNotYetVerifiedToken() {
-		//		LOG.debug("getNotYetVerifiedToken: trying to acquire synchronized block");
-		synchronized (tokensToProcess) {
-			//			LOG.debug("getNotYetVerifiedToken: acquired synchronized block");
-			for (final Entry<Token, Boolean> entry : tokensToProcess.entrySet()) {
-
-				if (entry.getValue() == null) {
-
-					entry.setValue(true);
-					return entry.getKey();
-				}
-			}
-			//			LOG.debug("getNotYetVerifiedToken: almost left synchronized block");
-			return null;
-		}
 	}
 
 	/**
@@ -196,13 +193,20 @@ public class SignatureValidationContext implements ValidationContext {
 	 */
 	private CertificateToken getIssuerCertificate(final Token token) throws DSSException {
 
+		if (logEnabled) {
+			LOG.trace(" > Get issuer for: {}", token.getAbbreviation());
+		}
 		if (token.isTrusted()) {
-
-			// When the token is trusted the check of the issuer token is not needed so null is returned. Only a certificate token can be trusted.
-			return null;
+			if (logEnabled) {
+				LOG.trace(" > Token is trusted: {}", token.getAbbreviation());
+			}
+			return null; // When the token is trusted the check of the issuer token is not needed so null is returned. Only a certificate token can be trusted.
 		}
 		if (token.getIssuerToken() != null) {
 
+			if (logEnabled) {
+				LOG.trace(" > Token has already an issuer: {}", token.getAbbreviation());
+			}
 			/**
 			 * The signer's certificate have been found already. This can happen in the case of:<br>
 			 * - multiple signatures that use the same certificate,<br>
@@ -214,17 +218,17 @@ public class SignatureValidationContext implements ValidationContext {
 		CertificateToken issuerCertificateToken = getIssuerFromPool(token, issuerX500Principal);
 
 		if (issuerCertificateToken == null && token instanceof CertificateToken) {
-
 			issuerCertificateToken = getIssuerFromAIA((CertificateToken) token);
 		}
 		if (issuerCertificateToken == null) {
 
+			if (logEnabled) {
+				LOG.trace(" > Issuer not found: {}", token.getAbbreviation());
+			}
 			token.extraInfo().infoTheSigningCertNotFound();
 		}
 		if (issuerCertificateToken != null && !issuerCertificateToken.isTrusted() && !issuerCertificateToken.isSelfSigned()) {
-
-			// The full chain is retrieved for each certificate
-			getIssuerCertificate(issuerCertificateToken);
+			getIssuerCertificate(issuerCertificateToken); // The full chain is retrieved for each certificate
 		}
 		return issuerCertificateToken;
 	}
@@ -240,22 +244,23 @@ public class SignatureValidationContext implements ValidationContext {
 		final X509Certificate issuerCert;
 		try {
 
-			LOG.info("Retrieving {} certificate's issuer using AIA.", token.getAbbreviation());
+			LOG.debug("Retrieving {} certificate's issuer using AIA.", token.getAbbreviation());
 			issuerCert = DSSUtils.loadIssuerCertificate(token.getCertificate(), dataLoader);
 			if (issuerCert != null) {
 
 				final CertificateToken issuerCertToken = validationCertificatePool.getInstance(issuerCert, CertificateSourceType.AIA);
 				if (token.isSignedBy(issuerCertToken)) {
 
+					if (LOG.isDebugEnabled()) {
+						LOG.debug(" > Issuer found in AIA: {}", token.getAbbreviation());
+					}
 					return issuerCertToken;
 				}
-				LOG.info("The retrieved certificate using AIA does not sign the certificate {}.", token.getAbbreviation());
+				LOG.warn("The retrieved certificate using AIA does not sign the certificate {}!", token.getAbbreviation());
 			} else {
-
-				LOG.info("The issuer certificate cannot be loaded using AIA.");
+				LOG.warn("The issuer certificate cannot be loaded using AIA!");
 			}
 		} catch (DSSException e) {
-
 			LOG.error(e.getMessage());
 		}
 		return null;
@@ -277,46 +282,26 @@ public class SignatureValidationContext implements ValidationContext {
 			// We keep the first issuer that signs the certificate
 			if (token.isSignedBy(issuerCertToken)) {
 
+				if (logEnabled) {
+					LOG.trace(" > Issuer found in the validation pool: {}", token.getAbbreviation());
+				}
 				return issuerCertToken;
 			}
 		}
 		return null;
 	}
 
-	/**
-	 * Adds a new token to the list of tokes to verify only if it was not already verified.
-	 *
-	 * @param token token to verify
-	 * @return true if the token was not yet verified, false otherwise.
-	 */
-	private boolean addTokenForVerification(final Token token) {
+	@Override
+	public void addCertificateTokenForVerification(final CertificateToken certificateToken) {
 
-		final boolean traceEnabled = LOG.isTraceEnabled();
-		synchronized (tokensToProcess) {
+		if (tokensToProcess.put(certificateToken)) {
 
-			if (traceEnabled) {
-				LOG.trace("addTokenForVerification: trying to acquire synchronized block");
-			}
-			try {
-
-				if (token == null) {
-					return false;
-				}
-				if (tokensToProcess.containsKey(token)) {
-
-					if (traceEnabled) {
-						LOG.trace("Token was already in the list {}:{}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation()});
-					}
-					return false;
-				}
-				tokensToProcess.put(token, null);
-				if (traceEnabled) {
-					LOG.trace("+ New {} to check: {}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation()});
-				}
-				return true;
-			} finally {
-				if (traceEnabled) {
-					LOG.trace("addTokenForVerification: almost left synchronized block");
+			final Boolean added = processedCertificates.put(certificateToken, true);
+			if (logEnabled) {
+				if (added == null) {
+					LOG.trace("CertificateToken added to processedCertificates: {} ", certificateToken.getAbbreviation());
+				} else {
+					LOG.trace("CertificateToken already present processedCertificates: {} ", certificateToken.getAbbreviation());
 				}
 			}
 		}
@@ -325,30 +310,14 @@ public class SignatureValidationContext implements ValidationContext {
 	@Override
 	public void addRevocationTokenForVerification(final RevocationToken revocationToken) {
 
-		if (addTokenForVerification(revocationToken)) {
+		if (tokensToProcess.put(revocationToken)) {
 
-			final boolean added = processedRevocations.add(revocationToken);
-			if (LOG.isTraceEnabled()) {
-				if (added) {
-					LOG.trace("RevocationToken added to processedRevocations: {} ", revocationToken);
+			final Boolean added = processedRevocations.put(revocationToken, true);
+			if (logEnabled) {
+				if (added == null) {
+					LOG.trace("RevocationToken added to processedRevocations: {} ", revocationToken.getAbbreviation());
 				} else {
-					LOG.trace("RevocationToken already present processedRevocations: {} ", revocationToken);
-				}
-			}
-		}
-	}
-
-	@Override
-	public void addCertificateTokenForVerification(final CertificateToken certificateToken) {
-
-		if (addTokenForVerification(certificateToken)) {
-
-			final boolean added = processedCertificates.add(certificateToken);
-			if (LOG.isTraceEnabled()) {
-				if (added) {
-					LOG.trace("CertificateToken added to processedRevocations: {} ", certificateToken);
-				} else {
-					LOG.trace("CertificateToken already present processedRevocations: {} ", certificateToken);
+					LOG.trace("RevocationToken already present processedRevocations: {} ", revocationToken.getAbbreviation());
 				}
 			}
 		}
@@ -357,14 +326,14 @@ public class SignatureValidationContext implements ValidationContext {
 	@Override
 	public void addTimestampTokenForVerification(final TimestampToken timestampToken) {
 
-		if (addTokenForVerification(timestampToken)) {
+		if (tokensToProcess.put(timestampToken)) {
 
-			final boolean added = processedTimestamps.add(timestampToken);
-			if (LOG.isTraceEnabled()) {
-				if (added) {
-					LOG.trace("TimestampToken added to processedRevocations: {} ", processedTimestamps);
+			final Boolean added = processedTimestamps.put(timestampToken, true);
+			if (logEnabled) {
+				if (added == null) {
+					LOG.trace("TimestampToken added to processedTimestamps: {} ", timestampToken.getAbbreviation());
 				} else {
-					LOG.trace("TimestampToken already present processedRevocations: {} ", processedTimestamps);
+					LOG.trace("TimestampToken already present processedTimestamps: {} ", timestampToken.getAbbreviation());
 				}
 			}
 		}
@@ -373,70 +342,82 @@ public class SignatureValidationContext implements ValidationContext {
 	@Override
 	public void validate() throws DSSException {
 
-		validateLoop();
-		try {
+		canValidate();
+		Token token = tokensToProcess.get();
+		do {
+			if (token != null) {
+				addNewTask(token);
+				token = null;
+			}
+			awaitTermination();
+		} while (threadCount != 0 || (token = tokensToProcess.get()) != null);
+		finalizeValidation(executorService);
+	}
 
-			LOG.debug(">>> MT ***DONE***");
-			final ExecutorService executorService = provideExecutorService();
-			executorService.shutdown();
-			executorService.awaitTermination(5, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
+	private void canValidate() {
+
+		synchronized (validated) {
+			if (validated) {
+				throw new DSSException("The instance {" + this + "} has been validated!");
+			}
+			validated = true;
 		}
 	}
 
-	private void validateLoop() {
+	private void awaitTermination() {
 
-		int threshold = 0;
-		int max_timeout = 0;
-		final ExecutorService executorService = provideExecutorService();
-		final ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executorService;
-		boolean exit = false;
-		boolean checkAgain = true;
-		do {
+		sleep();
+		threshold++;
+		if (threshold > 1000) {
 
-			final Token token = getNotYetVerifiedToken();
-			if (token != null) {
-
-				checkAgain = true;
-				try {
-
-					//					System.out.println("----------------------------------------------------");
-					//					System.out.println(" DSS_ID: " + token.getDSSId());
-					//					System.out.println("----------------------------------------------------");
-					final Task task = new Task(token);
-					executorService.submit(task);
-				} catch (RejectedExecutionException e) {
-					LOG.error(e.getMessage(), e);
-					throw new DSSException(e);
-				}
-			} else {
-
-				try {
-
-					Thread.sleep(5);
-					threshold++;
-					if (threshold > 1000) {
-
-						LOG.warn("{} active threads", threadPoolExecutor.getActiveCount());
-						LOG.warn("{} completed tasks", threadPoolExecutor.getCompletedTaskCount());
-						LOG.warn("{} waiting tasks", threadPoolExecutor.getQueue());
-						max_timeout++;
-						if (max_timeout == MAX_TIMEOUT) {
-							throw new DSSException("Operation aborted, the retrieval of the validation data takes too long.");
-						}
-						threshold = 0;
-					}
-				} catch (InterruptedException e) {
-					throw new DSSException(e);
-				}
-				final boolean threadPoolExecutorEmpty = !(threadPoolExecutor.getActiveCount() > 0 || threadPoolExecutor.getQueue().size() > 0);
-				exit = threadPoolExecutorEmpty && !checkAgain;
-				if (threadPoolExecutorEmpty) {
-					checkAgain = false;
-				}
+			LOG.warn("{} active threads", threadCount);
+			max_timeout++;
+			if (max_timeout == MAX_TIMEOUT) {
+				throw new DSSException("Operation aborted, the retrieval of the validation data takes too long!");
 			}
-		} while (!exit);
+			threshold = 0;
+		}
+	}
+
+	private void sleep() {
+
+		try {
+
+			Thread.sleep(WAIT_DELAY);
+		} catch (InterruptedException e) {
+			throw new DSSException(e);
+		}
+	}
+
+	private void addNewTask(final Token token) {
+
+		try {
+
+			final Task task = new Task(token);
+			provideExecutorService().submit(task);
+			threadCount++;
+		} catch (RejectedExecutionException e) {
+			LOG.error(e.getMessage(), e);
+			throw new DSSException(e);
+		}
+	}
+
+	private void finalizeValidation(final ExecutorService executorService) {
+
+		try {
+
+			LOG.debug(">>> Multithreaded validation ***DONE***");
+			if (executorService == null) {
+				return;
+			}
+			executorService.shutdown();
+			final boolean completedProperly = executorService.awaitTermination(WAIT_DELAY, TimeUnit.SECONDS);
+			if (!completedProperly) {
+				LOG.warn("Timeout: The validation was interrupted!");
+			}
+		} catch (InterruptedException e) {
+			throw new DSSException(e);
+		}
 	}
 
 	class Task implements Runnable {
@@ -444,21 +425,17 @@ public class SignatureValidationContext implements ValidationContext {
 		private final Token token;
 
 		public Task(final Token token) {
-
 			this.token = token;
 		}
 
 		@Override
 		public void run() {
 
-			final int threadCount_ = threadCount++;
-			LOG.debug(">>> MT IN  [" + threadCount_ + "] DSS_ID: " + token.getDSSId());
-			/**
-			 * Gets the issuer certificate of the Token and checks its signature
-			 */
-			final CertificateToken issuerCertToken = getIssuerCertificate(token);
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(">>> Start multithreaded processing: token-id: {}", token.getAbbreviation());
+			}
+			final CertificateToken issuerCertToken = getIssuerCertificate(token); // Gets the issuer certificate of the Token and checks its signature
 			if (issuerCertToken != null) {
-
 				addCertificateTokenForVerification(issuerCertToken);
 			}
 			if (token instanceof CertificateToken) {
@@ -482,7 +459,10 @@ public class SignatureValidationContext implements ValidationContext {
 				final RevocationToken revocationToken = getRevocationData(certificateToken);
 				addRevocationTokenForVerification(revocationToken);
 			}
-			LOG.debug(">>> MT END [" + threadCount_ + "] DSS_ID: " + token.getDSSId());
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(">>> Multithreaded processing finished: token-id: {}", token.getAbbreviation());
+			}
+			threadCount--;
 		}
 	}
 
@@ -495,34 +475,48 @@ public class SignatureValidationContext implements ValidationContext {
 	 */
 	private RevocationToken getRevocationData(final CertificateToken certToken) {
 
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("Checking revocation data for: " + certToken.getDSSIdAsString());
+		if (logEnabled) {
+			LOG.trace(" > Retrieve revocation data for: {}", certToken.getAbbreviation());
 		}
 		if (certToken.isSelfSigned() || certToken.isTrusted() || certToken.getIssuerToken() == null) {
 
 			// It is not possible to check the revocation data without its signing certificate;
 			// This check is not needed for the trust anchor.
+			if (logEnabled) {
+				LOG.trace(" > Certificate is self-signed or trusted or there is no issuer: {}", certToken.getAbbreviation());
+			}
 			return null;
 		}
 
 		if (certToken.isOCSPSigning() && certToken.hasIdPkixOcspNoCheckExtension()) {
 
-			certToken.extraInfo().add("OCSP check not needed: id-pkix-ocsp-nocheck extension present.");
+			certToken.extraInfo().infoOCSPCheckNotNeeded();
+			if (logEnabled) {
+				LOG.trace(" > Certificate is ocsp-signing and has id-pkix-ocsp-no-check extension : {}", certToken.getAbbreviation());
+			}
 			return null;
 		}
 
 		boolean checkOnLine = shouldCheckOnLine(certToken);
+		if (logEnabled) {
+			LOG.trace(" > Should check revocation data online: {} / {}", checkOnLine, certToken.getAbbreviation());
+		}
 		if (checkOnLine) {
 
 			final OCSPAndCRLCertificateVerifier onlineVerifier = new OCSPAndCRLCertificateVerifier(crlSource, ocspSource, validationCertificatePool);
 			final RevocationToken revocationToken = onlineVerifier.check(certToken);
 			if (revocationToken != null) {
-
+				if (logEnabled) {
+					LOG.trace(" > Revocation data: {} found online for: {}", revocationToken.getAbbreviation(), certToken.getAbbreviation());
+				}
 				return revocationToken;
 			}
 		}
 		final OCSPAndCRLCertificateVerifier offlineVerifier = new OCSPAndCRLCertificateVerifier(signatureCRLSource, signatureOCSPSource, validationCertificatePool);
 		final RevocationToken revocationToken = offlineVerifier.check(certToken);
+		if (revocationToken != null && logEnabled) {
+			LOG.trace(" > Revocation data: {} found offline for: {}", revocationToken.getAbbreviation(), certToken.getAbbreviation());
+		}
 		return revocationToken;
 	}
 
@@ -538,13 +532,13 @@ public class SignatureValidationContext implements ValidationContext {
 		final boolean expiredCertOnCRLExtension = issuerCertToken.hasExpiredCertOnCRLExtension();
 		if (expiredCertOnCRLExtension) {
 
-			certificateToken.extraInfo().add("Certificate is expired but the issuer certificate has ExpiredCertOnCRL extension.");
+			certificateToken.extraInfo().infoExpiredCertOnCRL();
 			return true;
 		}
 		final Date expiredCertsRevocationFromDate = getExpiredCertsRevocationFromDate(certificateToken);
 		if (expiredCertsRevocationFromDate != null) {
 
-			certificateToken.extraInfo().add("Certificate is expired but the TSL extension 'expiredCertsRevocationInfo' is present: " + expiredCertsRevocationFromDate);
+			certificateToken.extraInfo().infoExpiredCertsRevocationFromDate(expiredCertsRevocationFromDate);
 			return true;
 		}
 		return false;
@@ -566,10 +560,7 @@ public class SignatureValidationContext implements ValidationContext {
 
 						if (serviceInfo.getStatusEndDate() == null) {
 
-							/**
-							 * Service is still active (operational)
-							 */
-							// if(serviceInfo.getStatus().equals())
+							// Service is still active (operational)
 							return date;
 						}
 					}
@@ -582,28 +573,19 @@ public class SignatureValidationContext implements ValidationContext {
 	@Override
 	public Set<CertificateToken> getProcessedCertificates() {
 
-		return Collections.unmodifiableSet(processedCertificates);
+		return Collections.unmodifiableSet(processedCertificates.keySet());
 	}
 
 	@Override
 	public Set<RevocationToken> getProcessedRevocations() {
 
-		return Collections.unmodifiableSet(processedRevocations);
+		return Collections.unmodifiableSet(processedRevocations.keySet());
 	}
 
 	@Override
 	public Set<TimestampToken> getProcessedTimestamps() {
 
-		return Collections.unmodifiableSet(processedTimestamps);
-	}
-
-	/**
-	 * Returns certificate and revocation references.
-	 *
-	 * @return
-	 */
-	public List<TimestampReference> getTimestampedReferences() {
-		return timestampedReferences;
+		return Collections.unmodifiableSet(processedTimestamps.keySet());
 	}
 
 	/**
@@ -623,7 +605,7 @@ public class SignatureValidationContext implements ValidationContext {
 			// builder.append(indentStr).append("Validation time:").append(validationDate).append('\n');
 			builder.append(indentStr).append("Certificates[").append('\n');
 			indentStr += "\t";
-			for (CertificateToken certToken : processedCertificates) {
+			for (CertificateToken certToken : processedCertificates.keySet()) {
 
 				builder.append(certToken.toString(indentStr));
 			}
@@ -642,5 +624,56 @@ public class SignatureValidationContext implements ValidationContext {
 	public String toString() {
 
 		return toString("");
+	}
+
+	class TokensToProcess {
+
+		private final Map<Token, Boolean> tokensToProcess = new HashMap<Token, Boolean>();
+
+		/**
+		 * This method returns a token to verify. If there is no more tokens to verify null is returned.
+		 *
+		 * @return token to verify or null
+		 */
+		synchronized Token get() {
+
+			for (final Entry<Token, Boolean> entry : tokensToProcess.entrySet()) {
+				if (entry.getValue() == null) {
+
+					entry.setValue(true);
+					final Token token = entry.getKey();
+					if (logEnabled) {
+						LOG.trace("- Get {} to check: {} / {}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation(), tokensToProcess.size()});
+					}
+					return token;
+				}
+			}
+			return null;
+		}
+
+		/**
+		 * Adds a new token to the list of tokens to verify only if it was not already verified.
+		 *
+		 * @param token token to verify
+		 * @return true if the token was not yet verified, false otherwise.
+		 */
+		synchronized boolean put(final Token token) {
+
+			if (token == null) {
+				return false;
+			}
+			if (tokensToProcess.containsKey(token)) {
+
+				if (logEnabled) {
+					LOG.trace("Token was already in the list {}:{}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation()});
+				}
+				return false;
+			}
+			tokensToProcess.put(token, null);
+			if (logEnabled) {
+				LOG.trace("+ New {} to check: {} / {}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation(), tokensToProcess.size()});
+			}
+			return true;
+		}
 	}
 }
