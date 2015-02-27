@@ -7,7 +7,7 @@
 
 	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 	<artifactId>sd-dss</artifactId>
-	<version>4.3.0.w09-SNAPSHOT</version>
+	<version>4.3.0.w09-2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Digital Signature Services</name>
 

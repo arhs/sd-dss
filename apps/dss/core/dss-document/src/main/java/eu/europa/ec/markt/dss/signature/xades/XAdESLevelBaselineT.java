@@ -26,7 +26,6 @@ import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
-import eu.europa.ec.markt.dss.exception.SigningCertificateRevokedException;
 import eu.europa.ec.markt.dss.exception.SigningCertificateUnknownException;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.parameter.TimestampParameters;
@@ -206,9 +205,10 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 
 		// <xades:CertificateValues>
 		// ...<xades:EncapsulatedX509Certificate>MIIC9TC...
-		if (isSigningCertificateStatusUnknown(valContext.getProcessedCertificates())) {
-			throw new SigningCertificateUnknownException();
-		}
+
+        if (isSigningCertificateStatusUnknown(valContext.getProcessedCertificates())) {
+            throw new SigningCertificateUnknownException();
+        }
 
 		final Element certificateValuesDom = DSSXMLUtils.addElement(documentDom, parentDom, XAdES, XADES_CERTIFICATE_VALUES);
 
@@ -253,9 +253,6 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
                 throw new DSSException("OCSP response certificate load fails for " + principal.getName());
             }
             ocspResponderCerts.addAll(certificateVerifier.getTrustedCertSource().get(principal));
-            if (ocspToken.isRevoked()) {
-                throw new SigningCertificateRevokedException();
-            }
 		}
 		for (final CertificateToken certificateToken : ocspResponderCerts) {
 				final byte[] bytes = certificateToken.getEncoded();
@@ -267,29 +264,29 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 			}
 	}
 
-	private boolean isSigningCertificateStatusUnknown(Set<CertificateToken> processedCertificates) {
-		if(processedCertificates == null) {
-			return false;
-		}
-		for(CertificateToken cert : processedCertificates) {
-			List<CertificateSourceType> sources = cert.getSources();
-			if (sources == null) {
-				continue;
-			}
-			for (CertificateSourceType source : sources) {
-				if (source == CertificateSourceType.SIGNATURE) {
-					if (cert.getRevocationToken() == null) {
-						continue;
-					}
-					String reason = cert.getRevocationToken().getReason();
-					if(reason != null && reason.contains("unknown")) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
+    private boolean isSigningCertificateStatusUnknown(Set<CertificateToken> processedCertificates) {
+        if(processedCertificates == null) {
+            return false;
+        }
+        for(CertificateToken cert : processedCertificates) {
+            List<CertificateSourceType> sources = cert.getSources();
+            if (sources == null) {
+                continue;
+            }
+            for (CertificateSourceType source : sources) {
+                if (source == CertificateSourceType.SIGNATURE) {
+                    if (cert.getRevocationToken() == null) {
+                        continue;
+                    }
+                    String reason = cert.getRevocationToken().getReason();
+                    if(reason != null && reason.contains("unknown")) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
 	/**
 	 * Creates any XAdES TimeStamp object representation. The timestamp token is obtained from TSP source

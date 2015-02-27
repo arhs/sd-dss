@@ -23,7 +23,6 @@ package eu.europa.ec.markt.dss.validation102853.processes.subprocesses;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.TSLConstant;
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.exception.SigningCertificateRevokedException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.policy.*;
