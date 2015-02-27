@@ -1265,6 +1265,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				  providedSigningCertificateToken);
 			for (final CertificateValidity certificateValidity : certificateValidityList) {
 
+				LOG.debug(certificateValidity.getAbbreviation());
 				try {
 
 					final PublicKey publicKey = certificateValidity.getPublicKey();

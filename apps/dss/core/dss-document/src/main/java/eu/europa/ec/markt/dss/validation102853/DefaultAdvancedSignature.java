@@ -143,15 +143,15 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 			final SignatureLevel signatureLevel = signatureLevels[ii];
 			if (signatureLevels_.contains(signatureLevel)) {
 
-				SignatureLevel upperLevel = signatureLevel.upperLevel;
-				while (upperLevel != null) {
+				SignatureLevel loverLevel = signatureLevel.loverLevel;
+				while (loverLevel != null) {
 
-					if (!signatureLevels_.contains(upperLevel)) {
+					if (!signatureLevels_.contains(loverLevel)) {
 						break;
 					}
-					upperLevel = upperLevel.upperLevel;
+					loverLevel = loverLevel.loverLevel;
 				}
-				if (upperLevel == null) {
+				if (loverLevel == null) {
 					return signatureLevel;
 				}
 			}
@@ -344,7 +344,7 @@ public abstract class DefaultAdvancedSignature implements AdvancedSignature {
 			timestampTokenList.add(timestampToken);
 		}
 		/*
-	     * This validates the SigAndRefs timestamp tokens present in the signature.
+		 * This validates the SigAndRefs timestamp tokens present in the signature.
          */
 		for (final TimestampToken timestampToken : getTimestampsX1()) {
 			timestampTokenList.add(timestampToken);

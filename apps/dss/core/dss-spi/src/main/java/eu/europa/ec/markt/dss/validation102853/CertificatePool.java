@@ -163,14 +163,14 @@ public class CertificatePool implements Serializable {
 		}
 	}
 
-	private static void checkCertificateUniqueness(final X509Certificate certificateToAdd, final CertificateToken certToken) {
+	private static void checkCertificateUniqueness(final X509Certificate certificateToAdd, final CertificateToken foundCertificateToken) {
 
-		final X509Certificate foundCertificate = certToken.getCertificate();
+		final X509Certificate foundCertificate = foundCertificateToken.getCertificate();
 		final byte[] foundCertificateSignature = foundCertificate.getSignature();
 		final byte[] certificateToAddSignature = certificateToAdd.getSignature();
 		if (!Arrays.equals(foundCertificateSignature, certificateToAddSignature)) {
 
-			LOG.warn("Found certificate: " + certToken.getIssuerX500Principal().toString() + "|" + certToken.getSerialNumber());
+			LOG.warn("Found certificate: " + foundCertificateToken.getIssuerX500Principal().toString() + "|" + foundCertificateToken.getSerialNumber());
 			LOG.warn("More than one certificate for the same issuer subject name and serial number! The standard is not met by the certificate issuer!");
 		}
 	}

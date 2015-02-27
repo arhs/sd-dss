@@ -178,4 +178,10 @@ public class CertificateValidity implements Serializable {
 	public void setDigestAlgorithm(final DigestAlgorithm digestAlgorithm) {
 		this.digestAlgorithm = digestAlgorithm;
 	}
+
+	public String getAbbreviation() {
+
+		return "CertificateValidity{" +
+			  "certificateToken" + (certificateToken == null ? "[PK]" : certificateToken.getAbbreviation()) + '}';
+	}
 }

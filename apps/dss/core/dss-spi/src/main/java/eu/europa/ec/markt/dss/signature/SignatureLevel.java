@@ -43,10 +43,13 @@ public enum SignatureLevel {
 
 	ASiC_E_BASELINE_LTA(null), ASiC_E_BASELINE_LT(ASiC_E_BASELINE_LTA), ASiC_E_BASELINE_T(ASiC_E_BASELINE_LT), ASiC_E_BASELINE_B(ASiC_E_BASELINE_T);
 
-	public final SignatureLevel upperLevel;
+	/**
+	 * It indicates the level on which the current level is based.
+	 */
+	public final SignatureLevel loverLevel;
 
-	private SignatureLevel(final SignatureLevel upperLevel) {
-		this.upperLevel = upperLevel;
+	private SignatureLevel(final SignatureLevel loverLevel) {
+		this.loverLevel = loverLevel;
 	}
 
 	/**
