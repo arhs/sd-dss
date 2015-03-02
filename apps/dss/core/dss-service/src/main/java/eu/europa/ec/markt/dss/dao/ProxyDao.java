@@ -35,10 +35,10 @@ public interface ProxyDao {
     /**
      * This method returns {@code ProxyPreference} for the given {@code ProxyKey}.
      *
-     * @param id {@code ProxyKey}
+     * @param proxyKey {@code ProxyKey}
      * @return
      */
-    ProxyPreference get(final ProxyKey id);
+    ProxyPreference get(final ProxyKey proxyKey);
 
     /**
      * This method returns the {@code Collection} of {@code ProxyPreference}(s).
@@ -50,8 +50,8 @@ public interface ProxyDao {
     /**
      * This method set a {@code ProxyPreference}.
      *
-     * @param entity {@code ProxyPreference}
+     * @param proxyPreference {@code ProxyPreference}
      */
-    void update(final ProxyPreference entity);
+    void update(final ProxyPreference proxyPreference);
 
 }

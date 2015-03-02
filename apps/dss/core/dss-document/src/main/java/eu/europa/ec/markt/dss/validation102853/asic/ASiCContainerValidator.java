@@ -115,7 +115,7 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 	//	private MimeType asicContainerMimeType;
 
 	/**
-	 * This mime-type comes from the 'mimetype' file included within the container.
+	 * This mime-type comes from the first element with ASiC mimetipe: file extension, 'mimetype' file included within the container, zip comments.
 	 */
 	private MimeType asicMimeType;
 
@@ -484,6 +484,9 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
 
 				final DSSDocument signature = currentSubordinatedValidator.getDocument();
 				final AsicManifestDocument relatedAsicManifest = getRelatedAsicManifest(signature);
+				if (relatedAsicManifest == null) {
+					throw new DSSException("CAdES form of an ASiC-E container must contain 'META-INF/ASiCManifest*.xml'!");
+				}
 				final ArrayList<DSSDocument> relatedAsicManifests = new ArrayList<DSSDocument>();
 				relatedAsicManifests.add(relatedAsicManifest);
 				currentSubordinatedValidator.setDetachedContents(relatedAsicManifests);

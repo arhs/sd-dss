@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;
 
+import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.MimeType;
 
@@ -117,9 +118,11 @@ public class OfflineResolver extends ResourceResolverSpi {
 			// TODO-Bob (05/09/2014):  There is an error concerning the input streams base64 encoded. Some extra bytes are added within the santuario which breaks the HASH.
 			// TODO-Vin (05/09/2014): Can you create an isolated test-case JIRA DSS-?
 			InputStream inputStream = document.openStream();
-			//			final byte[] bytes = DSSUtils.toByteArray(inputStream);
-			//			final String string = new String(bytes);
-			//			inputStream = DSSUtils.toInputStream(bytes);
+//
+				final byte[] bytes = DSSUtils.toByteArray(inputStream);
+				System.out.println("####: " + DSSUtils.base64Encode(bytes));
+				inputStream = DSSUtils.toInputStream(bytes);
+//
 			final XMLSignatureInput result = new XMLSignatureInput(inputStream);
 			result.setSourceURI(documentUri);
 			final MimeType mimeType = document.getMimeType();

@@ -160,10 +160,10 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 
 		DSSDocument dssDocument = reference.getContents();
 		final List<DSSTransform> transforms = reference.getTransforms();
-		if (shouldPerformTransformations(transforms)) {
+		if (!shouldPerformTransformations(transforms)) {
 			return dssDocument;
 		}
-		// In the case of ENVELOPED signature the document to sign is an XML. However one of the references can point to another document this test case is not taken into account!
+		// the document to sign can be another XML. However one of the references can point to another document.
 
 		Node nodeToTransform = null;
 		final String uri = reference.getUri();
@@ -219,7 +219,7 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 
 		if (transforms != null) {
 			for (final DSSTransform transform : transforms) {
-				if (!transform.isPerform()) {
+				if (transform.isPerform()) {
 					return true;
 				}
 			}

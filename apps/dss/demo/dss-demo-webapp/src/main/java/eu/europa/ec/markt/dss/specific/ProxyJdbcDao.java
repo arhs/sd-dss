@@ -154,7 +154,7 @@ public class ProxyJdbcDao implements ProxyDao {
     }
 
     @Override
-    public void update(final ProxyPreference entity) {
+    public void update(final ProxyPreference proxyPreference) {
 
         final String sql = "update PROXY_PREFERENCES set PROXY_VALUE = :value where PROXY_KEY = :key";
         Connection connection = null;
@@ -162,8 +162,8 @@ public class ProxyJdbcDao implements ProxyDao {
         try {
             connection = getDataSource().getConnection();
             preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setString(1, entity.getValue());
-            preparedStatement.setString(2, entity.getProxyKey().getKeyName());
+            preparedStatement.setString(1, proxyPreference.getValue());
+            preparedStatement.setString(2, proxyPreference.getProxyKey().getKeyName());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new ProxyDaoException(e);

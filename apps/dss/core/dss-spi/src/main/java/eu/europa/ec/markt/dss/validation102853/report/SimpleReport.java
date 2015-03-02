@@ -125,7 +125,7 @@ public class SimpleReport extends XmlDom {
 	}
 
 	/**
-	 * @return the {@code List} of signature id(s) contained in the simpleReport
+	 * @return the {@code List} of signature id(s) contained in the simpleReport or an empty list if there is no signature found
 	 */
 	public List<String> getSignatureIdList() {
 
@@ -151,21 +151,47 @@ public class SimpleReport extends XmlDom {
 		return null;
 	}
 
+	/**
+	 * @deprecated since 4.3.2-SNAPSHOT, use {@link #getInfoList(String)} instead
+	 */
+	@Deprecated
 	public List<Conclusion.BasicInfo> getInfo(final String signatureId) {
+		return getInfoList(signatureId);
+	}
+
+	public List<Conclusion.BasicInfo> getInfoList(final String signatureId) {
 
 		final List<Conclusion.BasicInfo> infoList = getBasicInfo(signatureId, "Info");
 		return infoList;
 	}
 
-	public List<Conclusion.BasicInfo> getErrors(final String signatureId) {
+	/**
+	 * @deprecated since 4.3.2-SNAPSHOT, use {@link #getWarningList(String)} instead
+	 */
+	@Deprecated
+	public List<Conclusion.BasicInfo> getWarnings(final String signatureId) {
 
-		final List<Conclusion.BasicInfo> errorList = getBasicInfo(signatureId, "Error");
+		return getWarningList(signatureId);
+	}
+
+	public List<Conclusion.BasicInfo> getWarningList(final String signatureId) {
+
+		final List<Conclusion.BasicInfo> errorList = getBasicInfo(signatureId, "Warning");
 		return errorList;
 	}
 
-	public List<Conclusion.BasicInfo> getWarnings(final String signatureId) {
+	/**
+	 * @deprecated since 4.3.2-SNAPSHOT, use {@link #getErrorList(String)} instead
+	 */
+	@Deprecated
+	public List<Conclusion.BasicInfo> getErrors(final String signatureId) {
 
-		final List<Conclusion.BasicInfo> errorList = getBasicInfo(signatureId, "Warning");
+		return getErrorList(signatureId);
+	}
+
+	public List<Conclusion.BasicInfo> getErrorList(final String signatureId) {
+
+		final List<Conclusion.BasicInfo> errorList = getBasicInfo(signatureId, "Error");
 		return errorList;
 	}
 

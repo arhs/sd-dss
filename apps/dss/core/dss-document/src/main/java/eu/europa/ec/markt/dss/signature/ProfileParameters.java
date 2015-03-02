@@ -31,9 +31,12 @@ import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.SignatureForm;
 
 /**
- * This class This class manages the internal variables used in the process of creating of a signature and which allows to
+ * This class manages the internal variables used in the process of creating of a signature and which allows to
  * accelerate the generation.<br>
- * ! This class must be derived to  take also into account other formats then XAdES
+ * <p/>
+ * // TODO-Bob (01/03/2015):  This class must be derived to take also into account other formats then XAdES
+ *
+ * @author Robert Bielecki
  */
 public class ProfileParameters implements Serializable {
 

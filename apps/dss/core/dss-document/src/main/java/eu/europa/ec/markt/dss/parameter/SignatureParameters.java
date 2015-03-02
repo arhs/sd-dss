@@ -628,7 +628,6 @@ public class SignatureParameters implements Serializable {
 	public ASiCParameters aSiC() {
 
 		if (aSiCParams == null) {
-
 			aSiCParams = new ASiCParameters();
 		}
 		return aSiCParams;
@@ -711,12 +710,12 @@ public class SignatureParameters implements Serializable {
 			  ", reason='" + reason + '\'' +
 			  ", contactInfo='" + contactInfo + '\'' +
 			  ", deterministicId='" + deterministicId + '\'' +
-			  ", signatureTimestampParameters=" + signatureTimestampParameters.toString() +
-			  ", archiveTimestampParameters=" + archiveTimestampParameters.toString() +
+			  ", signatureTimestampParameters=" + signatureTimestampParameters +
+			  ", archiveTimestampParameters=" + archiveTimestampParameters +
 			  ", contentTimestamps=" + contentTimestamps +
 			  ", detachedContent=" + detachedContent +
 			  ", toCountersignSignatureId=" + toCounterSignSignatureId +
-			  ", toCountersignXPathQueryHolder=" + toCountersignXPathQueryHolder.toString() +
+			  ", toCountersignXPathQueryHolder=" + toCountersignXPathQueryHolder +
 			  '}';
 	}
 }

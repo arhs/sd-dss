@@ -61,6 +61,7 @@ import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.parameter.ASiCParameters;
+import eu.europa.ec.markt.dss.parameter.DSSReference;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.AbstractSignatureService;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
@@ -116,7 +117,7 @@ public class ASiCService extends AbstractSignatureService {
 	@Override
 	public byte[] getDataToSign(final DSSDocument toSignDocument, final SignatureParameters parameters) throws DSSException {
 
-		final SignatureParameters underlyingParameters = getParameters(parameters);
+		final SignatureParameters underlyingParameters = getParameters(toSignDocument, parameters);
 
 		// toSignDocument can be a simple file or an ASiC container
 		final DSSDocument contextToSignDocument = prepare(toSignDocument, underlyingParameters);
@@ -155,7 +156,7 @@ public class ASiCService extends AbstractSignatureService {
 		assertSigningDateInCertificateValidityRange(parameters);
 
 		// Signs the toSignDocument first
-		SignatureParameters underlyingParameters = getParameters(parameters);
+		SignatureParameters underlyingParameters = getParameters(toSignDocument, parameters);
 
 		DSSDocument contextToSignDocument = prepare(toSignDocument, underlyingParameters);
 		final ASiCParameters asicParameters = underlyingParameters.aSiC();
@@ -164,34 +165,49 @@ public class ASiCService extends AbstractSignatureService {
 		final DocumentSignatureService underlyingService = getSpecificService(underlyingParameters);
 		final DSSDocument signature = underlyingService.signDocument(contextToSignDocument, underlyingParameters, signatureValue);
 
-		underlyingParameters = getParameters(parameters);
-		DSSDocument asicContainer = null;
+		// ASiC-S: copy detached document from underlyingParameters to new underlyingParameters!
+		DSSDocument detachedContent = null;
+		if (isAsics(asicParameters)) {
+			detachedContent = underlyingParameters.getDetachedContent();
+		}
+		underlyingParameters = getParameters(toSignDocument, parameters);
+		if (isAsics(asicParameters)) {
+			underlyingParameters.setDetachedContent(detachedContent);
+		}
+		DSSDocument existingContainer = null;
 		final boolean signingContainer = asicParameters.getEnclosedSignature() != null;
 		if (signingContainer) {
-			asicContainer = toSignDocument;
+			existingContainer = toSignDocument;
 		}
 		if (isAsice(asicParameters) && isCAdESForm(asicParameters)) {
 			if (!signingContainer) {
-
 				contextToSignDocument = toSignDocument;
 			} else {
 				contextToSignDocument = parameters.getDetachedContent();
 			}
 		}
-		final InMemoryDocument asicSignature = buildASiCContainer(contextToSignDocument, asicContainer, underlyingParameters, signature);
+		if (isXAdESForm(asicParameters)) {
+			if (!signingContainer) {
+				contextToSignDocument = toSignDocument;
+			} else if (isAsics(asicParameters)) {
+				contextToSignDocument = detachedContent;
+			} else {
+				contextToSignDocument = parameters.getDetachedContent();
+			}
+		}
+		final InMemoryDocument newContainer = buildASiCContainer(contextToSignDocument, existingContainer, underlyingParameters, signature);
 		parameters.setDeterministicId(null);
-		return asicSignature;
+		return newContainer;
 	}
 
 	@Override
 	public DSSDocument signDocument(final DSSDocument toSignDocument, final SignatureParameters parameters) throws DSSException {
 
-		final byte[] dataToSign = getDataToSign(toSignDocument, parameters);
 		final SignatureTokenConnection signingToken = parameters.getSigningToken();
 		if (signingToken == null) {
-
 			throw new DSSNullException(SignatureTokenConnection.class);
 		}
+		final byte[] dataToSign = getDataToSign(toSignDocument, parameters);
 		final DigestAlgorithm digestAlgorithm = parameters.getDigestAlgorithm();
 		final DSSPrivateKeyEntry privateKeyEntry = parameters.getPrivateKeyEntry();
 		final byte[] signatureValue = signingToken.sign(dataToSign, digestAlgorithm, privateKeyEntry);
@@ -207,7 +223,7 @@ public class ASiCService extends AbstractSignatureService {
 		final DocumentSignatureService specificService = getSpecificService(parameters);
 		specificService.setTspSource(tspSource);
 
-		final SignatureParameters xadesParameters = getParameters(parameters);
+		final SignatureParameters xadesParameters = getParameters(toSignDocument, parameters);
 		final DSSDocument detachedContent = parameters.getDetachedContent();
 		final DSSDocument detachedContents = getDetachedContents(subordinatedValidator, detachedContent);
 		xadesParameters.setDetachedContent(detachedContents);
@@ -242,41 +258,23 @@ public class ASiCService extends AbstractSignatureService {
 		return new InMemoryDocument(output.toByteArray());
 	}
 
-	private DSSDocument copyDetachedContent(final SignatureParameters underlyingParameters, final DocumentValidator subordinatedValidator) {
+	/**
+	 * Only in the case of ASiC-S
+	 *
+	 * @param underlyingParameters  {@code SignatureParameters}
+	 * @param subordinatedValidator {@code DocumentValidator}
+	 */
+	private void copyDetachedContent(final SignatureParameters underlyingParameters, final DocumentValidator subordinatedValidator) {
 
-		DSSDocument contextToSignDocument = null;
-		DSSDocument currentDetachedDocument = null;
 		final List<DSSDocument> detachedContents = subordinatedValidator.getDetachedContents();
 		for (final DSSDocument detachedDocument : detachedContents) {
 
-			if (contextToSignDocument == null) {
-				contextToSignDocument = detachedDocument;
-			} else {
-				currentDetachedDocument.setNextDocument(detachedDocument);
-			}
-			currentDetachedDocument = detachedDocument;
+			underlyingParameters.setDetachedContent(detachedDocument);
+			return;
 		}
-		underlyingParameters.setDetachedContent(contextToSignDocument);
-		return contextToSignDocument;
 	}
 
-	private DocumentValidator getAsicValidator(final DSSDocument toSignDocument) {
-
-		// Check if this is an existing container
-		try {
-
-			final DocumentValidator validator = SignedDocumentValidator.fromDocument(toSignDocument);
-			if (isAsicValidator(validator)) {
-
-				return validator;
-			}
-		} catch (Exception e) {
-			// do nothing
-		}
-		return null;
-	}
-
-	private InMemoryDocument buildASiCContainer(final DSSDocument toSignDocument, DSSDocument signDocument, final SignatureParameters underlyingParameters,
+	private InMemoryDocument buildASiCContainer(final DSSDocument toSignDocument, DSSDocument existingContainer, final SignatureParameters underlyingParameters,
 	                                            final DSSDocument signature) {
 
 		final ASiCParameters asicParameters = underlyingParameters.aSiC();
@@ -286,10 +284,10 @@ public class ASiCService extends AbstractSignatureService {
 		final String toSignDocumentName = toSignDocument.getName();
 
 		final ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
-		ZipOutputStream zipOutputStream = new ZipOutputStream(outBytes);
-		if (asice && signDocument != null) {
+		final ZipOutputStream zipOutputStream = new ZipOutputStream(outBytes);
+		if (asice && existingContainer != null) {
 
-			copyZipContent(signDocument, zipOutputStream);
+			copyZipContent(existingContainer, zipOutputStream);
 		} else {
 
 			storeZipComment(asicParameters, zipOutputStream, toSignDocumentName);
@@ -333,43 +331,6 @@ public class ASiCService extends AbstractSignatureService {
 		createZipEntry(outZip, entrySignature);
 
 		buildAsicManifest(underlyingParameters, detachedDocument, outZip);
-	}
-
-	private void buildAsicManifest(final SignatureParameters underlyingParameters, final DSSDocument detachedDocument, final OutputStream outputStream) {
-
-		final ASiCParameters asicParameters = underlyingParameters.aSiC();
-
-		final Document documentDom = DSSXMLUtils.buildDOM();
-		final Element asicManifestDom = documentDom.createElementNS(ASiCNamespaces.ASiC, "asic:ASiCManifest");
-		documentDom.appendChild(asicManifestDom);
-
-		final Element sigReferenceDom = DSSXMLUtils.addElement(documentDom, asicManifestDom, ASiCNamespaces.ASiC, "asic:SigReference");
-		final String signatureName = getSignatureFileName(asicParameters);
-		sigReferenceDom.setAttribute("URI", signatureName);
-		final String signatureMimeType = getSignatureMimeType(asicParameters);
-		sigReferenceDom.setAttribute("MimeType", signatureMimeType);
-
-		DSSDocument currentDetachedDocument = detachedDocument;
-		do {
-
-			final String detachedDocumentName = currentDetachedDocument.getName();
-			final Element dataObjectReferenceDom = DSSXMLUtils.addElement(documentDom, sigReferenceDom, ASiCNamespaces.ASiC, "asic:DataObjectReference");
-			dataObjectReferenceDom.setAttribute("URI", detachedDocumentName);
-
-			final Element digestMethodDom = DSSXMLUtils.addElement(documentDom, dataObjectReferenceDom, XMLSignature.XMLNS, "DigestMethod");
-			final DigestAlgorithm digestAlgorithm = underlyingParameters.getDigestAlgorithm();
-			digestMethodDom.setAttribute("Algorithm", digestAlgorithm.getXmlId());
-
-			final Element digestValueDom = DSSXMLUtils.addElement(documentDom, dataObjectReferenceDom, XMLSignature.XMLNS, "DigestValue");
-			final byte[] digest = DSSUtils.digest(digestAlgorithm, currentDetachedDocument.getBytes());
-			final String base64Encoded = DSSUtils.base64Encode(digest);
-			final Text textNode = documentDom.createTextNode(base64Encoded);
-			digestValueDom.appendChild(textNode);
-
-			currentDetachedDocument = currentDetachedDocument.getNextDocument();
-		} while (currentDetachedDocument != null);
-
-		storeXmlDom(outputStream, documentDom);
 	}
 
 	private static void createZipEntry(final ZipOutputStream outZip, final ZipEntry entrySignature) throws DSSException {
@@ -417,24 +378,28 @@ public class ASiCService extends AbstractSignatureService {
 	}
 
 	private void storeZipComment(final ASiCParameters asicParameters, final ZipOutputStream outZip, final String toSignDocumentName) {
-
+		// TODO-Bob (02/03/2015):  Check if the toSignDocumentName is mandatory
 		if (asicParameters.isZipComment() && DSSUtils.isNotEmpty(toSignDocumentName)) {
 
 			outZip.setComment("mimetype=" + getMimeTypeBytes(asicParameters));
 		}
 	}
 
-	private DSSDocument prepare(final DSSDocument detachedDocument, final SignatureParameters underlyingParameters) {
+	/**
+	 * @param toSignDocument       {@code DSSDocument} can be a simple data file or an existing ASiC container
+	 * @param underlyingParameters {@code SignatureParameters}
+	 * @return {@code DSSDocument} ???
+	 */
+	private DSSDocument prepare(final DSSDocument toSignDocument, final SignatureParameters underlyingParameters) {
 
-		// detachedDocument can be a simple file or an ASiC container
-		DSSDocument contextToSignDocument = detachedDocument;
+		DSSDocument contextToSignDocument = toSignDocument;
 		final ASiCParameters asicParameters = underlyingParameters.aSiC();
 		final boolean asice = isAsice(asicParameters);
 		final boolean cadesForm = isCAdESForm(asicParameters);
-		final DocumentValidator validator = getAsicValidator(detachedDocument);
+		final DocumentValidator validator = getAsicValidator(toSignDocument);
 		if (isAsicValidator(validator)) {
 
-			// This is already an existing ASiC container; a new signature should be added.
+			// This is already an existing ASiC container; a new signature file should be added.
 			final DocumentValidator subordinatedValidator = validator.getSubordinatedValidator();
 			final DSSDocument contextSignature = subordinatedValidator.getDocument();
 			underlyingParameters.aSiC().setEnclosedSignature(contextSignature);
@@ -442,15 +407,17 @@ public class ASiCService extends AbstractSignatureService {
 
 				if (cadesForm) {
 
-					final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-					buildAsicManifest(underlyingParameters, underlyingParameters.getDetachedContent(), outputStream);
-					contextToSignDocument = new InMemoryDocument(outputStream.toByteArray(), "AsicManifestXXX.xml", MimeType.XML);
+					contextToSignDocument = createAsicManifest(underlyingParameters);
 					underlyingParameters.setDetachedContent(null);
 				} else {
-					contextToSignDocument = underlyingParameters.getDetachedContent();
+
+					// Bob (01/03/2015): contextToSignDocument = underlyingParameters.getDetachedContent();
+					// A new asic:XAdESSignatures element is always created. It could be possible to add signatures to the existing one: the process to be set
+					contextToSignDocument = createAsicXadesSignatures(); // Bob (01/03/2015):
 				}
 			} else {
-				contextToSignDocument = copyDetachedContent(underlyingParameters, subordinatedValidator);
+				copyDetachedContent(underlyingParameters, subordinatedValidator);
+				contextToSignDocument = contextSignature;
 			}
 			if (!asice && subordinatedValidator instanceof ASiCCMSDocumentValidator) {
 
@@ -461,19 +428,30 @@ public class ASiCService extends AbstractSignatureService {
 			if (asice && cadesForm) {
 
 				final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-				buildAsicManifest(underlyingParameters, detachedDocument, outputStream);
+				buildAsicManifest(underlyingParameters, toSignDocument, outputStream);
 				contextToSignDocument = new InMemoryDocument(outputStream.toByteArray(), "AsicManifestXXX.xml", MimeType.XML);
 			} else {
+
 				underlyingParameters.setDetachedContent(contextToSignDocument);
+				// TODO-Bob (01/03/2015):
+				// If the signature file does not exists yet then a new one is created
+				contextToSignDocument = createAsicXadesSignatures();
 			}
+		}
+		if (!cadesForm) {
+			prepareReferences(underlyingParameters);
 		}
 		return contextToSignDocument;
 	}
 
-	private boolean isAsicValidator(final DocumentValidator documentValidator) {
+	private static DSSDocument createAsicXadesSignatures() {
 
-		final boolean result = documentValidator != null && (documentValidator instanceof ASiCContainerValidator);
-		return result;
+		final Document document = DSSXMLUtils.buildDOM();
+		final Element asicDom = document.createElementNS(ASiCNamespaces.ASiC, ASICS_NS);
+		document.appendChild(asicDom);
+		final byte[] bytes = DSSXMLUtils.serializeNode(document);
+		final DSSDocument contextToSignDocument = new InMemoryDocument(bytes);
+		return contextToSignDocument;
 	}
 
 	private static ZipEntry getNextZipEntry(final ZipInputStream zipInputStream) throws DSSException {
@@ -487,11 +465,12 @@ public class ASiCService extends AbstractSignatureService {
 	private DSSDocument getDetachedContents(final DocumentValidator subordinatedValidator, DSSDocument originalDocument) {
 
 		final List<DSSDocument> detachedContents = subordinatedValidator.getDetachedContents();
-		if (detachedContents == null || detachedContents.size() == 0) {
+		if (DSSUtils.isEmpty(detachedContents)) {
 
 			final List<DSSDocument> detachedContentsList = new ArrayList<DSSDocument>();
 			DSSDocument currentDocument = originalDocument;
 			do {
+
 				detachedContentsList.add(currentDocument);
 				subordinatedValidator.setDetachedContents(detachedContentsList);
 				currentDocument = currentDocument.getNextDocument();
@@ -515,46 +494,50 @@ public class ASiCService extends AbstractSignatureService {
 
 	/**
 	 * Creates a specific XAdES/CAdES signature parameters on the base of the provided parameters. Forces the signature packaging to
-	 * DETACHED
+	 * DETACHED for the CAdES form and ENVELOPED for the XAdES form.
 	 *
-	 * @param parameters must provide signingToken, PrivateKeyEntry and date
+	 * @param toSignDocument
+	 * @param parameters     must provide signingToken, PrivateKeyEntry and date
 	 * @return new specific instance for XAdES or CAdES
 	 */
-	private SignatureParameters getParameters(final SignatureParameters parameters) {
+	private SignatureParameters getParameters(final DSSDocument toSignDocument, final SignatureParameters parameters) {
 
+		final AsicContext asicContext = new AsicContext(toSignDocument, parameters);
 		final SignatureParameters underlyingParameters = new SignatureParameters(parameters);
-		final SignatureLevel asicProfile = parameters.getSignatureLevel();
-		final SignatureForm asicSignatureForm = parameters.aSiC().getUnderlyingForm();
-		final SignatureLevel underlyingLevel;
-		final boolean xades = asicSignatureForm == SignatureForm.XAdES;
-		switch (asicProfile) {
-
-			case ASiC_S_BASELINE_B:
-			case ASiC_E_BASELINE_B:
-				underlyingLevel = xades ? SignatureLevel.XAdES_BASELINE_B : SignatureLevel.CAdES_BASELINE_B;
-				break;
-			case ASiC_S_BASELINE_T:
-			case ASiC_E_BASELINE_T:
-				underlyingLevel = xades ? SignatureLevel.XAdES_BASELINE_T : SignatureLevel.CAdES_BASELINE_T;
-				break;
-			case ASiC_S_BASELINE_LT:
-			case ASiC_E_BASELINE_LT:
-				underlyingLevel = xades ? SignatureLevel.XAdES_BASELINE_LT : SignatureLevel.CAdES_BASELINE_LT;
-				break;
-			case ASiC_S_BASELINE_LTA:
-			case ASiC_E_BASELINE_LTA:
-				underlyingLevel = xades ? SignatureLevel.XAdES_BASELINE_LTA : SignatureLevel.CAdES_BASELINE_LTA;
-				break;
-			default:
-				throw new DSSException("Unsupported format: " + asicProfile.name());
-		}
-		underlyingParameters.setSignatureLevel(underlyingLevel);
-		underlyingParameters.setSignaturePackaging(SignaturePackaging.DETACHED);
+		underlyingParameters.setSignatureLevel(asicContext.getSubordinatedLevel());
+		underlyingParameters.setSignaturePackaging(asicContext.getSubordinatedPackaging());
 		return underlyingParameters;
 	}
 
-	private void buildCAdES(final ASiCParameters asicParameters, final DSSDocument signature, final ZipOutputStream outZip) throws DSSException {
+	private void prepareReferences(final SignatureParameters signatureParameters) {
 
+		List<DSSReference> references = signatureParameters.getReferences();
+		if (references != null) {
+			return;
+		}
+		references = new ArrayList<DSSReference>();
+		DSSDocument currentDetachedDocument = signatureParameters.getDetachedContent();
+		int referenceIndex = 1;
+		do {
+			//<ds:Reference Id="detached-ref-id" URI="xml_example.xml">
+			final DSSReference reference = new DSSReference();
+			reference.setId("r-id-" + referenceIndex++);
+			final String currentDetachedDocumentName = currentDetachedDocument.getName();
+			if (currentDetachedDocumentName == null) {
+				throw new DSSException("The name of a detached document cannot be null!");
+			}
+			reference.setUri(currentDetachedDocumentName);
+			reference.setContents(currentDetachedDocument);
+			reference.setDigestMethodAlgorithm(signatureParameters.getDigestAlgorithm());
+
+			references.add(reference);
+			currentDetachedDocument = currentDetachedDocument.getNextDocument();
+		} while (currentDetachedDocument != null);
+		signatureParameters.setReferences(references);
+		signatureParameters.setSignaturePackaging(SignaturePackaging.ENVELOPED);
+	}
+
+	private void buildCAdES(final ASiCParameters asicParameters, final DSSDocument signature, final ZipOutputStream outZip) throws DSSException {
 
 		final String signatureZipEntryName = getSignatureFileName(asicParameters);
 		final ZipEntry entrySignature = new ZipEntry(signatureZipEntryName);
@@ -568,48 +551,6 @@ public class ASiCService extends AbstractSignatureService {
 			outZip.write(bytes);
 		} catch (IOException e) {
 			throw new DSSException(e);
-		}
-	}
-
-	private String getSignatureFileName(final ASiCParameters asicParameters) {
-
-		final boolean asice = isAsice(asicParameters);
-		final DSSDocument enclosedSignature = asicParameters.getEnclosedSignature();
-		if (isXAdESForm(asicParameters)) {
-
-			if (asice && enclosedSignature != null) {
-
-				return META_INF + asicParameters.getSignatureFileName();
-			} else {
-
-				return asice ? ZIP_ENTRY_ASICE_METAINF_XADES_SIGNATURE : ZIP_ENTRY_ASICS_METAINF_XADES_SIGNATURE;
-			}
-		} else if (isCAdESForm(asicParameters)) {
-
-			if (asice && enclosedSignature != null) {
-
-				return META_INF + asicParameters.getSignatureFileName();
-			} else {
-
-				return asice ? ZIP_ENTRY_ASICE_METAINF_CADES_SIGNATURE : ZIP_ENTRY_ASICS_METAINF_CADES_SIGNATURE;
-			}
-		} else {
-
-			throw new DSSException("ASiC signature form must be XAdES or CAdES!");
-		}
-	}
-
-	private String getSignatureMimeType(final ASiCParameters asicParameters) {
-
-		if (isXAdESForm(asicParameters)) {
-
-			return MimeType.PKCS7.getMimeTypeString();
-		} else if (isCAdESForm(asicParameters)) {
-
-			return MimeType.PKCS7.getMimeTypeString();
-		} else {
-
-			throw new DSSException("ASiC signature form must be XAdES or CAdES!");
 		}
 	}
 
@@ -695,26 +636,10 @@ public class ASiCService extends AbstractSignatureService {
 		createZipEntry(outZip, entrySignature);
 		// Creates the XAdES signature
 		final Document xmlSignatureDoc = DSSXMLUtils.buildDOM(signature);
-		final Element documentElement = xmlSignatureDoc.getDocumentElement();
-		final Element xmlSignatureElement = (Element) xmlSignatureDoc.removeChild(documentElement);
-
-		final Document xmlXAdESDoc;
-		final DSSDocument enclosedSignature = asicParameters.getEnclosedSignature();
-		if (enclosedSignature != null && isAsics(asicParameters)) {
-
-			final Document contextXmlSignatureDoc = DSSXMLUtils.buildDOM(enclosedSignature);
-			final Element contextDocumentElement = contextXmlSignatureDoc.getDocumentElement();
-			contextXmlSignatureDoc.adoptNode(xmlSignatureElement);
-			contextDocumentElement.appendChild(xmlSignatureElement);
-			xmlXAdESDoc = contextXmlSignatureDoc;
-		} else {
-
-			xmlXAdESDoc = DSSXMLUtils.createDocument(ASiCNamespaces.ASiC, ASICS_NS, xmlSignatureElement);
-		}
-		storeXmlDom(outZip, xmlXAdESDoc);
+		storeXmlDom(outZip, xmlSignatureDoc);
 	}
 
-	private void storeXmlDom(final OutputStream outZip, final Document xml) throws DSSException {
+	private static void storeXmlDom(final OutputStream outZip, final Document xml) throws DSSException {
 
 		try {
 			final DOMSource xmlSource = new DOMSource(xml);
@@ -747,5 +672,219 @@ public class ASiCService extends AbstractSignatureService {
 		final DocumentSignatureService underlyingASiCService = specificParameters.getContext().getUnderlyingASiCService(certificateVerifier, asicSignatureForm);
 		underlyingASiCService.setTspSource(tspSource);
 		return underlyingASiCService;
+	}
+
+	static class AsicContext {
+
+		private final SignatureForm containerForm;
+		private final SignatureLevel containerLevel;
+
+		private final SignatureForm subordinatedForm;
+		private final SignatureLevel subordinatedLevel;
+		private final SignaturePackaging subordinatedPackaging;
+
+		private final DocumentValidator containerValidator; // null it the document to sign is not an ASiC container
+
+		private DocumentValidator subordinatedValidator = null;
+
+		private DSSDocument subordinatedSignature = null;
+		private DSSDocument subordinatedToSignDocument = null;
+
+		private String signatureFileName;
+
+		/**
+		 * This constructor initiates the following fields:<br>
+		 * {@code containerForm} based on {@code SignatureForm}: ASiC container: S or E<br>
+		 * {@code containerLevel} based on {@code SignatureLevel}: ASiC container: ASiC_S_BASELINE_B, ASiC_S_BASELINE_T...<br>
+		 * {@code subordinatedForm} based on {@code SignatureForm} of the ASiC container: CAdES or XAdES<br>
+		 * {@code subordinatedLevel} based on {@code SignatureLevel} of the ASiC container: CAdES_BASELINE_B, XAdES_BASELINE_T...<br>
+		 */
+		public AsicContext(final DSSDocument toSignDocument, final SignatureParameters parameters) {
+
+			if (toSignDocument == null) {
+				throw new DSSNullException(DSSDocument.class, "toSignDocument");
+			}
+			final ASiCParameters asicParameters = parameters.aSiC();
+			final SignatureForm containerForm = asicParameters.getContainerForm();
+			if (containerForm == null) {
+				throw new DSSNullException(SignatureForm.class, "containerForm");
+			}
+			if (SignatureForm.ASiC_E != containerForm || SignatureForm.ASiC_S != containerForm) {
+				throw new DSSException("The SignatureForm must be either ASiC_E or ASiC_S but was '" + containerForm + "'!");
+			}
+			final SignatureLevel containerLevel = parameters.getSignatureLevel();
+			if (containerLevel == null) {
+				throw new DSSNullException(SignatureLevel.class, "containerLevel");
+			}
+			final SignatureForm underlyingForm = asicParameters.getUnderlyingForm();
+			if (underlyingForm == null) {
+				throw new DSSNullException(SignatureForm.class, "subordinatedForm");
+			}
+
+			this.containerForm = containerForm;
+			this.containerLevel = containerLevel;
+			this.subordinatedForm = underlyingForm;
+
+			this.subordinatedLevel = getUnderlyingLevel(containerLevel, containerForm);
+			subordinatedPackaging = isCadesFrom() ? SignaturePackaging.DETACHED : SignaturePackaging.ENVELOPED;
+
+			signatureFileName = getSignatureFileName(asicParameters.getSignatureFileName());
+
+			containerValidator = getAsicValidator(toSignDocument);
+			if (containerValidator != null) {
+
+				subordinatedValidator = containerValidator.getSubordinatedValidator();
+				subordinatedSignature = subordinatedValidator.getDocument();
+				if (isAsice()) {
+
+					if (isCadesFrom()) {
+
+						subordinatedToSignDocument = createAsicManifest(parameters);
+						//	???					underlyingParameters.setDetachedContent(null);
+					} else { // XAdES form
+
+						// A new asic:XAdESSignatures element is always created. It could be possible to add signatures to the existing one: the process to be set
+						contextToSignDocument = createAsicXadesSignatures();
+					}
+				}
+			}
+		}
+
+		public boolean isAsics() {
+			return containerForm == SignatureForm.ASiC_S;
+		}
+
+		public boolean isAsice() {
+			return containerForm == SignatureForm.ASiC_E;
+		}
+
+		public SignatureLevel getSubordinatedLevel() {
+			return subordinatedLevel;
+		}
+
+		public boolean isCadesFrom() {
+			return subordinatedForm == SignatureForm.CAdES;
+		}
+
+		public boolean isXadesFrom() {
+			return subordinatedForm == SignatureForm.XAdES;
+		}
+
+		public SignaturePackaging getSubordinatedPackaging() {
+
+			return subordinatedPackaging;
+		}
+
+		private static SignatureLevel getUnderlyingLevel(final SignatureLevel containerLevel, final SignatureForm containerForm) {
+
+			final boolean xades = containerForm == SignatureForm.XAdES;
+			switch (containerLevel) {
+
+				case ASiC_S_BASELINE_B:
+				case ASiC_E_BASELINE_B:
+					return xades ? SignatureLevel.XAdES_BASELINE_B : SignatureLevel.CAdES_BASELINE_B;
+				case ASiC_S_BASELINE_T:
+				case ASiC_E_BASELINE_T:
+					return xades ? SignatureLevel.XAdES_BASELINE_T : SignatureLevel.CAdES_BASELINE_T;
+				case ASiC_S_BASELINE_LT:
+				case ASiC_E_BASELINE_LT:
+					return xades ? SignatureLevel.XAdES_BASELINE_LT : SignatureLevel.CAdES_BASELINE_LT;
+				case ASiC_S_BASELINE_LTA:
+				case ASiC_E_BASELINE_LTA:
+					return xades ? SignatureLevel.XAdES_BASELINE_LTA : SignatureLevel.CAdES_BASELINE_LTA;
+				default:
+					throw new DSSException("Unsupported format: " + containerLevel.name());
+			}
+		}
+
+		private static DocumentValidator getAsicValidator(final DSSDocument toSignDocument) {
+
+			try { // Check if this is an existing container
+
+				final DocumentValidator documentValidator = SignedDocumentValidator.fromDocument(toSignDocument);
+				if (isAsicValidator(documentValidator)) {
+					return documentValidator;
+				}
+			} catch (Exception e) {
+				// do nothing
+			}
+			return null;
+		}
+
+		private static boolean isAsicValidator(final DocumentValidator documentValidator) {
+
+			final boolean result = documentValidator != null && (documentValidator instanceof ASiCContainerValidator);
+			return result;
+		}
+
+		private DSSDocument createAsicManifest(final SignatureParameters parameters) {
+
+			final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			buildAsicManifest(parameters, outputStream);
+			final DSSDocument contextToSignDocument = new InMemoryDocument(outputStream.toByteArray(), "AsicManifestXXX.xml", MimeType.XML);
+			return contextToSignDocument;
+		}
+
+		private void buildAsicManifest(final SignatureParameters parameters, final OutputStream outputStream) {
+
+			final Document documentDom = DSSXMLUtils.buildDOM();
+			final Element asicManifestDom = documentDom.createElementNS(ASiCNamespaces.ASiC, "asic:ASiCManifest");
+			documentDom.appendChild(asicManifestDom);
+
+			final Element sigReferenceDom = DSSXMLUtils.addElement(documentDom, asicManifestDom, ASiCNamespaces.ASiC, "asic:SigReference");
+			sigReferenceDom.setAttribute("URI", signatureFileName);
+			final String signatureMimeType = getSignatureMimeType();
+			sigReferenceDom.setAttribute("MimeType", signatureMimeType);
+
+			DSSDocument currentDetachedDocument = parameters.getDetachedContent();
+			do {
+
+				final String detachedDocumentName = currentDetachedDocument.getName();
+				final Element dataObjectReferenceDom = DSSXMLUtils.addElement(documentDom, sigReferenceDom, ASiCNamespaces.ASiC, "asic:DataObjectReference");
+				dataObjectReferenceDom.setAttribute("URI", detachedDocumentName);
+
+				final Element digestMethodDom = DSSXMLUtils.addElement(documentDom, dataObjectReferenceDom, XMLSignature.XMLNS, "DigestMethod");
+				final DigestAlgorithm digestAlgorithm = parameters.getDigestAlgorithm();
+				digestMethodDom.setAttribute("Algorithm", digestAlgorithm.getXmlId());
+
+				final Element digestValueDom = DSSXMLUtils.addElement(documentDom, dataObjectReferenceDom, XMLSignature.XMLNS, "DigestValue");
+				final byte[] digest = DSSUtils.digest(digestAlgorithm, currentDetachedDocument.getBytes());
+				final String base64Encoded = DSSUtils.base64Encode(digest);
+				final Text textNode = documentDom.createTextNode(base64Encoded);
+				digestValueDom.appendChild(textNode);
+
+				currentDetachedDocument = currentDetachedDocument.getNextDocument();
+			} while (currentDetachedDocument != null);
+
+			storeXmlDom(outputStream, documentDom);
+		}
+
+		private String getSignatureFileName(final String signatureFileName) {
+
+			if (isAsice()) {
+				if (DSSUtils.isNotBlank(signatureFileName)) {
+					return META_INF + signatureFileName;
+				} else if (subordinatedSignature != null) {
+					throw new DSSNullException(String.class, "signatureFileName");
+				}
+				return isCadesFrom() ? ZIP_ENTRY_ASICE_METAINF_CADES_SIGNATURE : ZIP_ENTRY_ASICE_METAINF_XADES_SIGNATURE;
+			}
+			// ASiC-S: does not matter if it's an existing or new container
+			return isCadesFrom() ? ZIP_ENTRY_ASICS_METAINF_CADES_SIGNATURE : ZIP_ENTRY_ASICS_METAINF_XADES_SIGNATURE;
+		}
+
+		private String getSignatureMimeType() {
+
+			if (isXadesFrom()) {
+
+				return MimeType.PKCS7.getMimeTypeString();
+			} else if (isCadesFrom()) {
+
+				return MimeType.PKCS7.getMimeTypeString();
+			} else {
+
+				throw new DSSException("ASiC signature form must be XAdES or CAdES!");
+			}
+		}
 	}
 }

@@ -27,11 +27,9 @@ import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 
 /**
- * TODO
- * <p/>
- * <p> DISCLAIMER: Project owner DG-MARKT.
+ * This class allows to create a customized reference.
  *
- * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
+ * @author Robert Bielecki
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
 public class DSSReference {
@@ -52,6 +50,11 @@ public class DSSReference {
 	public DSSReference() {
 	}
 
+	/**
+	 * Copy constructor.
+	 *
+	 * @param reference {@code DSSReference} to copy
+	 */
 	public DSSReference(final DSSReference reference) {
 
 		id = reference.id;

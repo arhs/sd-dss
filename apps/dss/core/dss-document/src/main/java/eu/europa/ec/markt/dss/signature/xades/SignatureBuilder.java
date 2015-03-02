@@ -368,7 +368,10 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		referenceDom.setAttribute(ID, dssReference.getId());
 		final String uri = dssReference.getUri();
 		referenceDom.setAttribute(URI, uri);
-		referenceDom.setAttribute(TYPE, dssReference.getType());
+		final String dssReferenceType = dssReference.getType();
+		if (DSSUtils.isNotEmpty(dssReferenceType)) {
+			referenceDom.setAttribute(TYPE, dssReferenceType);
+		}
 
 		final List<DSSTransform> dssTransforms = dssReference.getTransforms();
 		if (dssTransforms != null) { // Detached signature may not have transformations

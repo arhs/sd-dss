@@ -21,10 +21,9 @@ package eu.europa.ec.markt.dss.dao;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -84,8 +83,7 @@ public class ProxyFileDao implements ProxyDao {
 	@Override
 	public Collection<ProxyPreference> getAll() {
 
-		List<ProxyPreference> proxyPreferenceList = new ArrayList<ProxyPreference>(proxyPreferences.values());
-		return proxyPreferenceList;
+		return Collections.unmodifiableCollection(proxyPreferences.values());
 	}
 
 	@Override

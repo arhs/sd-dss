@@ -35,7 +35,6 @@ import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.tsp.TimeStampToken;
-import org.bouncycastle.util.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,11 +157,9 @@ public class CAdESCertificateSource extends SignatureCertificateSource {
 	}
 
 	/**
-	 * @throws org.bouncycastle.util.StoreException
 	 * @throws eu.europa.ec.markt.dss.exception.DSSException
 	 */
-	@SuppressWarnings("unchecked")
-	private ArrayList<CertificateToken> extractIdSignedDataCertificates() throws StoreException, DSSException {
+	private ArrayList<CertificateToken> extractIdSignedDataCertificates() throws DSSException {
 
 		final ArrayList<CertificateToken> essCertIDCerts = new ArrayList<CertificateToken>();
 		final Collection<X509CertificateHolder> x509CertificateHolders = (Collection<X509CertificateHolder>) cmsSignedData.getCertificates().getMatches(null);

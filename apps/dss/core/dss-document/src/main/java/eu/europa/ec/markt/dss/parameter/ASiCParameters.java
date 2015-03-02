@@ -137,7 +137,7 @@ public class ASiCParameters implements Serializable {
 	}
 
 	/**
-	 * This method returns the name of the signature file to use with ASiC-E container.
+	 * This method returns the name of the signature file to use only with ASiC-E container.
 	 *
 	 * @return signature file name
 	 */
