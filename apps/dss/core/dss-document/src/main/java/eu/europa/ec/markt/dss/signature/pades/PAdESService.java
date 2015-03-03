@@ -1,11 +1,11 @@
 /*
- * DSS - Digital Signature Services
+ * SD-DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
+ * Copyright (C) 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
+ * Developed by: 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * This file is part of the "DSS - Digital Signature Services" project.
+ * This file is part of the "https://github.com/arhs/sd-dss" project.
  *
  * "DSS - Digital Signature Services" is free software: you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation, either version 2.1 of the
@@ -15,7 +15,7 @@
  * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License along with
- * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
+ * "SD-DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package eu.europa.ec.markt.dss.signature.pades;
@@ -53,7 +53,7 @@ import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 /**
  * PAdES implementation of the DocumentSignatureService
  *
- * @version $Revision$ - $Date$
+ * @author Robert Bielecki
  */
 
 public class PAdESService extends AbstractSignatureService {
@@ -80,11 +80,11 @@ public class PAdESService extends AbstractSignatureService {
 			case PAdES_BASELINE_B:
 				return null;
 			case PAdES_BASELINE_T:
-				return new PAdESLevelBaselineT(tspSource, certificateVerifier);
+				return new PAdESLevelBaselineT(tspSource, cryptographicSourceProvider);
 			case PAdES_BASELINE_LT:
-				return new PAdESLevelBaselineLT(tspSource, certificateVerifier);
+				return new PAdESLevelBaselineLT(tspSource, cryptographicSourceProvider);
 			case PAdES_BASELINE_LTA:
-				return new PAdESLevelBaselineLTA(tspSource, certificateVerifier);
+				return new PAdESLevelBaselineLTA(tspSource, cryptographicSourceProvider);
 			default:
 				throw new IllegalArgumentException("Signature format '" + parameters.getSignatureLevel() + "' not supported");
 		}
@@ -139,7 +139,7 @@ public class PAdESService extends AbstractSignatureService {
 			final SignatureLevel signatureLevel = parameters.getSignatureLevel();
 			if (signatureLevel != SignatureLevel.PAdES_BASELINE_B) {
 				// use an embedded timestamp
-				CAdESLevelBaselineT cadesLevelBaselineT = new CAdESLevelBaselineT(tspSource, certificateVerifier, false);
+				CAdESLevelBaselineT cadesLevelBaselineT = new CAdESLevelBaselineT(tspSource, cryptographicSourceProvider, false);
 				data = cadesLevelBaselineT.extendCMSSignatures(data, parameters);
 			}
 

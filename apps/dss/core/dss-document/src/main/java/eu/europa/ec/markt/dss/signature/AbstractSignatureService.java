@@ -1,11 +1,11 @@
 /*
- * DSS - Digital Signature Services
+ * SD-DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
+ * Copyright (C) 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
+ * Developed by: 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * This file is part of the "DSS - Digital Signature Services" project.
+ * This file is part of the "https://github.com/arhs/sd-dss" project.
  *
  * "DSS - Digital Signature Services" is free software: you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation, either version 2.1 of the
@@ -15,7 +15,7 @@
  * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License along with
- * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
+ * "SD-DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package eu.europa.ec.markt.dss.signature;
@@ -33,10 +33,9 @@ import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
 
 /**
- * DISCLAIMER: Project owner DG-MARKT.
+ * This abstract class  {@code AbstractSignatureService} implements operations for the signature creation and for its extension.
  *
- * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
- * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
+ * @author Robert Bielecki
  */
 public abstract class AbstractSignatureService implements DocumentSignatureService {
 
@@ -46,20 +45,27 @@ public abstract class AbstractSignatureService implements DocumentSignatureServi
 
 	protected TSPSource tspSource;
 
-	final protected CertificateVerifier certificateVerifier;
+	final protected CertificateVerifier cryptographicSourceProvider;
 
 	/**
-	 * To construct a signature service the <code>CertificateVerifier</code> must be set and cannot be null.
+	 * To construct a signature service the {@code CertificateVerifier} must be set and cannot be null.
 	 *
-	 * @param certificateVerifier {@code CertificateVerifier} provides information on the sources to be used in the validation process in the context of a signature.
+	 * @param cryptographicSourceProvider {@code CertificateVerifier} provides information on the sources to be used in the context of validation process.
 	 */
-	protected AbstractSignatureService(final CertificateVerifier certificateVerifier) {
+	protected AbstractSignatureService(final CertificateVerifier cryptographicSourceProvider) {
 
-		if (certificateVerifier == null) {
-
+		if (cryptographicSourceProvider == null) {
 			throw new DSSNullException(CertificateVerifier.class);
 		}
-		this.certificateVerifier = certificateVerifier;
+		this.cryptographicSourceProvider = cryptographicSourceProvider;
+	}
+
+	public TSPSource getTspSource() {
+		return tspSource;
+	}
+
+	public CertificateVerifier getCryptographicSourceProvider() {
+		return cryptographicSourceProvider;
 	}
 
 	@Override

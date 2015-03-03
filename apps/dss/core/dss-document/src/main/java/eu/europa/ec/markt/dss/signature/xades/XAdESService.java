@@ -1,11 +1,11 @@
 /*
- * DSS - Digital Signature Services
+ * SD-DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
+ * Copyright (C) 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
+ * Developed by: 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * This file is part of the "DSS - Digital Signature Services" project.
+ * This file is part of the "https://github.com/arhs/sd-dss" project.
  *
  * "DSS - Digital Signature Services" is free software: you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation, either version 2.1 of the
@@ -15,7 +15,7 @@
  * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License along with
- * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
+ * "SD-DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package eu.europa.ec.markt.dss.signature.xades;
@@ -52,9 +52,8 @@ import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
 /**
  * XAdES implementation of DocumentSignatureService
  *
- * @version $Revision$ - $Date$
+ * @author Robert Bielecki
  */
-
 public class XAdESService extends AbstractSignatureService {
 
 	static {
@@ -80,7 +79,7 @@ public class XAdESService extends AbstractSignatureService {
 
 		assertSigningDateInCertificateValidityRange(parameters);
 
-		final XAdESLevelBaselineB levelBaselineB = new XAdESLevelBaselineB(certificateVerifier);
+		final XAdESLevelBaselineB levelBaselineB = new XAdESLevelBaselineB(cryptographicSourceProvider);
 		final byte[] dataToSign = levelBaselineB.getDataToSign(toSignDocument, parameters);
 		parameters.getContext().setProfile(levelBaselineB);
 		return dataToSign;
@@ -95,7 +94,7 @@ public class XAdESService extends AbstractSignatureService {
 		assertSigningDateInCertificateValidityRange(parameters);
 		parameters.getContext().setOperationKind(Operation.SIGNING);
 		final ProfileParameters context = parameters.getContext();
-		final XAdESLevelBaselineB profile = context.getProfile() != null ? context.getProfile() : new XAdESLevelBaselineB(certificateVerifier);
+		final XAdESLevelBaselineB profile = context.getProfile() != null ? context.getProfile() : new XAdESLevelBaselineB(cryptographicSourceProvider);
 		final DSSDocument signedDoc = profile.signDocument(toSignDocument, parameters, signatureValue);
 		final SignatureExtension extension = getExtensionProfile(parameters);
 		if (extension != null) {
@@ -126,7 +125,7 @@ public class XAdESService extends AbstractSignatureService {
 
 		parameters.getContext().setOperationKind(Operation.SIGNING);
 
-		final XAdESLevelBaselineB profile = new XAdESLevelBaselineB(certificateVerifier);
+		final XAdESLevelBaselineB profile = new XAdESLevelBaselineB(cryptographicSourceProvider);
 		final byte[] dataToSign = profile.getDataToSign(toSignDocument, parameters);
 		parameters.getContext().setProfile(profile);
 
@@ -183,7 +182,7 @@ public class XAdESService extends AbstractSignatureService {
 		}
 		parameters.setToCounterSignSignatureValueId(signatureValueId);
 
-		final CounterSignatureBuilder counterSignatureBuilder = new CounterSignatureBuilder(toCounterSignDocument, xadesSignature, parameters, certificateVerifier);
+		final CounterSignatureBuilder counterSignatureBuilder = new CounterSignatureBuilder(toCounterSignDocument, xadesSignature, parameters, cryptographicSourceProvider);
 		final byte[] dataToSign = counterSignatureBuilder.build();
 
 		final DigestAlgorithm digestAlgorithm = parameters.getDigestAlgorithm();
@@ -233,42 +232,41 @@ public class XAdESService extends AbstractSignatureService {
 				return null;
 			case XAdES_BASELINE_T:
 
-				final XAdESLevelBaselineT extensionT = new XAdESLevelBaselineT(certificateVerifier);
+				final XAdESLevelBaselineT extensionT = new XAdESLevelBaselineT(cryptographicSourceProvider);
 				extensionT.setTspSource(tspSource);
 				return extensionT;
 			case XAdES_C:
 
-				final XAdESLevelC extensionC = new XAdESLevelC(certificateVerifier);
+				final XAdESLevelC extensionC = new XAdESLevelC(cryptographicSourceProvider);
 				extensionC.setTspSource(tspSource);
 				return extensionC;
 			case XAdES_X:
 
-				final XAdESLevelX extensionX = new XAdESLevelX(certificateVerifier);
+				final XAdESLevelX extensionX = new XAdESLevelX(cryptographicSourceProvider);
 				extensionX.setTspSource(tspSource);
 				return extensionX;
 			case XAdES_XL:
 
-				final XAdESLevelXL extensionXL = new XAdESLevelXL(certificateVerifier);
+				final XAdESLevelXL extensionXL = new XAdESLevelXL(cryptographicSourceProvider);
 				extensionXL.setTspSource(tspSource);
 				return extensionXL;
 			case XAdES_A:
 
-				final XAdESLevelA extensionA = new XAdESLevelA(certificateVerifier);
+				final XAdESLevelA extensionA = new XAdESLevelA(cryptographicSourceProvider);
 				extensionA.setTspSource(tspSource);
 				return extensionA;
 			case XAdES_BASELINE_LT:
 
-				final XAdESLevelBaselineLT extensionLT = new XAdESLevelBaselineLT(certificateVerifier);
+				final XAdESLevelBaselineLT extensionLT = new XAdESLevelBaselineLT(cryptographicSourceProvider);
 				extensionLT.setTspSource(tspSource);
 				return extensionLT;
 			case XAdES_BASELINE_LTA:
 
-				final XAdESLevelBaselineLTA extensionLTA = new XAdESLevelBaselineLTA(certificateVerifier);
+				final XAdESLevelBaselineLTA extensionLTA = new XAdESLevelBaselineLTA(cryptographicSourceProvider);
 				extensionLTA.setTspSource(tspSource);
 				return extensionLTA;
 			default:
-
-				throw new DSSException("Unsupported signature format " + parameters.getSignatureLevel());
+				throw new DSSException("Unsupported signature format: '" + parameters.getSignatureLevel() + "'!");
 		}
 	}
 }

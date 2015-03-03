@@ -1,18 +1,33 @@
+/*
+ * SD-DSS - Digital Signature Services
+ *
+ * Copyright (C) 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
+ *
+ * Developed by: 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
+ *
+ * This file is part of the "https://github.com/arhs/sd-dss" project.
+ *
+ * "DSS - Digital Signature Services" is free software: you can redistribute it and/or modify it under the terms of
+ * the GNU Lesser General Public License as published by the Free Software Foundation, either version 2.1 of the
+ * License, or (at your option) any later version.
+ *
+ * DSS is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with
+ * "SD-DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package eu.europa.ec.markt.dss.parameter;
 
 import java.io.Serializable;
 
-import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.validation102853.SignatureForm;
 
 /**
- * This class regroups the signature parameters related to ASiC form.
- * <p/>
- * <p/>
- * DISCLAIMER: Project owner DG-MARKT.
+ * This class regroups the signature parameters related to the ASiC form.
  *
- * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
- * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
+ * @author Robert Bielecki
  */
 public class ASiCParameters implements Serializable {
 
@@ -29,17 +44,12 @@ public class ASiCParameters implements Serializable {
 	/**
 	 * The default signature form to use within the ASiC containers.
 	 */
-	private SignatureForm underlyingForm = SignatureForm.XAdES;
+	private SignatureForm subordinatedForm = SignatureForm.XAdES;
 
 	/**
 	 * The form of the container -S or -E.
 	 */
 	SignatureForm containerForm;
-
-	/**
-	 * This variable contains already enclosed signature(s) when appending a new one.
-	 */
-	private DSSDocument enclosedSignature;
 
 	/**
 	 * This property allows to provide a specific signature file name in the case of an ASiC-E container.
@@ -61,9 +71,8 @@ public class ASiCParameters implements Serializable {
 
 		zipComment = source.zipComment;
 		mimeType = source.mimeType;
-		underlyingForm = source.underlyingForm;
+		subordinatedForm = source.subordinatedForm;
 		containerForm = source.containerForm;
-		enclosedSignature = source.enclosedSignature;
 		signatureFileName = source.signatureFileName;
 	}
 
@@ -98,17 +107,33 @@ public class ASiCParameters implements Serializable {
 		this.mimeType = mimeType;
 	}
 
+	/**
+	 * @deprecated since 4.3.2-SNAPSHOT, use {@link #getSubordinatedForm()}
+	 */
+	@Deprecated
 	public SignatureForm getUnderlyingForm() {
-		return underlyingForm;
+		return subordinatedForm;
+	}
+
+	public SignatureForm getSubordinatedForm() {
+		return subordinatedForm;
+	}
+
+	/**
+	 * @deprecated since 4.3.2-SNAPSHOT, use {@link #setSubordinatedForm(eu.europa.ec.markt.dss.validation102853.SignatureForm)}
+	 */
+	@Deprecated
+	public void setUnderlyingForm(final SignatureForm underlyingForm) {
+		this.subordinatedForm = underlyingForm;
 	}
 
 	/**
 	 * Sets the signature form associated with an ASiC container. Only two forms are acceptable: XAdES and CAdES.
 	 *
-	 * @param underlyingForm signature form to associate with the ASiC container.
+	 * @param subordinatedForm signature form to associate with the ASiC container.
 	 */
-	public void setUnderlyingForm(final SignatureForm underlyingForm) {
-		this.underlyingForm = underlyingForm;
+	public void setSubordinatedForm(final SignatureForm subordinatedForm) {
+		this.subordinatedForm = subordinatedForm;
 	}
 
 	/**
@@ -116,24 +141,6 @@ public class ASiCParameters implements Serializable {
 	 */
 	public SignatureForm getContainerForm() {
 		return containerForm;
-	}
-
-	/**
-	 * This method allows to set the already existing signature. It is used when re-sign the ASIC-S container.
-	 *
-	 * @param signature extracted from the already existing container.
-	 */
-	public void setEnclosedSignature(final DSSDocument signature) {
-		this.enclosedSignature = signature;
-	}
-
-	/**
-	 * This method returns the already existing signature within a container.
-	 *
-	 * @return {@code DSSDocument} representing a signature
-	 */
-	public DSSDocument getEnclosedSignature() {
-		return enclosedSignature;
 	}
 
 	/**
