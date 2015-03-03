@@ -1,11 +1,11 @@
 /*
- * DSS - Digital Signature Services
+ * SD-DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
+ * Copyright (C) 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
+ * Developed by: 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * This file is part of the "DSS - Digital Signature Services" project.
+ * This file is part of the "https://github.com/arhs/sd-dss" project.
  *
  * "DSS - Digital Signature Services" is free software: you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation, either version 2.1 of the
@@ -15,7 +15,7 @@
  * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License along with
- * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
+ * "SD-DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package eu.europa.ec.markt.dss.signature.xades;
@@ -44,21 +44,18 @@ import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 
 /**
  * This class handles the specifics of the enveloping XML signature
- * <p/>
- * <p/>
- * DISCLAIMER: Project owner DG-MARKT.
  *
- * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
- * @version $Revision: 672 $ - $Date: 2011-05-12 11:59:21 +0200 (Thu, 12 May 2011) $
+ * @author Robert Bielecki
  */
 class EnvelopingSignatureBuilder extends SignatureBuilder {
 
 	/**
 	 * The default constructor for EnvelopingSignatureBuilder. The enveloped signature uses by default the inclusive
 	 * method of canonicalization.
-	 *  @param params  The set of parameters relating to the structure and process of the creation or extension of the
-	 *                electronic signature.
-	 * @param origDoc The original document to sign.
+	 *
+	 * @param params              The set of parameters relating to the structure and process of the creation or extension of the
+	 *                            electronic signature.
+	 * @param origDoc             The original document to sign.
 	 * @param certificateVerifier
 	 */
 	public EnvelopingSignatureBuilder(final SignatureParameters params, final DSSDocument origDoc, final CertificateVerifier certificateVerifier) {
@@ -145,7 +142,7 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 			objectDom.setAttribute(ID, id);
 		}
 
-		byte[] documentBytes = DSSXMLUtils.transformDomToByteArray(documentDom);
+		byte[] documentBytes = DSSXMLUtils.transformToByteArray(documentDom);
 		final InMemoryDocument inMemoryDocument = new InMemoryDocument(documentBytes);
 		inMemoryDocument.setMimeType(MimeType.XML);
 		return inMemoryDocument;

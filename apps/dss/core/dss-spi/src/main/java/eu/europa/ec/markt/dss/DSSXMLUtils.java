@@ -1,11 +1,11 @@
 /*
- * DSS - Digital Signature Services
+ * SD-DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
+ * Copyright (C) 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
+ * Developed by: 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * This file is part of the "DSS - Digital Signature Services" project.
+ * This file is part of the "https://github.com/arhs/sd-dss" project.
  *
  * "DSS - Digital Signature Services" is free software: you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation, either version 2.1 of the
@@ -15,7 +15,7 @@
  * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License along with
- * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
+ * "SD-DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package eu.europa.ec.markt.dss;
@@ -51,6 +51,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -91,7 +92,7 @@ import eu.europa.ec.markt.dss.signature.DSSDocument;
 /**
  * Utility class that contains some XML related method.
  *
- * @version $Revision: 2221 $ - $Date: 2013-06-11 11:53:27 +0200 (Tue, 11 Jun 2013) $
+ * @author Robert Bielecki
  */
 
 public final class DSSXMLUtils {
@@ -806,24 +807,44 @@ public final class DSSXMLUtils {
 		return dom;
 	}
 
-	public static byte[] transformDomToByteArray(final Document documentDom) {
+	/**
+	 * <p>Transforms the XML {@code Document} and returns an array of {@code byte}s.</p>
+	 *
+	 * @param domDocument {@code Document} to transform
+	 * @return array of {@code byte}s
+	 */
+	public static byte[] transformToByteArray(final Document domDocument) {
+
+		final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		transform(domDocument, byteArrayOutputStream);
+		byte[] byteArray = byteArrayOutputStream.toByteArray();
+		return byteArray;
+	}
+
+	/**
+	 * <p>Transforms and writes the XML {@code Document} to a {@code OutputStream}.</p>
+	 *
+	 * @param domDocument  {@code Document}  to transform
+	 * @param outputStream {@code OutputStream}
+	 * @throws DSSException
+	 */
+	public static void transform(final Document domDocument, final OutputStream outputStream) throws DSSException {
 
 		try {
 
 			final TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			final Transformer transformer = transformerFactory.newTransformer();
-			final String xmlEncoding = documentDom.getXmlEncoding();
+			final String xmlEncoding = domDocument.getXmlEncoding();
 			if (DSSUtils.isNotBlank(xmlEncoding)) {
 				transformer.setOutputProperty(OutputKeys.ENCODING, xmlEncoding);
 			}
-			final DOMSource source = new DOMSource(documentDom);
 
-			final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-			final StreamResult streamResult = new StreamResult(byteArrayOutputStream);
-			transformer.transform(source, streamResult);
-			byte[] byteArray = byteArrayOutputStream.toByteArray();
-			return byteArray;
-		} catch (final TransformerException e) {
+			final DOMSource xmlSource = new DOMSource(domDocument);
+			final StreamResult outputTarget = new StreamResult(outputStream);
+			transformer.transform(xmlSource, outputTarget);
+		} catch (TransformerException e) {
+			throw new DSSException(e);
+		} catch (TransformerFactoryConfigurationError e) {
 			throw new DSSException(e);
 		}
 	}

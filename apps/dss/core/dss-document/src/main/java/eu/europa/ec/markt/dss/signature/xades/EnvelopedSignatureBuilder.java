@@ -1,11 +1,11 @@
 /*
- * DSS - Digital Signature Services
+ * SD-DSS - Digital Signature Services
  *
- * Copyright (C) 2013 European Commission, Directorate-General Internal Market and Services (DG MARKT), B-1049 Bruxelles/Brussel
+ * Copyright (C) 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * Developed by: 2013 ARHS Developments S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-developments.com
+ * Developed by: 2015 ARHS SpikeSeed S.A. (rue Nicolas Bové 2B, L-1253 Luxembourg) http://www.arhs-spikeseed.com
  *
- * This file is part of the "DSS - Digital Signature Services" project.
+ * This file is part of the "https://github.com/arhs/sd-dss" project.
  *
  * "DSS - Digital Signature Services" is free software: you can redistribute it and/or modify it under the terms of
  * the GNU Lesser General Public License as published by the Free Software Foundation, either version 2.1 of the
@@ -15,7 +15,7 @@
  * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License along with
- * "DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
+ * "SD-DSS - Digital Signature Services".  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package eu.europa.ec.markt.dss.signature.xades;
@@ -49,10 +49,8 @@ import eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder;
 
 /**
  * This class handles the specifics of the enveloped XML signature
- * <p/>
  *
  * @author Robert Bielecki
- * @version $Revision: 672 $ - $Date: 2011-05-12 11:59:21 +0200 (Thu, 12 May 2011) $
  */
 class EnvelopedSignatureBuilder extends SignatureBuilder {
 
@@ -265,7 +263,7 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 		final Text signatureValueNode = documentDom.createTextNode(signatureValueBase64Encoded);
 		signatureValueDom.appendChild(signatureValueNode);
 
-		byte[] documentBytes = DSSXMLUtils.transformDomToByteArray(documentDom);
+		byte[] documentBytes = DSSXMLUtils.transformToByteArray(documentDom);
 		final InMemoryDocument inMemoryDocument = new InMemoryDocument(documentBytes);
 		inMemoryDocument.setMimeType(MimeType.XML);
 		return inMemoryDocument;
