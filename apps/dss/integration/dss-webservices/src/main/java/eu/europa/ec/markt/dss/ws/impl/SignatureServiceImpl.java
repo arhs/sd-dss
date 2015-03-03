@@ -176,7 +176,6 @@ public class SignatureServiceImpl implements SignatureService {
 		setAsicSignatureForm(wsParameters, params);
 		setAsicMimeType(wsParameters, params);
 		setAsicZipComment(wsParameters, params);
-		setAsicEnclosedSignature(wsParameters, params);
 		return params;
 	}
 
@@ -333,12 +332,6 @@ public class SignatureServiceImpl implements SignatureService {
 
 	private void setAsicSignatureForm(final WSParameters wsParameters, final SignatureParameters params) {
 		params.aSiC().setUnderlyingForm(wsParameters.getAsicSignatureForm());
-	}
-
-	private void setAsicEnclosedSignature(final WSParameters wsParameters, final SignatureParameters params) {
-
-		final DSSDocument dssDocument = DSSWSUtils.createDssDocument(wsParameters.getAsicEnclosedSignature());
-		params.aSiC().setEnclosedSignature(dssDocument);
 	}
 
 	@Override
