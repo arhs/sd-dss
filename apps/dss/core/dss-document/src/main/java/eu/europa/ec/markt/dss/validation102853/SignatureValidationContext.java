@@ -20,33 +20,6 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import javax.security.auth.x500.X500Principal;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.bouncycastle.util.encoders.Hex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
@@ -55,6 +28,14 @@ import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.crl.CRLSource;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.x500.X500Principal;
+import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.*;
 
 /**
  * During the validation of a signature, the software retrieves different X509 artifacts like Certificate, CRL and OCSP Response. The SignatureValidationContext is a "cache" for
@@ -69,9 +50,6 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
 public class SignatureValidationContext implements ValidationContext {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SignatureValidationContext.class);
-	
-	/** TODO: A hack for DDS configuration; to be removed later. NB! Synchronize all access to this set! */
-    public static final Set<String> sha256ForTrustedPublicKeysInHex = new LinkedHashSet<String>();
 
 	/**
 	 * Each unit is approximately 5 seconds
@@ -413,7 +391,6 @@ public class SignatureValidationContext implements ValidationContext {
 					//					System.out.println("----------------------------------------------------");
 					//					System.out.println(" DSS_ID: " + token.getDSSId());
 					//					System.out.println("----------------------------------------------------");
-				    
 					final Task task = createTask(token);
 					submittedTasks.add(executorService.submit(task));
 				} catch (RejectedExecutionException e) {
@@ -506,18 +483,8 @@ public class SignatureValidationContext implements ValidationContext {
 		if (LOG.isTraceEnabled()) {
 			LOG.trace("Checking revocation data for: " + certToken.getDSSIdAsString());
 		}
-		
-		// TODO: A hack for DDS configuration
-		byte[] publicKeySha256 = DigestUtils.sha256(certToken.getPublicKey().getEncoded());
-		String publicKeySha256Hex = Hex.toHexString(publicKeySha256).toUpperCase();  Hex.toHexString(certToken.getPublicKey().getEncoded()).toUpperCase();
-		LOG.info("Certificate public key hash is: " + publicKeySha256Hex);
-		synchronized (sha256ForTrustedPublicKeysInHex) {
-		    if(sha256ForTrustedPublicKeysInHex.contains(publicKeySha256Hex)) {
-		        certToken.addSourceType(CertificateSourceType.TRUSTED_LIST);
-		    }       
-        }
-		
 		if (certToken.isSelfSigned() || certToken.isTrusted() || certToken.getIssuerToken() == null) {
+
 			// It is not possible to check the revocation data without its signing certificate;
 			// This check is not needed for the trust anchor.
 			return null;
