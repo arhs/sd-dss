@@ -166,7 +166,7 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 		Node nodeToTransform = null;
 		final String uri = reference.getUri();
 		// Check if the reference is related to the whole document
-		if (DSSUtils.isNotBlank(uri) && uri.startsWith("#") && !isXPointer(uri)) {
+		if (DSSUtils.isNotBlank(uri) && uri.charAt(0) == '#' && !isXPointer(uri)) {
 
 			final Document document = DSSXMLUtils.buildDOM(dssDocument);
 			DSSXMLUtils.recursiveIdBrowse(document.getDocumentElement());
@@ -225,12 +225,6 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 		return false;
 	}
 
-	private static boolean isXPointer(final String uri) {
-
-		final boolean xPointer = uri.startsWith("#xpointer(") || uri.startsWith("#xmlns(");
-		return xPointer;
-	}
-
 	/**
 	 * Bob --> This method is not used anymore, but it can replace {@code NOT_ANCESTOR_OR_SELF_DS_SIGNATURE} transformation. Performance test should be performed!
 	 * In case of the enveloped signature the existing signatures are removed.
@@ -245,27 +239,5 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 			final Element signatureDOM = (Element) signatureNodeList.item(ii);
 			signatureDOM.getParentNode().removeChild(signatureDOM);
 		}
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public DSSDocument signDocument(final byte[] signatureValue) throws DSSException {
-
-		if (!built) {
-			build();
-		}
-		final EncryptionAlgorithm encryptionAlgorithm = params.getEncryptionAlgorithm();
-		final byte[] signatureValueBytes = DSSSignatureUtils.convertToXmlDSig(encryptionAlgorithm, signatureValue);
-		final String signatureValueBase64Encoded = DSSUtils.base64Encode(signatureValueBytes);
-
-		final Text signatureValueNode = documentDom.createTextNode(signatureValueBase64Encoded);
-		signatureValueDom.appendChild(signatureValueNode);
-
-		byte[] documentBytes = DSSXMLUtils.transformToByteArray(documentDom);
-		final InMemoryDocument inMemoryDocument = new InMemoryDocument(documentBytes);
-		inMemoryDocument.setMimeType(MimeType.XML);
-		return inMemoryDocument;
 	}
 }

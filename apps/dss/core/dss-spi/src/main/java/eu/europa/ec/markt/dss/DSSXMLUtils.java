@@ -492,30 +492,35 @@ public final class DSSXMLUtils {
 
 	/**
 	 * Guarantees that the xmlString builder has been created.
-	 *
-	 * @throws ParserConfigurationException
 	 */
-	private static void ensureDocumentBuilder() throws DSSException {
+	private static void ensureDocumentBuilderFactory() {
 
 		if (dbFactory != null) {
 			return;
 		}
-		dbFactory = DocumentBuilderFactory.newInstance();
-		dbFactory.setNamespaceAware(true);
+		dbFactory = getDocumentBuilderFactory(true);
+	}
+
+	/**
+	 * @param namespaceAware {@code boolean}
+	 * @return {@code DocumentBuilderFactory} with the desired behaviour
+	 */
+	public static DocumentBuilderFactory getDocumentBuilderFactory(final boolean namespaceAware) {
+
+		final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+		documentBuilderFactory.setNamespaceAware(namespaceAware);
+		return documentBuilderFactory;
 	}
 
 	/**
 	 * Creates the new empty Document.
 	 *
-	 * @return
-	 * @throws ParserConfigurationException
-	 * @throws IOException
-	 * @throws SAXException
+	 * @return newly created {@code Document}
+	 * @throws DSSException
 	 */
-	public static Document buildDOM() {
+	public static Document buildDOM() throws DSSException {
 
-		ensureDocumentBuilder();
-
+		ensureDocumentBuilderFactory();
 		try {
 			return dbFactory.newDocumentBuilder().newDocument();
 		} catch (ParserConfigurationException e) {
@@ -527,10 +532,8 @@ public final class DSSXMLUtils {
 	 * This method returns the {@link org.w3c.dom.Document} created based on the XML string.
 	 *
 	 * @param xmlString The string representing the dssDocument to be created.
-	 * @return
-	 * @throws ParserConfigurationException
-	 * @throws IOException
-	 * @throws SAXException
+	 * @return newly created {@code Document}
+	 * @throws DSSException
 	 */
 	public static Document buildDOM(final String xmlString) throws DSSException {
 
@@ -542,31 +545,56 @@ public final class DSSXMLUtils {
 	 * This method returns the {@link org.w3c.dom.Document} created based on byte array.
 	 *
 	 * @param bytes The bytes array representing the dssDocument to be created.
-	 * @return
-	 * @throws ParserConfigurationException
-	 * @throws IOException
-	 * @throws SAXException
+	 * @return newly created {@code Document}
+	 * @throws DSSException
 	 */
 	public static Document buildDOM(final byte[] bytes) throws DSSException {
 
+		ensureDocumentBuilderFactory();
+		return buildDOM(dbFactory, bytes);
+	}
+
+	/**
+	 * This method returns the {@link org.w3c.dom.Document} created based on byte array.
+	 *
+	 * @param documentBuilderFactory {@code DocumentBuilderFactory} to use
+	 * @param bytes                  The bytes array representing the dssDocument to be created.
+	 * @return newly created {@code Document}
+	 * @throws DSSException
+	 */
+	public static Document buildDOM(final DocumentBuilderFactory documentBuilderFactory, final byte[] bytes) throws DSSException {
+
 		final InputStream input = new ByteArrayInputStream(bytes);
-		return buildDOM(input);
+		return buildDOM(documentBuilderFactory, input);
 	}
 
 	/**
 	 * This method returns the {@link org.w3c.dom.Document} created based on the XML inputStream.
 	 *
 	 * @param inputStream The inputStream stream representing the dssDocument to be created.
-	 * @return
-	 * @throws SAXException
-	 * @throws IOException
+	 * @return newly created {@code Document}
+	 * @throws DSSException
 	 */
 	public static Document buildDOM(final InputStream inputStream) throws DSSException {
 
-		try {
-			ensureDocumentBuilder();
+		ensureDocumentBuilderFactory();
+		return buildDOM(dbFactory, inputStream);
+	}
 
-			final Document rootElement = dbFactory.newDocumentBuilder().parse(inputStream);
+	/**
+	 * This method returns the {@link org.w3c.dom.Document} created based on the XML inputStream.
+	 *
+	 * @param documentBuilderFactory {@code DocumentBuilderFactory} to use
+	 * @param inputStream            The inputStream stream representing the dssDocument to be created.
+	 * @return newly created {@code Document}
+	 * @throws DSSException
+	 */
+
+	public static Document buildDOM(final DocumentBuilderFactory documentBuilderFactory, final InputStream inputStream) throws DSSException {
+
+		try {
+
+			final Document rootElement = documentBuilderFactory.newDocumentBuilder().parse(inputStream);
 			return rootElement;
 		} catch (SAXParseException e) {
 			throw new DSSException(e);
@@ -585,7 +613,7 @@ public final class DSSXMLUtils {
 	 * This method returns the {@link org.w3c.dom.Document} created based on the {@link eu.europa.ec.markt.dss.signature.DSSDocument}.
 	 *
 	 * @param dssDocument The DSS representation of the document from which the dssDocument is created.
-	 * @return
+	 * @return newly created {@code Document}
 	 * @throws DSSException
 	 */
 	public static Document buildDOM(final DSSDocument dssDocument) throws DSSException {
@@ -872,6 +900,7 @@ public final class DSSXMLUtils {
 	 */
 	public static Document createDocument(final String namespaceURI, final String qualifiedName, final Element element) {
 
+		ensureDocumentBuilderFactory();
 		DOMImplementation domImpl;
 		try {
 			domImpl = dbFactory.newDocumentBuilder().getDOMImplementation();
@@ -895,6 +924,7 @@ public final class DSSXMLUtils {
 	 */
 	public static Document createDocument(final String namespaceURI, final String qualifiedName) {
 
+		ensureDocumentBuilderFactory();
 		DOMImplementation domImpl;
 		try {
 			domImpl = dbFactory.newDocumentBuilder().getDOMImplementation();
@@ -917,6 +947,7 @@ public final class DSSXMLUtils {
 	 */
 	public static Document createDocument(final String namespaceURI, final String qualifiedName, final Element element1, final Element element2) {
 
+		ensureDocumentBuilderFactory();
 		DOMImplementation domImpl;
 		try {
 			domImpl = dbFactory.newDocumentBuilder().getDOMImplementation();
@@ -980,30 +1011,47 @@ public final class DSSXMLUtils {
 	}
 
 	/**
-	 * This method retrieves an element based on its ID
+	 * This method retrieves an element based on its {@code elementId}, {@code namespace} and {@code tagName}. If more than one element has an ID attribute with that value, the
+	 * first one is returned.
 	 *
 	 * @param currentDom the DOM in which the element has to be retrieved
 	 * @param elementId  the specified ID
 	 * @param namespace  the namespace to take into account
 	 * @param tagName    the tagName of the element to find
-	 * @return the
-	 * @throws DSSNullException
+	 * @return the {@code Element} or {@code null} when not found
+	 * //	 * @throws DSSNullException
 	 */
-	public static Element getElementById(Document currentDom, String elementId, String namespace, String tagName) throws DSSNullException {
+	public static Element getElementById(Document currentDom, String elementId, String namespace, String tagName) /*throws DSSNullException*/ {
 
-		Element element = null;
 		NodeList nodes = currentDom.getElementsByTagNameNS(namespace, tagName);
 
-		for (int i = 0; i < nodes.getLength(); i++) {
-			element = (Element) nodes.item(i);
+		for (int ii = 0; ii < nodes.getLength(); ii++) {
+
+			Element element = (Element) nodes.item(ii);
 			if (elementId.equals(DSSXMLUtils.getIDIdentifier(element))) {
 				return element;
 			}
 		}
-		if (element == null) {
-			throw new DSSNullException(Element.class);
-		}
+		//		if (element == null) {
+		//			throw new DSSNullException(Element.class);
+		//		}
 		return null;
+	}
+
+	/**
+	 * This method retrieves an element based on its {@code elementId}, {@code namespace} and {@code tagName}. If more than one element has an ID attribute with that value, what
+	 * is
+	 * returned is undefined.
+	 *
+	 * @param currentDom the DOM in which the element has to be retrieved
+	 * @param elementId  the specified ID
+	 * @return the {@code Element} or {@code null} when not found
+	 * @throws DSSNullException
+	 */
+	public static Element getElementById(final Document currentDom, final String elementId) throws DSSNullException {
+
+		final Element element = currentDom.getElementById(elementId);
+		return element;
 	}
 
 	/**

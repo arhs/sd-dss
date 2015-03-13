@@ -25,19 +25,19 @@ import java.util.List;
 
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Text;
+import org.w3c.dom.Node;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
-import eu.europa.ec.markt.dss.EncryptionAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.DSSReference;
 import eu.europa.ec.markt.dss.parameter.DSSTransform;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
-import eu.europa.ec.markt.dss.signature.DSSSignatureUtils;
 import eu.europa.ec.markt.dss.signature.InMemoryDocument;
 import eu.europa.ec.markt.dss.signature.MimeType;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
@@ -109,42 +109,89 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 	@Override
 	protected DSSDocument transformReference(final DSSReference reference) {
 
-		return reference.getContents();
+		final DSSDocument contents = reference.getContents();
+		if (MimeType.XML == contents.getMimeType()) {
+
+			if (!reference.hasSetObjectId()) {
+
+				final String uri = reference.getUri();
+				if (DSSUtils.isNotEmpty(uri) && uri.charAt(0) == '#' && !isXPointer(uri)) {
+
+					final String id = uri.substring(1);
+					DSSXMLUtils.recursiveIdBrowse(documentDom.getDocumentElement());
+					final Element nodeToTransform = DSSXMLUtils.getElementById(documentDom, id);
+					final List<DSSTransform> transforms = reference.getTransforms();
+					if (DSSUtils.isEmpty(transforms)) {
+
+						byte[] transformedReferenceBytes = DSSXMLUtils.canonicalizeSubtree(signedInfoCanonicalizationMethod, nodeToTransform);
+						return new InMemoryDocument(transformedReferenceBytes);
+					}
+				}
+			}
+		}
+		return contents;
 	}
 
 	/**
-	 * Adds signature value to the signature and returns XML signature (InMemoryDocument)
-	 *
-	 * @param signatureValue
-	 * @return
-	 * @throws DSSException
+	 * {@inheritDoc}
 	 */
-	@Override
-	public DSSDocument signDocument(final byte[] signatureValue) throws DSSException {
 
-		if (!built) {
-			build();
-		}
-
-		final EncryptionAlgorithm encryptionAlgorithm = params.getEncryptionAlgorithm();
-		final byte[] signatureValueBytes = DSSSignatureUtils.convertToXmlDSig(encryptionAlgorithm, signatureValue);
-		final String signatureValueBase64Encoded = DSSUtils.base64Encode(signatureValueBytes);
-		final Text signatureValueNode = documentDom.createTextNode(signatureValueBase64Encoded);
-		signatureValueDom.appendChild(signatureValueNode);
+	protected void incorporateSpecificObjects() {
 
 		final List<DSSReference> references = params.getReferences();
 		for (final DSSReference reference : references) {
 
 			// <ds:Object>
-			final String base64EncodedOriginalDocument = DSSUtils.base64Encode(reference.getContents());
-			final Element objectDom = DSSXMLUtils.addTextElement(documentDom, signatureDom, XMLSignature.XMLNS, DS_OBJECT, base64EncodedOriginalDocument);
-			final String id = reference.getUri().substring(1);
+			final Element objectDom = getObjectElement(reference);
+			setObjectId(reference, objectDom);
+			setObjectMimeType(reference, objectDom);
+		}
+	}
+
+	private void setObjectMimeType(final DSSReference reference, final Element objectDom) {
+
+		final String objectMimeType = reference.getObjectMimeType();
+		if (DSSUtils.isNotEmpty(objectMimeType)) {
+			objectDom.setAttribute(MIME_TYPE, objectMimeType);
+		}
+	}
+
+	private void setObjectId(final DSSReference reference, final Element objectDom) {
+
+		final String uri = reference.getUri();
+		if (DSSUtils.isNotEmpty(uri) && reference.hasSetObjectId()) {
+
+			final String id = uri.substring(1);
 			objectDom.setAttribute(ID, id);
 		}
+	}
 
-		byte[] documentBytes = DSSXMLUtils.transformToByteArray(documentDom);
-		final InMemoryDocument inMemoryDocument = new InMemoryDocument(documentBytes);
-		inMemoryDocument.setMimeType(MimeType.XML);
-		return inMemoryDocument;
+	private Element getObjectElement(final DSSReference dssReference) {
+
+		final DSSDocument dssDocument = dssReference.getContents();
+		byte[] contents = dssDocument.getBytes();
+		final List<DSSTransform> transforms = dssReference.getTransforms();
+		if (transforms != null) {
+			for (final DSSTransform transform : transforms) {
+				if (CanonicalizationMethod.BASE64.equals(transform.getAlgorithm())) {
+					contents = DSSUtils.base64BinaryEncode(contents);
+					dssDocument.setMimeType(MimeType.TEXT);
+				}
+			}
+		}
+		if (dssDocument.getMimeType() == MimeType.XML) {
+
+			final DocumentBuilderFactory documentBuilderFactory = DSSXMLUtils.getDocumentBuilderFactory(false);
+			final Document document = DSSXMLUtils.buildDOM(documentBuilderFactory, contents);
+			final Element objectDom = DSSXMLUtils.addElement(documentDom, signatureDom, XMLSignature.XMLNS, DS_OBJECT);
+
+			final Node importedNode = documentDom.importNode(document.getDocumentElement(), true);
+			objectDom.appendChild(importedNode);
+			return objectDom;
+		} else {
+
+			final Element objectDom = DSSXMLUtils.addTextElement(documentDom, signatureDom, XMLSignature.XMLNS, DS_OBJECT, new String(contents));
+			return objectDom;
+		}
 	}
 }

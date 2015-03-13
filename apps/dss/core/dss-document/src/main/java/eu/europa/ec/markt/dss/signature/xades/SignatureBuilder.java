@@ -45,6 +45,7 @@ import eu.europa.ec.markt.dss.parameter.DSSReference;
 import eu.europa.ec.markt.dss.parameter.DSSTransform;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
+import eu.europa.ec.markt.dss.signature.DSSSignatureUtils;
 import eu.europa.ec.markt.dss.signature.InMemoryDocument;
 import eu.europa.ec.markt.dss.signature.MimeType;
 import eu.europa.ec.markt.dss.validation102853.CertificatePool;
@@ -202,6 +203,7 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		incorporateSignatureValue();
 		incorporateKeyInfo();
 		incorporateObject();
+		incorporateSpecificObjects();
 
 		/**
 		 * We create <ds:Reference> segment only now, because we need first to define the SignedProperties segment to
@@ -325,6 +327,15 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		qualifyingPropertiesDom.setAttribute(TARGET, "#" + deterministicId);
 
 		incorporateSignedProperties();
+	}
+
+	/**
+	 * To be used in the case of an ENVELOPING signature
+	 *
+	 * @throws DSSException
+	 */
+	protected void incorporateSpecificObjects() throws DSSException {
+
 	}
 
 	/**
@@ -719,7 +730,23 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 	 * @return {@code DSSDocument}
 	 * @throws DSSException
 	 */
-	public abstract DSSDocument signDocument(final byte[] signatureValue) throws DSSException;
+	public DSSDocument signDocument(final byte[] signatureValue) throws DSSException {
+
+		if (!built) {
+			build();
+		}
+		final EncryptionAlgorithm encryptionAlgorithm = params.getEncryptionAlgorithm();
+		final byte[] signatureValueBytes = DSSSignatureUtils.convertToXmlDSig(encryptionAlgorithm, signatureValue);
+		final String signatureValueBase64Encoded = DSSUtils.base64Encode(signatureValueBytes);
+
+		final Text signatureValueNode = documentDom.createTextNode(signatureValueBase64Encoded);
+		signatureValueDom.appendChild(signatureValueNode);
+
+		byte[] documentBytes = DSSXMLUtils.transformToByteArray(documentDom);
+		final InMemoryDocument inMemoryDocument = new InMemoryDocument(documentBytes);
+		inMemoryDocument.setMimeType(MimeType.XML);
+		return inMemoryDocument;
+	}
 
 	/**
 	 * Adds the content of a timestamp into the given timestamp element
@@ -754,4 +781,11 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 
 		timestampElement.appendChild(encapsulatedTimestampElement);
 	}
+
+	protected static boolean isXPointer(final String uri) {
+
+		final boolean xPointer = uri.startsWith("#xpointer(") || uri.startsWith("#xmlns(");
+		return xPointer;
+	}
+
 }

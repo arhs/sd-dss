@@ -38,6 +38,10 @@ public class DSSReference {
 	private String uri;
 	private String type;
 
+	private String objectMimeType;
+
+	private boolean setObjectId = true;
+
 	private DigestAlgorithm digestMethod;
 
 	private DSSDocument contents;
@@ -60,6 +64,8 @@ public class DSSReference {
 		id = reference.id;
 		uri = reference.uri;
 		type = reference.type;
+		objectMimeType = reference.objectMimeType;
+		setObjectId = reference.setObjectId;
 		digestMethod = reference.digestMethod;
 		contents = reference.contents;
 		if (reference.transforms != null && reference.transforms.size() > 0) {
@@ -77,7 +83,7 @@ public class DSSReference {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
@@ -85,7 +91,7 @@ public class DSSReference {
 		return uri;
 	}
 
-	public void setUri(String uri) {
+	public void setUri(final String uri) {
 		this.uri = uri;
 	}
 
@@ -93,15 +99,31 @@ public class DSSReference {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(final String type) {
 		this.type = type;
+	}
+
+	public String getObjectMimeType() {
+		return objectMimeType;
+	}
+
+	public void setObjectMimeType(final String objectMimeType) {
+		this.objectMimeType = objectMimeType;
+	}
+
+	public boolean hasSetObjectId() {
+		return setObjectId;
+	}
+
+	public void setSetObjectId(final boolean setObjectId) {
+		this.setObjectId = setObjectId;
 	}
 
 	public DigestAlgorithm getDigestMethodAlgorithm() {
 		return digestMethod;
 	}
 
-	public void setDigestMethodAlgorithm(DigestAlgorithm digestMethod) {
+	public void setDigestMethodAlgorithm(final DigestAlgorithm digestMethod) {
 		this.digestMethod = digestMethod;
 	}
 
@@ -109,7 +131,7 @@ public class DSSReference {
 		return transforms;
 	}
 
-	public void setTransforms(List<DSSTransform> transforms) {
+	public void setTransforms(final List<DSSTransform> transforms) {
 		this.transforms = transforms;
 	}
 
@@ -117,17 +139,19 @@ public class DSSReference {
 		return contents;
 	}
 
-	public void setContents(DSSDocument contents) {
+	public void setContents(final DSSDocument contents) {
 		this.contents = contents;
 	}
 
-
 	@Override
 	public String toString() {
+
 		return "DSSReference{" +
 			  "id='" + id + '\'' +
 			  ", uri='" + uri + '\'' +
 			  ", type='" + type + '\'' +
+			  ", objectMimeType='" + objectMimeType + '\'' +
+			  ", setObjectId=" + setObjectId +
 			  ", digestMethod='" + (digestMethod != null ? digestMethod.getName() : digestMethod) + '\'' +
 			  ", contents=" + (contents != null ? contents.toString() : contents) +
 			  ", transforms=" + transforms +
