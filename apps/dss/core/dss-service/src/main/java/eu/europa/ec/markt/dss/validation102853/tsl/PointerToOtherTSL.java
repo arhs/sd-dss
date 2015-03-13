@@ -44,7 +44,7 @@ import eu.europa.ec.markt.tsl.jaxb.tsl.ServiceDigitalIdentityListType;
  * @version $Revision: 1154 $ - $Date: 2012-02-23 16:04:49 +0100 (Thu, 23 Feb 2012) $
  */
 
-class PointerToOtherTSL {
+public class PointerToOtherTSL {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(PointerToOtherTSL.class);
 

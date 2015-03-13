@@ -41,7 +41,7 @@ import eu.europa.ec.markt.tsl.jaxb.tsl.TrustStatusListType;
  * @version $Revision: 946 $ - $Date: 2011-06-06 17:15:14 +0200 (Mon, 06 Jun 2011) $
  */
 
-abstract class TrustServiceListFactory {
+public abstract class TrustServiceListFactory {
 
     /**
      * @param input

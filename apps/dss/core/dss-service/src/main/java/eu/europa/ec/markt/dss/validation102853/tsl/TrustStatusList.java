@@ -40,7 +40,7 @@ import eu.europa.ec.markt.tsl.jaxb.tsl.TrustStatusListType;
  *
  * @version $Revision: 1244 $ - $Date: 2012-07-24 14:13:04 +0200 (Tue, 24 Jul 2012) $
  */
-class TrustStatusList {
+public class TrustStatusList {
 
 	private TrustStatusListType trustStatusListType;
 

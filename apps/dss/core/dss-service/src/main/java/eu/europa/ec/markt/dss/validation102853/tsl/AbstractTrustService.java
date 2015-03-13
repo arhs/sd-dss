@@ -66,7 +66,7 @@ import eu.europa.ec.markt.tsl.jaxb.xades.ObjectIdentifierType;
  * @version $Revision: 1834 $ - $Date: 2013-03-28 16:04:04 +0100 (Thu, 28 Mar 2013) $
  */
 
-abstract class AbstractTrustService {
+public abstract class AbstractTrustService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractTrustService.class);
 

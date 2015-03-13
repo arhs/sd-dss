@@ -39,7 +39,7 @@ import eu.europa.ec.markt.tsl.jaxb.tsl.TSPType;
  * @version $Revision: 1049 $ - $Date: 2011-06-27 17:25:05 +0200 (Mon, 27 Jun 2011) $
  */
 
-class TrustServiceProvider {
+public class TrustServiceProvider {
 
 	private TSPType tspType;
 

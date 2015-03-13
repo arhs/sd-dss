@@ -41,13 +41,13 @@ public class FileCacheDataLoader extends CommonDataLoader {
 
 	private static final Logger LOG = LoggerFactory.getLogger(FileCacheDataLoader.class);
 
-	private File fileCacheDirectory = new File(System.getProperty("java.io.tmpdir"));
+	protected File fileCacheDirectory = new File(System.getProperty("java.io.tmpdir"));
 
-	private ResourceLoader resourceLoader = new ResourceLoader();
+	protected ResourceLoader resourceLoader = new ResourceLoader();
 
-	private List<String> toBeLoaded;
+	protected List<String> toBeLoaded;
 
-	private List<String> toIgnored;
+	protected List<String> toIgnored;
 
 	/**
 	 * This method allows to set the file cache directory. If the cache folder does not exists then it's created.
@@ -125,7 +125,7 @@ public class FileCacheDataLoader extends CommonDataLoader {
 		return returnedBytes;
 	}
 
-	private byte[] getContentUsingNotNetworkProtocol(String url) {
+	private byte[] getContentUsingNotNetworkProtocol(final String url) {
 
 		final String resourcePath = resourceLoader.getAbsoluteResourceFolder(url.trim());
 		final File fileResource = new File(resourcePath);

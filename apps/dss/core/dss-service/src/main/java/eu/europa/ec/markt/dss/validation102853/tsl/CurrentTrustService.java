@@ -38,7 +38,7 @@ import eu.europa.ec.markt.tsl.jaxb.tsl.TSPServiceType;
  * @version $Revision: 1154 $ - $Date: 2012-02-23 16:04:49 +0100 (Thu, 23 Feb 2012) $
  */
 
-class CurrentTrustService extends AbstractTrustService {
+public class CurrentTrustService extends AbstractTrustService {
 
     private TSPServiceType service;
 

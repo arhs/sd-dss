@@ -36,7 +36,7 @@ import eu.europa.ec.markt.tsl.jaxb.tsl.ServiceHistoryInstanceType;
  * @version $Revision: 946 $ - $Date: 2011-06-06 17:15:14 +0200 (Mon, 06 Jun 2011) $
  */
 
-class HistoricalTrustService extends AbstractTrustService {
+public class HistoricalTrustService extends AbstractTrustService {
 
     private ServiceHistoryInstanceType service;
 
