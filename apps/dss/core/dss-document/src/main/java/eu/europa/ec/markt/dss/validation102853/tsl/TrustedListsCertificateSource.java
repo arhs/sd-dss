@@ -177,7 +177,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	 * @param tlWellSigned   Indicates if the signature of trusted list is valid
 	 * @return
 	 */
-	private ServiceInfo getServiceInfo(final AbstractTrustService trustedService, final TrustServiceProvider tsProvider, final boolean tlWellSigned) {
+	protected ServiceInfo getServiceInfo(final AbstractTrustService trustedService, final TrustServiceProvider tsProvider, final boolean tlWellSigned) {
 
 		// System.out.println("--- > ServiceName: " + trustedService.getServiceName());
 		final ServiceInfo serviceInfo = trustedService.createServiceInfo();
@@ -215,7 +215,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	 * @return the inputStream stream
 	 * @throws DSSException
 	 */
-	private InputStream getLotlCertificateInputStream() throws DSSException {
+	protected InputStream getLotlCertificateInputStream() throws DSSException {
 
 		InputStream inputStream = null;
 		try {
@@ -248,7 +248,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	 * @param signingCertList the {@code List} of the possible signing certificates
 	 * @return {@code TrustStatusList}
 	 */
-	private TrustStatusList getTrustStatusList(final String url, final List<X509Certificate> signingCertList) {
+	protected TrustStatusList getTrustStatusList(final String url, final List<X509Certificate> signingCertList) {
 
 		boolean refresh = shouldRefresh(url);
 		final byte[] bytes = dataLoader.get(url, refresh);
@@ -263,7 +263,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		return trustStatusList;
 	}
 
-	private boolean validateTslSignature(final List<X509Certificate> signingCertList, final byte[] bytes) {
+	protected boolean validateTslSignature(final List<X509Certificate> signingCertList, final byte[] bytes) {
 
 		boolean coreValidity = false;
 		if (signingCertList != null) {
@@ -302,7 +302,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		return tslHashes.getProperty(url);
 	}
 
-	private void ensureTSLHashCodePropertyFileLoaded() {
+	protected void ensureTSLHashCodePropertyFileLoaded() {
 		if (tslHashes == null) {
 			tslHashes = loadProperties(TSL_HASH_PROPERTIES);
 		}
@@ -322,7 +322,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		saveProperties(tslNextUpdates, TSL_NEXT_UPDATE_PROPERTIES);
 	}
 
-	private void ensureTSLNextUpdatePropertyFileLoaded() {
+	protected void ensureTSLNextUpdatePropertyFileLoaded() {
 		if (tslNextUpdates == null) {
 			tslNextUpdates = loadProperties(TSL_NEXT_UPDATE_PROPERTIES);
 		}
@@ -359,7 +359,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		}
 	}
 
-	private boolean shouldRefresh(final String url) {
+	protected boolean shouldRefresh(final String url) {
 
 		if (tslRefreshPolicy == TSLRefreshPolicy.ALWAYS) {
 			return true;
@@ -397,11 +397,11 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		return refresh;
 	}
 
-	private String getSha2Url(String url) {
+	protected String getSha2Url(String url) {
 		return url.substring(0, url.lastIndexOf(".")) + ".sha2";
 	}
 
-	private XMLDocumentValidator prepareSignatureValidation(final List<X509Certificate> signingCertList, final byte[] bytes) {
+	protected XMLDocumentValidator prepareSignatureValidation(final List<X509Certificate> signingCertList, final byte[] bytes) {
 
 		final CommonTrustedCertificateSource commonTrustedCertificateSource = new CommonTrustedCertificateSource();
 		for (final X509Certificate x509Certificate : signingCertList) {
@@ -473,7 +473,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		LOG.info("                 : {} certificates", certPool.getNumberOfCertificates());
 	}
 
-	private TrustStatusList loadLotl() {
+	protected TrustStatusList loadLotl() {
 
 		X509Certificate lotlCert = null;
 		if (checkSignature) {
@@ -496,7 +496,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		return lotl;
 	}
 
-	private X509Certificate readLOTLCertificate() throws DSSException {
+	protected X509Certificate readLOTLCertificate() throws DSSException {
 
 		X509Certificate lotlCert;
 		if (lotlCertificate == null) {
@@ -573,7 +573,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 		}
 	}
 
-	private void makeATrace(final String url, final String message, final Throwable e) {
+	protected void makeATrace(final String url, final String message, final Throwable e) {
 
 		LOG.error(message, e);
 		StringWriter w = new StringWriter();
@@ -587,7 +587,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	 *
 	 * @param trustStatusList
 	 */
-	private void loadAllCertificatesFromOneTSL(final TrustStatusList trustStatusList) {
+	protected void loadAllCertificatesFromOneTSL(final TrustStatusList trustStatusList) {
 
 		for (final TrustServiceProvider trustServiceProvider : trustStatusList.getTrustServicesProvider()) {
 
