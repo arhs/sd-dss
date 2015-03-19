@@ -72,12 +72,13 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		final byte[] signatureValue = DSSUtils.EMPTY_BYTE_ARRAY;
 		File toSignFile = null;
 		File signedFile = null;
+		InputStream inputStream = null;
 		PDDocument pdDocument = null;
 		try {
 
 			toSignFile = DSSPDFUtils.getFileFromPdfData(toSignDocument);
-
-			pdDocument = PDDocument.load(toSignFile);
+			inputStream = new FileInputStream(toSignFile);
+			pdDocument = PDDocument.load(inputStream, true);
 			addExtraDictionaries(pdDocument, extraDictionariesToAddBeforeSign);
 			PDSignature pdSignature = createSignatureDictionary(parameters);
 
@@ -89,6 +90,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		} catch (IOException e) {
 			throw new DSSException(e);
 		} finally {
+			DSSUtils.closeQuietly(inputStream);
 			DSSUtils.delete(toSignFile);
 			DSSUtils.delete(signedFile);
 			DSSPDFUtils.close(pdDocument);
@@ -103,12 +105,14 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		File signedFile = null;
 		FileInputStream fileInputStream = null;
 		FileInputStream finalFileInputStream = null;
+		InputStream inputStream = null;
 		PDDocument pdDocument = null;
 		try {
 
 			toSignFile = DSSPDFUtils.getFileFromPdfData(pdfData);
 
-			pdDocument = PDDocument.load(toSignFile);
+			inputStream = new FileInputStream(toSignFile);
+			pdDocument = PDDocument.load(inputStream, true);
 			addExtraDictionaries(pdDocument, extraDictionariesToAddBeforeSign);
 			final PDSignature pdSignature = createSignatureDictionary(parameters);
 
@@ -122,6 +126,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		} catch (IOException e) {
 			throw new DSSException(e);
 		} finally {
+			DSSUtils.closeQuietly(inputStream);
 			DSSUtils.closeQuietly(fileInputStream);
 			DSSUtils.closeQuietly(finalFileInputStream);
 			DSSUtils.delete(toSignFile);
@@ -253,7 +258,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 
 			DSSUtils.copy(input, buffer);
 
-			doc = PDDocument.load(new ByteArrayInputStream(buffer.toByteArray()));
+			doc = PDDocument.load(new ByteArrayInputStream(buffer.toByteArray()),true);
 			final PdfDict catalog = new PdfBoxDict(doc.getDocumentCatalog().getCOSDictionary(), doc);
 
 			final List<PDSignature> signatureDictionaries = doc.getSignatureDictionaries();

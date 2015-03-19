@@ -33,7 +33,7 @@ class PdfBoxReader implements PdfReader {
 	private PDDocument wrapped;
 
 	public PdfBoxReader(InputStream inputstream) throws IOException {
-		wrapped = PDDocument.load(inputstream);
+		wrapped = PDDocument.load(inputstream, true);
 	}
 
 	@Override
