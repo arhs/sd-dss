@@ -363,7 +363,7 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		// </ds:Transforms>
 
 		// <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
-		final DigestAlgorithm digestAlgorithm = params.getDigestAlgorithm();
+		final DigestAlgorithm digestAlgorithm = params.getSignedPropertiesDigestAlgorithm();
 		incorporateDigestMethod(reference, digestAlgorithm);
 
 		// <ds:DigestValue>b/JEDQH2S1Nfe4Z3GSVtObN34aVB1kMrEbVQZswThfQ=</ds:DigestValue>

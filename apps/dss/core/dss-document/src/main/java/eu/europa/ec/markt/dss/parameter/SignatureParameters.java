@@ -107,6 +107,12 @@ public class SignatureParameters implements Serializable {
 	 * XAdES: The digest algorithm used to hash ds:SignedInfo.
 	 */
 	private DigestAlgorithm digestAlgorithm = signatureAlgorithm.getDigestAlgorithm();
+
+	/**
+	 * XAdES: The digest algorithm used to hash ds:SignedInfo.
+	 */
+	private DigestAlgorithm signedPropertiesDigestAlgorithm = signatureAlgorithm.getDigestAlgorithm();
+
 	private List<DSSReference> dssReferences;
 
 	/**
@@ -169,6 +175,7 @@ public class SignatureParameters implements Serializable {
 		detachedContent = source.detachedContent;
 		privateKeyEntry = source.privateKeyEntry;
 		reason = source.reason;
+		signedPropertiesDigestAlgorithm = this.signedPropertiesDigestAlgorithm;
 		signedInfoCanonicalizationMethod = source.signedInfoCanonicalizationMethod;
 		signedPropertiesCanonicalizationMethod = source.signedPropertiesCanonicalizationMethod;
 		signatureAlgorithm = source.signatureAlgorithm;
@@ -500,6 +507,15 @@ public class SignatureParameters implements Serializable {
 		this.signaturePackaging = signaturePackaging;
 	}
 
+
+
+	public DigestAlgorithm getSignedPropertiesDigestAlgorithm() {
+		return signedPropertiesDigestAlgorithm;
+	}
+
+	public void setSignedPropertiesDigestAlgorithm(final DigestAlgorithm signedPropertiesDigestAlgorithm) {
+		this.signedPropertiesDigestAlgorithm = signedPropertiesDigestAlgorithm;
+	}
 
 	/**
 	 * @return (XAdES) the canonicalization algorithm to be used when dealing with SignedInfo.
