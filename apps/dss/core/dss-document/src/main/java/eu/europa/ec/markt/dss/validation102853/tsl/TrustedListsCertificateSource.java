@@ -65,6 +65,7 @@ import eu.europa.ec.markt.dss.validation102853.report.SimpleReport;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder;
+import eu.europa.ec.markt.tsl.jaxb.tsl.NonEmptyMultiLangURIType;
 
 /**
  * This class allows to extract all the trust anchors defined within the trusted lists. The LOTL is used as the entry point of the process. Note that the SHA2 files are used to
@@ -95,6 +96,8 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	protected transient DataLoader dataLoader;
 
 	private Map<String, String> diagnosticInfo = new HashMap<String, String>();
+
+	private List<String> infoList = new ArrayList<String>();
 
 	/**
 	 * Defines if the TL signature must be checked. The default value is true.
@@ -207,6 +210,11 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 	public Map<String, String> getDiagnosticInfo() {
 
 		return Collections.unmodifiableMap(diagnosticInfo);
+	}
+
+	public List<String> getInfo() {
+
+		return Collections.unmodifiableList(infoList);
 	}
 
 	/**
@@ -561,7 +569,19 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 			diagnosticInfo.put(trimmedUrl, "Loading");
 			LOG.info("Downloading TrustStatusList for '{}' from url= {}", territory, trimmedUrl);
 			final TrustStatusList countryTSL = getTrustStatusList(trimmedUrl, signingCertList);
+			if (LOG.isTraceEnabled()) {
+
+				LOG.trace("-------------------------------------------------------------------------------");
+				LOG.trace("#Country: " + territory);
+				infoList.add("<Country>");
+				infoList.add("\t<Name>" + territory + "</Name>");
+			}
+
 			loadAllCertificatesFromOneTSL(countryTSL);
+			if (LOG.isTraceEnabled()) {
+
+				infoList.add("</Country>");
+			}
 			LOG.info(".... done for '{}'", territory);
 			diagnosticInfo.put(trimmedUrl, "Loaded " + new Date().toString());
 		} catch (final DSSNullReturnedException e) {
@@ -591,12 +611,36 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 
 		for (final TrustServiceProvider trustServiceProvider : trustStatusList.getTrustServicesProvider()) {
 
+			if (LOG.isTraceEnabled()) {
+
+				LOG.trace("-------------------------------------------------------------------------------");
+				LOG.trace("#Trust Service Provider: " + trustServiceProvider.getTradeName());
+				final List<NonEmptyMultiLangURIType> electronicAddresses = trustServiceProvider.getElectronicAddresses();
+				for (final NonEmptyMultiLangURIType electronicAddress : electronicAddresses) {
+
+					LOG.trace(" eAddress ---> " + electronicAddress.getValue());
+				}
+				infoList.add("\t<TrustServiceProvider>");
+				LOG.trace("  Name ------> " + trustServiceProvider.getName());
+				infoList.add("\t\t<Name>" + trustServiceProvider.getTradeName() + "</Name>");
+				for (final NonEmptyMultiLangURIType electronicAddress : electronicAddresses) {
+					infoList.add("\t\t<eAddress>" + electronicAddress.getValue() + "</eAddress>");
+				}
+				infoList.add("\t\t<Address>" + trustServiceProvider.getPostalAddress() + "</Address>");
+				infoList.add("\t\t<Name>" + trustServiceProvider.getName() + "</Name>");
+
+			}
+			infoList.add("\t\t\t<Services>");
 			for (final AbstractTrustService trustService : trustServiceProvider.getTrustServiceList()) {
 
 				if (LOG.isTraceEnabled()) {
-					LOG.trace("#Service Name: " + trustService.getServiceName());
-					LOG.trace("      ------> " + trustService.getType());
-					LOG.trace("      ------> " + trustService.getStatus());
+
+					LOG.trace("\t" + trustService.getServiceName());
+					LOG.trace("\t  Type ------> " + trustService.getType() + "");
+					LOG.trace("\t  Status ----> " + trustService.getStatus() + "");
+					infoList.add("\t\t\t\t<Service Name=\"" + trustService.getServiceName() + "\"></Name>");
+					//infoList.add("\t\t\tType: " + trustService.getType());
+					//infoList.add("\t\t\tStatus: " + trustService.getStatus());
 				}
 				for (final Object digitalIdentity : trustService.getDigitalIdentity()) {
 
@@ -626,6 +670,10 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 						LOG.warn(e.getLocalizedMessage());
 					}
 				}
+			}
+			infoList.add("\t\t\t</Services>");
+			if (LOG.isTraceEnabled()) {
+				infoList.add("</TrustServiceProvider>");
 			}
 		}
 	}

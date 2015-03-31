@@ -38,7 +38,11 @@ public class DSSReference {
 	private String uri;
 	private String type;
 
+	// .. is an optional attribute which describes the data within the Object (independent of its encoding).
 	private String objectMimeType;
+	// ... may be used to provide a URI that identifies the method by which the object is encoded.
+	// ... if the Object contains base64 encoded PNG, the Encoding may be specified as 'http://www.w3.org/2000/09/xmldsig#base64' and the MimeType as 'image/png'.
+	private String objectEncoding;
 
 	private boolean setObjectId = true;
 
@@ -65,6 +69,7 @@ public class DSSReference {
 		uri = reference.uri;
 		type = reference.type;
 		objectMimeType = reference.objectMimeType;
+		objectEncoding = reference.objectEncoding;
 		setObjectId = reference.setObjectId;
 		digestMethod = reference.digestMethod;
 		contents = reference.contents;
@@ -111,6 +116,14 @@ public class DSSReference {
 		this.objectMimeType = objectMimeType;
 	}
 
+	public String getObjectEncoding() {
+		return objectEncoding;
+	}
+
+	public void setObjectEncoding(String objectEncoding) {
+		this.objectEncoding = objectEncoding;
+	}
+
 	public boolean hasSetObjectId() {
 		return setObjectId;
 	}
@@ -145,12 +158,12 @@ public class DSSReference {
 
 	@Override
 	public String toString() {
-
 		return "DSSReference{" +
 			  "id='" + id + '\'' +
 			  ", uri='" + uri + '\'' +
 			  ", type='" + type + '\'' +
 			  ", objectMimeType='" + objectMimeType + '\'' +
+			  ", objectEncoding='" + objectEncoding + '\'' +
 			  ", setObjectId=" + setObjectId +
 			  ", digestMethod='" + (digestMethod != null ? digestMethod.getName() : digestMethod) + '\'' +
 			  ", contents=" + (contents != null ? contents.toString() : contents) +

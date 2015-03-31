@@ -33,7 +33,6 @@ import org.w3c.dom.Node;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
-import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.DSSReference;
 import eu.europa.ec.markt.dss.parameter.DSSTransform;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
@@ -65,22 +64,9 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 	}
 
 	/**
-	 * This method creates the first reference (this is a reference to the file to sign) witch is specific for each form
-	 * of signature. Here, the value of the URI is an unique identifier to the base64 encoded data (file). The data are
-	 * included in the signature XML.
-	 *
-	 * @throws DSSException
+	 * {@code inheritDoc}<br>
+	 * By default the encapsulated, signed data is base 64 encoded.
 	 */
-	@Override
-	protected void incorporateReferences() throws DSSException {
-
-		final List<DSSReference> references = params.getReferences();
-		for (final DSSReference reference : references) {
-
-			incorporateReference(reference);
-		}
-	}
-
 	@Override
 	protected List<DSSReference> createDefaultReferences() {
 
@@ -110,20 +96,21 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 	protected DSSDocument transformReference(final DSSReference reference) {
 
 		final DSSDocument contents = reference.getContents();
-		if (MimeType.XML == contents.getMimeType()) {
+		if (MimeType.XML == contents.getMimeType()) { // In the case of an XML document
 
-			if (!reference.hasSetObjectId()) {
+			if (!reference.hasSetObjectId()) { // when the reference does not point to the ds:Object, not the whole XML encapsulated data is signed
 
 				final String uri = reference.getUri();
-				if (DSSUtils.isNotEmpty(uri) && uri.charAt(0) == '#' && !isXPointer(uri)) {
+				if (DSSUtils.isNotEmpty(uri) && uri.charAt(0) == '#' && !isXPointer(uri)) { // and the URL is relative and not an XPointer
 
 					final String id = uri.substring(1);
+					// TODO-Bob (13/03/2015):  Add ID wen creating the node!
 					DSSXMLUtils.recursiveIdBrowse(documentDom.getDocumentElement());
-					final Element nodeToTransform = DSSXMLUtils.getElementById(documentDom, id);
+					final Element nodeToTransform = DSSXMLUtils.getElementById(documentDom, id); // The element to sign
 					final List<DSSTransform> transforms = reference.getTransforms();
-					if (DSSUtils.isEmpty(transforms)) {
+					if (DSSUtils.isEmpty(transforms)) { // if there is no transformation defined, the XML data is canonicalised
 
-						byte[] transformedReferenceBytes = DSSXMLUtils.canonicalizeSubtree(signedInfoCanonicalizationMethod, nodeToTransform);
+						byte[] transformedReferenceBytes = DSSXMLUtils.canonicalizeSubtree(CanonicalizationMethod.INCLUSIVE, nodeToTransform);
 						return new InMemoryDocument(transformedReferenceBytes);
 					}
 				}
@@ -135,7 +122,6 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 	/**
 	 * {@inheritDoc}
 	 */
-
 	protected void incorporateSpecificObjects() {
 
 		final List<DSSReference> references = params.getReferences();
@@ -145,24 +131,6 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 			final Element objectDom = getObjectElement(reference);
 			setObjectId(reference, objectDom);
 			setObjectMimeType(reference, objectDom);
-		}
-	}
-
-	private void setObjectMimeType(final DSSReference reference, final Element objectDom) {
-
-		final String objectMimeType = reference.getObjectMimeType();
-		if (DSSUtils.isNotEmpty(objectMimeType)) {
-			objectDom.setAttribute(MIME_TYPE, objectMimeType);
-		}
-	}
-
-	private void setObjectId(final DSSReference reference, final Element objectDom) {
-
-		final String uri = reference.getUri();
-		if (DSSUtils.isNotEmpty(uri) && reference.hasSetObjectId()) {
-
-			final String id = uri.substring(1);
-			objectDom.setAttribute(ID, id);
 		}
 	}
 
@@ -192,6 +160,24 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 
 			final Element objectDom = DSSXMLUtils.addTextElement(documentDom, signatureDom, XMLSignature.XMLNS, DS_OBJECT, new String(contents));
 			return objectDom;
+		}
+	}
+
+	private void setObjectMimeType(final DSSReference reference, final Element objectDom) {
+
+		final String objectMimeType = reference.getObjectMimeType();
+		if (DSSUtils.isNotEmpty(objectMimeType)) {
+			objectDom.setAttribute(MIME_TYPE, objectMimeType);
+		}
+	}
+
+	private void setObjectId(final DSSReference reference, final Element objectDom) {
+
+		final String uri = reference.getUri();
+		if (DSSUtils.isNotEmpty(uri) && reference.hasSetObjectId()) {
+
+			final String id = uri.substring(1);
+			objectDom.setAttribute(ID, id);
 		}
 	}
 }

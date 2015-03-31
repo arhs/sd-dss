@@ -271,7 +271,15 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 	 *
 	 * @throws DSSException
 	 */
-	protected abstract void incorporateReferences() throws DSSException;
+	protected void incorporateReferences() throws DSSException {
+
+		final List<DSSReference> references = params.getReferences();
+		for (final DSSReference reference : references) {
+
+			incorporateReference(reference);
+		}
+	}
+
 
 	/**
 	 * Creates KeyInfoType JAXB object.
@@ -426,9 +434,9 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 	}
 
 	/**
-	 * When the user does not want to create its own references (only when signing one contents) the default one are created.
+	 * This method creates the default references in the case they are not set as a parameter.
 	 *
-	 * @return {@code List} of {@code DSSReference}
+	 * @return {@code List} of {@code DSSReference}s with default values
 	 */
 	protected abstract List<DSSReference> createDefaultReferences();
 

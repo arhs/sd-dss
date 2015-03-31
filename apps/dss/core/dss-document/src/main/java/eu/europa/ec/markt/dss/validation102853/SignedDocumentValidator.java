@@ -134,6 +134,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 	private static final byte[] xmlPreamble = new byte[]{'<', '?', 'x', 'm', 'l'};
 	private static final byte[] xmlUtf8 = new byte[]{-17, -69, -65, '<', '?'};
+	private static final byte[] pdfPreamble = new byte[]{'%', 'P', 'D', 'F', '-'};
 
 	/**
 	 * This variable can hold a specific {@code ProcessExecutor}
@@ -218,18 +219,17 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 			throw new DSSException("The signature is not found.");
 		}
-		final String preambleString = new String(preamble);
 		if (isXmlPreamble(preamble)) {
 
 			return new XMLDocumentValidator(dssDocument);
-		} else if (preambleString.startsWith("%PDF-")) {
+		} else if (isPdfPreamble(preamble)) {
 
 			// TODO (29/08/2014): DSS-356
 			return new PDFDocumentValidator(dssDocument);
 		} else if (preamble[0] == 'P' && preamble[1] == 'K') {
 
 			return ASiCContainerValidator.getInstanceForAsics(dssDocument);
-		} else if (preambleString.getBytes()[0] == 0x30) {
+		} else if (preamble[0] == 0x30) {
 
 			return new CMSDocumentValidator(dssDocument);
 		} else {
@@ -240,6 +240,11 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	private static boolean isXmlPreamble(byte[] preamble) {
 
 		return DSSUtils.equals(preamble, xmlPreamble, 5) || DSSUtils.equals(preamble, xmlUtf8, 5);
+	}
+
+	private static boolean isPdfPreamble(byte[] preamble) {
+
+		return DSSUtils.equals(preamble, pdfPreamble, 5);
 	}
 
 	@Override

@@ -56,6 +56,10 @@ class DetachedSignatureBuilder extends SignatureBuilder {
 		setCanonicalizationMethods(params, CanonicalizationMethod.EXCLUSIVE);
 	}
 
+	/**
+	 * {@inheritDoc}<br>
+	 * In the case of a detached packaging these are the references to the files to sign. The value of the URI is the name of the file to sign.
+	 */
 	@Override
 	protected List<DSSReference> createDefaultReferences() {
 
@@ -79,23 +83,6 @@ class DetachedSignatureBuilder extends SignatureBuilder {
 			currentDetachedDocument = currentDetachedDocument.getNextDocument();
 		} while (currentDetachedDocument != null);
 		return references;
-	}
-
-	/**
-	 * This method creates the first reference (this is a reference to the file to sign) which is specific for each form
-	 * of signature. Here, the value of the URI is the name of the file to sign or if the information is not available
-	 * the URI will use the default value: "detached-file".
-	 *
-	 * @throws DSSException
-	 */
-	@Override
-	protected void incorporateReferences() throws DSSException {
-
-		final List<DSSReference> references = params.getReferences();
-		for (final DSSReference reference : references) {
-
-			incorporateReference(reference);
-		}
 	}
 
 	@Override

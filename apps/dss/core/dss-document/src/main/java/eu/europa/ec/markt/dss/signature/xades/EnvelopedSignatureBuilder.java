@@ -31,17 +31,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
-import eu.europa.ec.markt.dss.EncryptionAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.DSSReference;
 import eu.europa.ec.markt.dss.parameter.DSSTransform;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
-import eu.europa.ec.markt.dss.signature.DSSSignatureUtils;
 import eu.europa.ec.markt.dss.signature.InMemoryDocument;
 import eu.europa.ec.markt.dss.signature.MimeType;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
@@ -92,19 +89,9 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 
 	/**
 	 * {@inheritDoc}
-	 * Per default the value of the URI is set to http://www.w3.org/TR/1999/REC-xpath-19991116 (XPath recommendation) which means that an XPath-expression must be used to select a
-	 * defined subset of the document tree.
+	 * In the case of an enveloped signature, the value of the URI is set to http://www.w3.org/TR/1999/REC-xpath-19991116 (XPath recommendation) which means that an
+	 * XPath-expression is used to select a defined subset of the document tree.
 	 */
-	@Override
-	protected void incorporateReferences() throws DSSException {
-
-		final List<DSSReference> references = params.getReferences();
-		for (final DSSReference reference : references) {
-
-			incorporateReference(reference);
-		}
-	}
-
 	@Override
 	protected List<DSSReference> createDefaultReferences() {
 
@@ -129,7 +116,7 @@ class EnvelopedSignatureBuilder extends SignatureBuilder {
 
 		// Canonicalization is the last operation, its better to operate the canonicalization on the smaller document
 		dssTransform = new DSSTransform();
-		dssTransform.setAlgorithm(CanonicalizationMethod.EXCLUSIVE);
+		dssTransform.setAlgorithm(signedInfoCanonicalizationMethod);
 		dssTransform.setPerform(true);
 		dssTransformList.add(dssTransform);
 

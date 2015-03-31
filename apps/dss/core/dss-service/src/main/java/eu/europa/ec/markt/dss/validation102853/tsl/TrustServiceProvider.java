@@ -25,8 +25,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import eu.europa.ec.markt.tsl.jaxb.tsl.ElectronicAddressType;
 import eu.europa.ec.markt.tsl.jaxb.tsl.InternationalNamesType;
 import eu.europa.ec.markt.tsl.jaxb.tsl.MultiLangNormStringType;
+import eu.europa.ec.markt.tsl.jaxb.tsl.NonEmptyMultiLangURIType;
 import eu.europa.ec.markt.tsl.jaxb.tsl.PostalAddressType;
 import eu.europa.ec.markt.tsl.jaxb.tsl.ServiceHistoryInstanceType;
 import eu.europa.ec.markt.tsl.jaxb.tsl.ServiceHistoryType;
@@ -155,5 +157,14 @@ public class TrustServiceProvider {
 			return null;
 		}
 		return tspType.getTSPInformation().getTSPAddress().getElectronicAddress().getURI().get(0).getValue();
+	}
+
+	public List<NonEmptyMultiLangURIType> getElectronicAddresses() {
+
+		final ElectronicAddressType electronicAddress = tspType.getTSPInformation().getTSPAddress().getElectronicAddress();
+		if (electronicAddress == null) {
+			return null;
+		}
+		return electronicAddress.getURI();
 	}
 }
