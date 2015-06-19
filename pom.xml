@@ -1,35 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 	<artifactId>sd-dss</artifactId>
-	<version>4.3.0-SNAPSHOT</version>
+	<version>4.4.RC2</version>
 	<packaging>pom</packaging>
 	<name>Digital Signature Services</name>
 
 	<modules>
-		<module>apps/dss</module>
+		<module>dss-document</module>
+		<module>dss-common</module>
+		<module>dss-service</module>
+		<module>dss-spi</module>
+		<module>dss-test</module>
+		<module>sscd-mocca-adapter</module>
+		<module>dss-webservices</module>
+		<module>dss-webservices-client</module>
+		<module>dss-demo-applet</module>
+		<module>dss-demo-applet-package</module>
+		<module>dss-demo-webapp</module>
+		<module>dss-demo-bundle</module>
+		<module>dss-tsl-jaxb</module>
+		<module>dss-diagnostic-jaxb</module>
+		<module>dss-cookbook</module>
 	</modules>
 
 	<developers>
 		<developer>
-			<id>bob</id>
-			<name>Robert</name>
-			<email>Robert.Bielecki@arhs-spikeseed.com</email>
-			<organization>ARhS</organization>
+			<id>naramski</id>
+			<name>David Naramski</name>
 			<roles>
 				<role>developer</role>
 			</roles>
 		</developer>
 		<developer>
-			<id>bouckavi</id>
-			<name>Vincent Bouckaert</name>
-			<email>Vincent.Bouckaert@arhs-spikeseed.com</email>
-			<organization>ARhS</organization>
+			<id>vandenbroucke</id>
+			<name>Pierrick Vandenbroucke</name>
+			<roles>
+				<role>developer</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>pirard</id>
+			<name>Nicolas Pirard</name>
 			<roles>
 				<role>developer</role>
 			</roles>
@@ -38,48 +54,33 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<encoding>UTF-8</encoding>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-resources-plugin</artifactId>
-				<configuration>
-					<encoding>UTF-8</encoding>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-source-plugin</artifactId>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.7.2.201409121644</version>
 				<executions>
 					<execution>
-						<id>bundle-sources</id>
-						<phase>package</phase>
+						<id>prepare-unit-test-agent</id>
 						<goals>
-							<goal>jar-no-fork</goal>
+							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>1.3.1</version>
-				<executions>
 					<execution>
-						<id>enforce</id>
-						<configuration>
-							<rules>
-								<DependencyConvergence/>
-							</rules>
-						</configuration>
+						<id>generate-unit-test-report</id>
 						<goals>
-							<goal>enforce</goal>
+							<goal>report</goal>
 						</goals>
-						<phase>validate</phase>
+					</execution>
+					<execution>
+						<id>prepare-integration-test-agent</id>
+						<goals>
+							<goal>prepare-agent-integration</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>generate-integration-test-report</id>
+						<goals>
+							<goal>report-integration</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -89,13 +90,36 @@
 			<plugins>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>2.5.1</version>
+					<configuration>
+						<encoding>UTF-8</encoding>
+						<source>1.6</source>
+						<target>1.6</target>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>2.5</version>
+					<configuration>
+						<encoding>UTF-8</encoding>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>2.3.2</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<version>2.3</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jarsigner-plugin</artifactId>
-					<version>1.2</version>
+					<version>1.4</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-source-plugin</artifactId>
@@ -105,11 +129,10 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-release-plugin</artifactId>
 					<version>2.3.2</version>
-				</plugin>
-				<plugin>
-					<groupId>org.codehaus.cargo</groupId>
-					<artifactId>cargo-maven2-plugin</artifactId>
-					<version>1.2.2</version>
+					<configuration>
+						<autoVersionSubmodules>true</autoVersionSubmodules>
+						<tagNameFormat>@{project.version}</tagNameFormat>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
@@ -123,23 +146,11 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>2.5.1</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-resources-plugin</artifactId>
-					<version>2.5</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.12</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-site-plugin</artifactId>
-					<version>3.1</version>
+					<version>2.18</version>
+					<configuration>
+						<testFailureIgnore>true</testFailureIgnore>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -152,41 +163,44 @@
 					<version>2.2</version>
 				</plugin>
 				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>sonar-maven-plugin</artifactId>
-					<version>2.0</version>
-				</plugin>
-				<plugin>
 					<groupId>org.jvnet.jaxb2.maven2</groupId>
 					<artifactId>maven-jaxb2-plugin</artifactId>
-					<version>0.7.5</version>
+					<version>0.10.0</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
 
 	<scm>
-		<connection>scm:svn:http://forge.arhs-lux.lan/svn/dss/trunk</connection>
-		<developerConnection>scm:svn:http://forge.arhs-lux.lan/svn/dss/trunk</developerConnection>
+		<url>https://github.com/esig/dss.git</url>
+		<connection>scm:git:https://github.com/esig/dss.git</connection>
+		<developerConnection>scm:git:https://github.com/esig/dss.git</developerConnection>
+		<tag>HEAD</tag>
 	</scm>
 
 	<properties>
 		<log4j.version>1.2.17</log4j.version>
-		<spring.version>4.1.4.RELEASE</spring.version>
+		<spring.version>3.2.13.RELEASE</spring.version>
 		<tiles.version>2.2.2</tiles.version>
 		<slf4j.version>1.6.6</slf4j.version>
+		<logback-classic.version>1.0.13</logback-classic.version>
 		<bouncycastle.version>1.51</bouncycastle.version>
 		<jgoodies-forms.version>1.6.0</jgoodies-forms.version>
 		<jgoodies-bindings.version>2.7.0</jgoodies-bindings.version>
 		<flying-saucer.version>9.0.4</flying-saucer.version>
-		<beansbinding.version>1.2.1</beansbinding.version>
 		<xmlsec.version>2.0.2</xmlsec.version>
 		<pdfbox.version>1.8.8</pdfbox.version>
+		<junit.version>4.11</junit.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
 			<!-- Internal Dependencies -->
+			<dependency>
+				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+				<artifactId>sscd-mocca-adapter</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 				<artifactId>dss-demo-applet</artifactId>
@@ -233,17 +247,22 @@
 				<artifactId>dss-common</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+				<artifactId>dss-test</artifactId>
+				<version>${project.version}</version>
+				<scope>test</scope>
+			</dependency>
 			<!-- Public Dependencies -->
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
 				<version>4.3.5</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-codec</groupId>
-						<artifactId>commons-codec</artifactId>
-					</exclusion>
-				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>commons-codec</groupId>
+				<artifactId>commons-codec</artifactId>
+				<version>1.6</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-lang</groupId>
@@ -251,9 +270,25 @@
 				<version>2.6</version>
 			</dependency>
 			<dependency>
+				<groupId>commons-collections</groupId>
+				<artifactId>commons-collections</artifactId>
+				<version>3.2</version>
+			</dependency>
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.4</version>
+			</dependency>
+			
+			<dependency>
 				<groupId>org.apache.santuario</groupId>
 				<artifactId>xmlsec</artifactId>
 				<version>${xmlsec.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>xalan</groupId>
+				<artifactId>xalan</artifactId>
+				<version>2.7.2</version>
 			</dependency>
 			<dependency>
 				<groupId>xerces</groupId>
@@ -261,35 +296,16 @@
 				<version>2.11.0</version>
 			</dependency>
 			<dependency>
-				<groupId>xml-apis</groupId>
-				<artifactId>xml-apis</artifactId>
-				<version>1.4.01</version>
-			</dependency>
-			<dependency>
 				<groupId>com.sun.xml.bind</groupId>
 				<artifactId>jaxb-impl</artifactId>
-				<version>2.2.10-b140310.1920</version>
-			</dependency>
-			<dependency>
-				<groupId>org.jvnet.jaxb2.maven2</groupId>
-				<artifactId>maven-jaxb2-plugin</artifactId>
-				<version>0.7.5</version>
-			</dependency>
-			<dependency>
-				<groupId>org.swinglabs</groupId>
-				<artifactId>swingx</artifactId>
-				<version>1.6.1</version>
-			</dependency>
-			<dependency>
-				<groupId>org.jdesktop</groupId>
-				<artifactId>beansbinding</artifactId>
-				<version>${beansbinding.version}</version>
+				<version>2.1.13</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.pdfbox</groupId>
 				<artifactId>pdfbox</artifactId>
 				<version>${pdfbox.version}</version>
 			</dependency>
+			
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
 				<artifactId>bcprov-jdk15on</artifactId>
@@ -300,11 +316,7 @@
 				<artifactId>bcmail-jdk15on</artifactId>
 				<version>${bouncycastle.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>org.netbeans.api</groupId>
-				<artifactId>org-openide-dialogs</artifactId>
-				<version>RELEASE71</version>
-			</dependency>
+			
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-beans</artifactId>
@@ -314,6 +326,12 @@
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-core</artifactId>
 				<version>${spring.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>
@@ -323,16 +341,6 @@
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-webmvc</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-orm</artifactId>
-				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-aop</artifactId>
 				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
@@ -425,13 +433,17 @@
 				<version>${slf4j.version}</version>
 				<scope>runtime</scope>
 			</dependency>
+			<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-classic</artifactId>
+				<version>${logback-classic.version}</version>
+			</dependency>
 
 			<dependency>
 				<groupId>com.jgoodies</groupId>
 				<artifactId>jgoodies-binding</artifactId>
 				<version>${jgoodies-bindings.version}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>com.jgoodies</groupId>
 				<artifactId>jgoodies-forms</artifactId>
@@ -440,36 +452,37 @@
 
 			<dependency>
 				<groupId>org.xhtmlrenderer</groupId>
-				<artifactId>flying-saucer-core</artifactId>
-				<version>${flying-saucer.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.xhtmlrenderer</groupId>
 				<artifactId>flying-saucer-pdf</artifactId>
 				<version>${flying-saucer.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<repositories>
 		<repository>
-			<id>central</id>
-			<name>Maven Central</name>
-			<url>http://repo.maven.apache.org/maven2/</url>
-		</repository>
-		<repository>
 			<id>jboss-public</id>
-			<name>JBoss Public Maven repository</name>
 			<url>https://repository.jboss.org/nexus/</url>
 		</repository>
 		<repository>
 			<id>netbeans</id>
-			<name>Maven Repository for org.openide</name>
 			<url>http://bits.netbeans.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>java.net</id>
-			<name>Maven Repository of java.net</name>
 			<url>http://download.java.net/maven/2/</url>
+		</repository>
+		<repository>
+			<id>joinup-mocca-thirparty</id>
+			<url>http://joinup.ec.europa.eu/site/mocca/m2/repository/</url>
+		</repository>
+		<repository>
+			<id>joinup-dss-thirdparty</id>
+			<url>http://joinup.ec.europa.eu/site/sd-dss/maven2</url>
 		</repository>
 	</repositories>
 	<pluginRepositories>
@@ -484,35 +497,20 @@
 
 	<distributionManagement>
 		<repository>
-			<id>deployment</id>
-			<name>4.1.0</name>
-			<!--<url>https://joinup.ec.europa.eu/nexus/content/repositories/releases/</url>-->
-			<url>https://joinup.ec.europa.eu/nexus/content/repositories/releases/eu/europa/ec/joinup/sd-dss/</url>
+			<id>joinup-nexus</id>
+			<url>https://joinup.ec.europa.eu/nexus/content/repositories/releases/</url>
 		</repository>
+		<snapshotRepository>
+			<id>joinup-nexus</id>
+			<url>https://joinup.ec.europa.eu/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<site>
+			<id>joinup-site</id>
+			<url>dav:https://joinup.ec.europa.eu/webdav/sd-dss/www</url>
+		</site>
 	</distributionManagement>
 
 	<profiles>
-		<profile>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<modules>
-				<!--The sscd-mocca-adapter is not delivered within this release because its usage requires some additional commercial libraries.-->
-				<!--
-					To use this module, you need mocca-1.3.16
-					 see joinup URL: https://joinup.ec.europa.eu/asset/mocca/asset_release/mocca-1316
-
-					This requires additional commercial libraries:
-					  iaik_jce_full_signed-3.16 and iaik_jce_me4se-3.04 as jar and pom
-
-					You can install these via:
-					  mvn install:install-file -Dfile=iaik_jce_me4se-3.04.jar -DpomFile=iaik_jce_me4se-3.04.pom
-					  mvn install:install-file -Dfile=iaik_jce_full_signed-3.16.jar -DpomFile=iaik_jce_full_signed-3.16.pom
-				-->
-				<!--<module>apps/sscd-mocca-adapter</module>-->
-			</modules>
-			<id>default</id>
-		</profile>
 		<profile>
 			<id>delivery</id>
 			<build>
@@ -539,6 +537,29 @@
 						</executions>
 					</plugin>
 				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>owasp</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.owasp</groupId>
+						<artifactId>dependency-check-maven</artifactId>
+						<version>1.2.10</version>
+						<configuration>
+							<failBuildOnCVSS>6</failBuildOnCVSS>
+						</configuration>
+						<executions>
+							<execution>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+
 			</build>
 		</profile>
 	</profiles>
