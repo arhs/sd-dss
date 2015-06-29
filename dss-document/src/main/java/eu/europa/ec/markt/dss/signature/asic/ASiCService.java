@@ -285,12 +285,11 @@ public class ASiCService extends AbstractSignatureService {
 	public InMemoryDocument buildASiCContainer(final DSSDocument toSignDocument, DSSDocument signDocument, final SignatureParameters underlyingParameters,
 			final DSSDocument signature) throws IOException {
 
-		final DSSDocument detachedDocument = underlyingParameters.getDetachedContent();
-		final String toSignDocumentName = detachedDocument.getName();
-
 		final ASiCParameters asicParameters = underlyingParameters.aSiC();
 		final boolean asice = isAsice(asicParameters);
 		final boolean cadesForm = isCAdESForm(asicParameters);
+
+		String toSignDocumentName = getSignableDocumentName(toSignDocument, underlyingParameters);
 
 		final ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
 		ZipOutputStream zipOutputStream = new ZipOutputStream(outBytes);
@@ -328,6 +327,15 @@ public class ASiCService extends AbstractSignatureService {
 			IOUtils.copy(zipInputStream, zipOutputStream);
 		}
 		IOUtils.closeQuietly(zipInputStream);
+	}
+
+	private String getSignableDocumentName(DSSDocument toSignDocument, SignatureParameters underlyingParameters) {
+		if(underlyingParameters.getDetachedContent() != null) {
+			DSSDocument detachedDocument = underlyingParameters.getDetachedContent();
+			return detachedDocument.getName();
+		} else {
+			return toSignDocument.getName();
+		}
 	}
 
   private void storeManifest(DSSDocument document, ZipOutputStream outZip) {

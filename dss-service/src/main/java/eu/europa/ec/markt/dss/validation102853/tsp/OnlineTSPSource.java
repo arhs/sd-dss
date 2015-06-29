@@ -26,6 +26,7 @@ import java.math.BigInteger;
 import java.net.URLConnection;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampRequest;
@@ -55,6 +56,8 @@ public class OnlineTSPSource implements TSPSource {
 	private ASN1ObjectIdentifier policyOid;
 
 	private DataLoader dataLoader;
+
+	private String userAgent;
 
 	private TSPNonceSource tspNonceSource;
 
@@ -118,6 +121,10 @@ public class OnlineTSPSource implements TSPSource {
 
 	public void setTspNonceSource(final TSPNonceSource tspNonceSource) {
 		this.tspNonceSource = tspNonceSource;
+	}
+
+	public void setUserAgent(String userAgent) {
+		this.userAgent = userAgent;
 	}
 
 	@Override
@@ -188,6 +195,9 @@ public class OnlineTSPSource implements TSPSource {
 		tsaConnection.setUseCaches(false);
 		tsaConnection.setRequestProperty("Content-Type", "application/timestamp-query");
 		tsaConnection.setRequestProperty("Content-Transfer-Encoding", "binary");
+		if (StringUtils.isNotBlank(userAgent)) {
+			tsaConnection.setRequestProperty("User-Agent", userAgent);
+		}
 
 		DSSUtils.writeToURLConnection(tsaConnection, requestBytes);
 

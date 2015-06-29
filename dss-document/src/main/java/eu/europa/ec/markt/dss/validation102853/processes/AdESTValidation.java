@@ -175,6 +175,8 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 
 		this.diagnosticData = params.getDiagnosticData();
 		this.currentTime = params.getCurrentTime();
+		certPool = params.getCertPool();
+
 		isInitialised(mainNode, params);
 	}
 

@@ -20,6 +20,7 @@
  */
 package eu.europa.ec.markt.dss.validation102853.tsp;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 /**
@@ -30,7 +31,7 @@ import java.math.BigInteger;
  *
  *
  */
-public class TSPNonceSource {
+public class TSPNonceSource implements Serializable {
 
 
 	public BigInteger getNonce() {

@@ -20,6 +20,7 @@
  */
 package eu.europa.ec.markt.dss;
 
+import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -32,7 +33,7 @@ import eu.europa.ec.markt.dss.validation102853.Token;
 /**
  * This class is used to obtain a unique id for Token
  */
-public final class TokenIdentifier {
+public final class TokenIdentifier implements Serializable {
 
 	private Digest tokenDigest;
 

@@ -329,7 +329,7 @@ public class ASiCContainerValidator extends SignedDocumentValidator {
         NamedNodeMap attributes = firstChild.getAttributes();
         String textContent = attributes.getNamedItem("manifest:full-path").getTextContent();
         String mimeType = attributes.getNamedItem("manifest:media-type").getTextContent();
-        if (!"/".equals(textContent))
+        if (!"/".equals(textContent) && StringUtils.isNotBlank(mimeType))
           entries.put(textContent, mimeType);
       }
       firstChild = firstChild.getNextSibling();
