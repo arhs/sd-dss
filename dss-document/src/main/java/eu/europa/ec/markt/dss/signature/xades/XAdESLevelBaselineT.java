@@ -212,6 +212,7 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 			final CertificatePool certificatePool = getCertificatePool();
 			final boolean trustAnchorBPPolicy = params.bLevel().isTrustAnchorBPPolicy();
 			boolean trustAnchorIncluded = false;
+			boolean ocspCertificateIncluded = false;	//Needed for Custom Estonian functionality
 			for (final CertificateToken certificateToken : toIncludeCertificates) {
 
 				if (trustAnchorBPPolicy && (certificatePool != null)) {
@@ -223,39 +224,23 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 				}
 				final byte[] bytes = certificateToken.getEncoded();
 				final String base64EncodeCertificate = Base64.encodeBase64String(bytes);
-				DSSXMLUtils.addTextElement(documentDom, certificateValuesDom, XAdES, XADES_ENCAPSULATED_X509_CERTIFICATE, base64EncodeCertificate);
+				Element element = DSSXMLUtils.addElement(documentDom, certificateValuesDom, XAdESNamespaces.XAdES, XADES_ENCAPSULATED_X509_CERTIFICATE);
+				//Custom Estonian functionality: OCSP responder certificate must have RESPONDER_CERT id attribute (needed only for jDigidoc interoperability)
+				if(certificateToken.isOCSPSigning()) {
+					ocspCertificateIncluded = true;
+					element.setAttribute("Id", xadesSignature.getId() + "-RESPONDER_CERT");
+				}
+				//End of Custom Estonian functionality
+				DSSXMLUtils.setTextNode(documentDom, element, base64EncodeCertificate);
 			}
-/*
-    //todo CB experimental
-    final Set<CertificateToken> ocspResponderCerts = new HashSet<CertificateToken>();
-    Set<RevocationToken> processedRevocations = valContext.getProcessedRevocations();
-
-    if (processedRevocations.size() == 0) {
-			throw new DSSException("OCSP request failed");
-		}
 			if (trustAnchorBPPolicy && !trustAnchorIncluded) {
 				LOG.warn("The trust anchor is missing but its inclusion is required by the signature policy!");
 			}
-
-		RevocationToken next = processedRevocations.iterator().next();
-		if (next instanceof OCSPToken) {
-				X500Name name = ((OCSPToken) next).getBasicOCSPResp().getResponderId().toASN1Object().getName();
-				X500Principal principal = null;
-				try {
-					principal = new X500Principal(name.getEncoded());
-				} catch (IOException e) {
-					throw new DSSException("OCSP response certificate load fails for " + principal.getName());
-				}
-				ocspResponderCerts.addAll(certificateVerifier.getTrustedCertSource().get(principal));
+			//Custom Estoninan functionality: must contain OCSP request
+			if (!ocspCertificateIncluded) {
+				throw new DSSException("OCSP request failed");
 			}
-		for (final CertificateToken certificateToken : ocspResponderCerts) {
-				final byte[] bytes = certificateToken.getEncoded();
-				final String base64EncodeCertificate = DSSUtils.base64Encode(bytes);
-				Element element = DSSXMLUtils.addElement(documentDom, certificateValuesDom, XAdESNamespaces.XAdES,
-            "xades:EncapsulatedX509Certificate");
-				element.setAttribute("Id", xadesSignature.getId() + "-RESPONDER_CERT");
-				DSSXMLUtils.setTextNode(documentDom, element, base64EncodeCertificate);
-			}*/
+			//End of Custom Estonian functionality
 		}
 	}
 
