@@ -24,6 +24,7 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
+import eu.europa.ec.markt.dss.exception.SigningCertificateExpiredException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
@@ -84,8 +85,7 @@ public abstract class AbstractSignatureService implements DocumentSignatureServi
 		final Date notBefore = signingCertificate.getNotBefore();
 		final Date signingDate = parameters.bLevel().getSigningDate();
 		if (signingDate.after(notAfter) || signingDate.before(notBefore)) {
-			throw new DSSException(
-				  String.format("Signing Date (%s) is not in certificate validity range (%s, %s).", signingDate.toString(), notBefore.toString(), notAfter.toString()));
+			throw new SigningCertificateExpiredException(signingDate, notBefore, notAfter);
 		}
 	}
 }
