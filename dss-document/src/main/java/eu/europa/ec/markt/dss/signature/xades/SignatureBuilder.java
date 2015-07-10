@@ -23,6 +23,8 @@ package eu.europa.ec.markt.dss.signature.xades;
 import static eu.europa.ec.markt.dss.XAdESNamespaces.XAdES;
 import static javax.xml.crypto.dsig.XMLSignature.XMLNS;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
@@ -44,7 +46,6 @@ import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.EncryptionAlgorithm;
 import eu.europa.ec.markt.dss.SignatureAlgorithm;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
-import eu.europa.ec.markt.dss.*;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.BLevelParameters;
 import eu.europa.ec.markt.dss.parameter.ChainCertificate;
@@ -62,16 +63,6 @@ import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.TimestampInclude;
 import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
-
-import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 /**
  * This class implements all the necessary mechanisms to build each form of the XML signature.
@@ -357,8 +348,8 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 
 		final Element referenceDom = DSSXMLUtils.addElement(documentDom, signedInfoDom, XMLNS, DS_REFERENCE);
 		referenceDom.setAttribute(ID, dssReference.getId());
-		final String uri = dssReference.getUri();
-		referenceDom.setAttribute(URI, uri);
+		final String uri = dssReference.getUri(); 
+		referenceDom.setAttribute(URI, uriEncode(uri));
 		referenceDom.setAttribute(TYPE, dssReference.getType());
 
 		final List<DSSTransform> dssTransforms = dssReference.getTransforms();
@@ -383,7 +374,21 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		incorporateDigestValue(referenceDom, digestAlgorithm, canonicalizedDocument);
 	}
 
-	static void createTransform(final Document document, final DSSTransform dssTransform, final Element transformDom) {
+	static String uriEncode(String string) {
+	    try {
+	        return URLEncoder.encode(string, "UTF-8")
+	                .replaceAll("\\+", "%20")
+	                .replaceAll("\\%21", "!")
+	                .replaceAll("\\%27", "'")
+	                .replaceAll("\\%28", "(")
+	                .replaceAll("\\%29", ")")
+	                .replaceAll("\\%7E", "~");
+	    } catch (UnsupportedEncodingException e) {
+	        throw new RuntimeException(e);
+	    }
+    }
+
+    static void createTransform(final Document document, final DSSTransform dssTransform, final Element transformDom) {
 
 		transformDom.setAttribute(ALGORITHM, dssTransform.getAlgorithm());
 
@@ -600,7 +605,7 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 
 			final TimestampType timeStampType = contentTimestamp.getTimeStampType();
 			if (TimestampType.ALL_DATA_OBJECTS_TIMESTAMP.equals(timeStampType)) {
-
+			    
 				if (allDataObjectsTimestampDom == null) {
 
 					allDataObjectsTimestampDom = DSSXMLUtils.addElement(documentDom, signedDataObjectPropertiesDom, XAdES, XADES_ALL_DATA_OBJECTS_TIME_STAMP);
@@ -663,14 +668,14 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_CITY, city);
 			}
 
+			final String stateOrProvince = signatureProductionPlace.getStateOrProvince();
+			if (stateOrProvince != null) {
+			    DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_STATE_OR_PROVINCE, stateOrProvince);
+			}
+
 			final String postalCode = signatureProductionPlace.getPostalCode();
 			if (postalCode != null) {
 				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_POSTAL_CODE, postalCode);
-			}
-
-			final String stateOrProvince = signatureProductionPlace.getStateOrProvince();
-			if (stateOrProvince != null) {
-				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_STATE_OR_PROVINCE, stateOrProvince);
 			}
 
 			final String country = signatureProductionPlace.getCountry();
