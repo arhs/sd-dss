@@ -207,7 +207,7 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 
 		// <xades:CertificateValues>
 		// ...<xades:EncapsulatedX509Certificate>MIIC9TC...
-        if (isSigningCertificateStatusUnknown(valContext.getProcessedCertificates())) {
+        if (isSigningCertificateStatusUnknown(toIncludeCertificates)) {
             throw new SigningCertificateUnknownException();
         }
 		if (!toIncludeCertificates.isEmpty()) {
@@ -242,9 +242,11 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 				LOG.warn("The trust anchor is missing but its inclusion is required by the signature policy!");
 			}
 			//Custom Estoninan functionality: must contain OCSP request
+			/*
 			if (!ocspCertificateIncluded) {
 				throw new DSSException("OCSP request failed");
 			}
+			*/
 			//End of Custom Estonian functionality
 		}
 	}
@@ -262,7 +264,7 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 		return certificates;
 	}
 
-    private boolean isSigningCertificateStatusUnknown(Set<CertificateToken> processedCertificates) {
+    private boolean isSigningCertificateStatusUnknown(List<CertificateToken> processedCertificates) {
         if(processedCertificates == null) {
             return false;
         }
