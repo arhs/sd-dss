@@ -161,7 +161,7 @@ public class FileCacheDataLoader extends CommonDataLoader {
 	protected boolean isNetworkProtocol(final String urlString) {
 
 		final String normalizedUrl = urlString.trim().toLowerCase();
-		return Protocol.isHttpUrl(normalizedUrl) || Protocol.isLdapUrl(normalizedUrl) || Protocol.isFtpUrl(normalizedUrl);
+		return Protocol.isHttpUrl(normalizedUrl) || Protocol.isFileUrl(normalizedUrl) || Protocol.isLdapUrl(normalizedUrl) || Protocol.isFtpUrl(normalizedUrl);
 	}
 
 	private File getCacheFile(final String fileName) {
