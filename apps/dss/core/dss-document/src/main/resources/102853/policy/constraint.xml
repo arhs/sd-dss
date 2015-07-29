@@ -19,7 +19,7 @@
 			<DigestValuePresent Level="FAIL"/>
 			<DigestValueMatch Level="FAIL">true</DigestValueMatch>
 			<IssuerSerialMatch Level="WARN">true</IssuerSerialMatch>
-			<Signed Level="FAIL" />
+			<Signed Level="FAIL"/>
 			<Signature Level="FAIL"/>
 			<Expiration Level="FAIL"/>
 			<RevocationDataAvailable Level="FAIL"/>
@@ -42,11 +42,15 @@
 					<Algo>RSA</Algo>
 					<Algo>DSA</Algo>
 					<Algo>ECDSA</Algo>
+					<Algo>RSASSA_PSS</Algo>
+					<Algo>RSA_MGF1</Algo>
 				</AcceptableEncryptionAlgo>
 				<MiniPublicKeySize>
-	                <Algo Size="128">DSA</Algo>
+					<Algo Size="128">DSA</Algo>
 					<Algo Size="1024">RSA</Algo>
 					<Algo Size="192">ECDSA</Algo>
+					<Algo Size="1024">RSASSA_PSS</Algo>
+					<Algo Size="1024">RSA_MGF1</Algo>
 				</MiniPublicKeySize>
 				<AcceptableDigestAlgo>
 					<Algo>SHA1</Algo>
@@ -70,11 +74,15 @@
 					<Algo>RSA</Algo>
 					<Algo>DSA</Algo>
 					<Algo>ECDSA</Algo>
+					<Algo>RSASSA_PSS</Algo>
+					<Algo>RSA_MGF1</Algo>
 				</AcceptableEncryptionAlgo>
 				<MiniPublicKeySize>
-	                <Algo Size="128">DSA</Algo>
+					<Algo Size="128">DSA</Algo>
 					<Algo Size="1024">RSA</Algo>
-	                <Algo Size="192">ECDSA</Algo>
+					<Algo Size="192">ECDSA</Algo>
+					<Algo Size="1024">RSASSA_PSS</Algo>
+					<Algo Size="1024">RSA_MGF1</Algo>
 				</MiniPublicKeySize>
 				<AcceptableDigestAlgo>
 					<Algo>SHA1</Algo>
@@ -91,11 +99,15 @@
 				<Algo>RSA</Algo>
 				<Algo>DSA</Algo>
 				<Algo>ECDSA</Algo>
+				<Algo>RSASSA_PSS</Algo>
+				<Algo>RSA_MGF1</Algo>
 			</AcceptableEncryptionAlgo>
 			<MiniPublicKeySize>
-	            <Algo Size="128">DSA</Algo>
+				<Algo Size="128">DSA</Algo>
 				<Algo Size="1024">RSA</Algo>
 				<Algo Size="192">ECDSA</Algo>
+				<Algo Size="1024">RSASSA_PSS</Algo>
+				<Algo Size="1024">RSA_MGF1</Algo>
 			</MiniPublicKeySize>
 			<AcceptableDigestAlgo>
 				<Algo>SHA1</Algo>
@@ -108,19 +120,19 @@
 		</Cryptographic>
 		<MandatedSignedQProperties>
 			<SigningTime Level="FAIL"/>
-            <ContentTimeStamp>
-                <MessageImprintDataFound Level="FAIL" />
-                <MessageImprintDataIntact Level="FAIL" />
-            </ContentTimeStamp>
+			<ContentTimeStamp>
+				<MessageImprintDataFound Level="FAIL"/>
+				<MessageImprintDataIntact Level="FAIL"/>
+			</ContentTimeStamp>
 			<!--<ContentType Level="FAIL">1.2.840.113549.1.7.1</ContentType>-->
 		</MandatedSignedQProperties>
-        <MandatedUnsignedQProperties>
-            <CounterSignature>
-                <ReferenceDataExistence Level="FAIL" />
-                <ReferenceDataIntact Level="FAIL" />
-                <SignatureIntact Level="FAIL" />
-            </CounterSignature>
-        </MandatedUnsignedQProperties>
+		<MandatedUnsignedQProperties>
+			<CounterSignature>
+				<ReferenceDataExistence Level="FAIL"/>
+				<ReferenceDataIntact Level="FAIL"/>
+				<SignatureIntact Level="FAIL"/>
+			</CounterSignature>
+		</MandatedUnsignedQProperties>
 	</MainSignature>
 	<Timestamp>
 		<TimestampDelay Unit="DAYS">0</TimestampDelay>
@@ -147,11 +159,15 @@
 					<Algo>RSA</Algo>
 					<Algo>DSA</Algo>
 					<Algo>ECDSA</Algo>
+					<Algo>RSASSA_PSS</Algo>
+					<Algo>RSA_MGF1</Algo>
 				</AcceptableEncryptionAlgo>
 				<MiniPublicKeySize>
-	                <Algo Size="128">DSA</Algo>
+					<Algo Size="128">DSA</Algo>
 					<Algo Size="1024">RSA</Algo>
 					<Algo Size="192">ECDSA</Algo>
+					<Algo Size="1024">RSASSA_PSS</Algo>
+					<Algo Size="1024">RSA_MGF1</Algo>
 				</MiniPublicKeySize>
 				<AcceptableDigestAlgo>
 					<Algo>SHA1</Algo>
@@ -175,11 +191,15 @@
 					<Algo>RSA</Algo>
 					<Algo>DSA</Algo>
 					<Algo>ECDSA</Algo>
+					<Algo>RSASSA_PSS</Algo>
+					<Algo>RSA_MGF1</Algo>
 				</AcceptableEncryptionAlgo>
 				<MiniPublicKeySize>
-	                <Algo Size="128">DSA</Algo>
+					<Algo Size="128">DSA</Algo>
 					<Algo Size="1024">RSA</Algo>
 					<Algo Size="192">ECDSA</Algo>
+					<Algo Size="1024">RSASSA_PSS</Algo>
+					<Algo Size="1024">RSA_MGF1</Algo>
 				</MiniPublicKeySize>
 				<AcceptableDigestAlgo>
 					<Algo>SHA1</Algo>
@@ -206,11 +226,15 @@
 					<Algo>RSA</Algo>
 					<Algo>DSA</Algo>
 					<Algo>ECDSA</Algo>
+					<Algo>RSASSA_PSS</Algo>
+					<Algo>RSA_MGF1</Algo>
 				</AcceptableEncryptionAlgo>
 				<MiniPublicKeySize>
-	                <Algo Size="128">DSA</Algo>
+					<Algo Size="128">DSA</Algo>
 					<Algo Size="1024">RSA</Algo>
 					<Algo Size="192">ECDSA</Algo>
+					<Algo Size="1024">RSASSA_PSS</Algo>
+					<Algo Size="1024">RSA_MGF1</Algo>
 				</MiniPublicKeySize>
 				<AcceptableDigestAlgo>
 					<Algo>SHA1</Algo>
@@ -234,11 +258,15 @@
 					<Algo>RSA</Algo>
 					<Algo>DSA</Algo>
 					<Algo>ECDSA</Algo>
+					<Algo>RSASSA_PSS</Algo>
+					<Algo>RSA_MGF1</Algo>
 				</AcceptableEncryptionAlgo>
 				<MiniPublicKeySize>
-	                <Algo Size="128">DSA</Algo>
+					<Algo Size="128">DSA</Algo>
 					<Algo Size="1024">RSA</Algo>
 					<Algo Size="192">ECDSA</Algo>
+					<Algo Size="1024">RSASSA_PSS</Algo>
+					<Algo Size="1024">RSA_MGF1</Algo>
 				</MiniPublicKeySize>
 				<AcceptableDigestAlgo>
 					<Algo>SHA1</Algo>
@@ -267,6 +295,10 @@
 			<Algo Date="2035-02-24">RSA4096</Algo>
 			<Algo Date="2035-02-24">ECDSA192</Algo>
 			<Algo Date="2035-02-24">ECDSA256</Algo>
+			<Algo Date="2035-02-24">RSASSA_PSS1024</Algo>
+			<Algo Date="2035-02-24">RSASSA_PSS2048</Algo>
+			<Algo Date="2035-02-24">RSA_MGF11024</Algo>
+			<Algo Date="2035-02-24">RSA_MGF12048</Algo>
 		</AlgoExpirationDate>
 	</Cryptographic>
 </ConstraintsParameters>

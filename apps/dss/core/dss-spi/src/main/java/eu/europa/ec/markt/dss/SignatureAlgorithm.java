@@ -50,11 +50,13 @@ public enum SignatureAlgorithm {
 
 	HMAC_SHA1(EncryptionAlgorithm.HMAC, DigestAlgorithm.SHA1), HMAC_SHA224(EncryptionAlgorithm.HMAC, DigestAlgorithm.SHA224), HMAC_SHA256(EncryptionAlgorithm.HMAC,
 		  DigestAlgorithm.SHA256), HMAC_SHA384(EncryptionAlgorithm.HMAC, DigestAlgorithm.SHA384), HMAC_SHA512(EncryptionAlgorithm.HMAC, DigestAlgorithm.SHA512), HMAC_RIPEMD160(
-		  EncryptionAlgorithm.HMAC, DigestAlgorithm.RIPEMD160);
+		  EncryptionAlgorithm.HMAC, DigestAlgorithm.RIPEMD160),
 
-	private final EncryptionAlgorithm encryptionAlgo;
+	RSASSA_PSS_SHA1(EncryptionAlgorithm.RSASSA_PSS, DigestAlgorithm.SHA1), RSASSA_PSS_SHA256(EncryptionAlgorithm.RSASSA_PSS, DigestAlgorithm.SHA256);
 
-	private final DigestAlgorithm digestAlgo;
+	private final EncryptionAlgorithm encryptionAlgorithm;
+
+	private final DigestAlgorithm digestAlgorithm;
 
 	// http://www.w3.org/TR/2013/NOTE-xmlsec-algorithms-20130411/
 	private final static Map<String, SignatureAlgorithm> XML_ALGORITHMS = registerXmlAlgorithms();
@@ -70,6 +72,8 @@ public enum SignatureAlgorithm {
 		xmlAlgorithms.put("http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", RSA_SHA384);
 		xmlAlgorithms.put("http://www.w3.org/2001/04/xmldsig-more#rsa-sha512", RSA_SHA512);
 		xmlAlgorithms.put("http://www.w3.org/2001/04/xmldsig-more#rsa-ripemd160", RSA_RIPEMD160);
+		xmlAlgorithms.put("http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1", RSASSA_PSS_SHA1);
+		xmlAlgorithms.put("http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1", RSASSA_PSS_SHA256);
 		// Support of not standard AT algorithm name
 		// http://www.rfc-editor.org/rfc/rfc4051.txt --> http://www.rfc-editor.org/errata_search.php?rfc=4051
 		xmlAlgorithms.put("http://www.w3.org/2001/04/xmldsig-more/rsa-ripemd160", RSA_RIPEMD160);
@@ -122,8 +126,13 @@ public enum SignatureAlgorithm {
 		oidAlgorithms.put("1.2.840.113549.1.1.13", RSA_SHA512);
 		oidAlgorithms.put("1.3.36.3.3.1.2", RSA_RIPEMD160);
 
+		oidAlgorithms.put("1.2.840.113549.1.1.10", RSASSA_PSS_SHA1);
+		// There is only one OID defined for RSASSA_PSS encryption
+		// !!! oidAlgorithms.put("1.2.840.113549.1.1.10", RSASSA_PSS_SHA256);
+
 		oidAlgorithms.put("1.2.840.113549.1.1.4", RSA_MD5);
 		oidAlgorithms.put("1.2.840.113549.1.1.2", RSA_MD2);
+
 		/**
 		 * RFC 2313:<br>
 		 * "md2WithRSAEncryption", 1.2.840.113549.1.1.2<br>
@@ -165,7 +174,8 @@ public enum SignatureAlgorithm {
 		javaAlgorithms.put("SHA384withRSA", RSA_SHA384);
 		javaAlgorithms.put("SHA512withRSA", RSA_SHA512);
 		javaAlgorithms.put("RIPEMD160withRSA", RSA_RIPEMD160);
-
+		javaAlgorithms.put("SHA1withRSAandMGF1", RSASSA_PSS_SHA1);
+		javaAlgorithms.put("SHA256withRSAandMGF1", RSASSA_PSS_SHA256);
 		javaAlgorithms.put("MD5withRSA", RSA_MD5);
 		javaAlgorithms.put("MD2withRSA", RSA_MD2);
 
@@ -301,8 +311,8 @@ public enum SignatureAlgorithm {
 	 */
 	private SignatureAlgorithm(final EncryptionAlgorithm encryptionAlgorithm, final DigestAlgorithm digestAlgorithm) {
 
-		this.encryptionAlgo = encryptionAlgorithm;
-		this.digestAlgo = digestAlgorithm;
+		this.encryptionAlgorithm = encryptionAlgorithm;
+		this.digestAlgorithm = digestAlgorithm;
 	}
 
 	/**
@@ -312,7 +322,7 @@ public enum SignatureAlgorithm {
 	 */
 	public EncryptionAlgorithm getEncryptionAlgorithm() {
 
-		return encryptionAlgo;
+		return encryptionAlgorithm;
 	}
 
 	/**
@@ -322,7 +332,7 @@ public enum SignatureAlgorithm {
 	 */
 	public DigestAlgorithm getDigestAlgorithm() {
 
-		return digestAlgo;
+		return digestAlgorithm;
 	}
 
 	/**

@@ -33,7 +33,7 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 
 public enum EncryptionAlgorithm {
 
-	RSA("RSA", "1.2.840.113549.1.1.1", "RSA/ECB/PKCS1Padding"), DSA("DSA", "1.2.840.10040.4.1", "DSA"), ECDSA("ECDSA", "1.2.840.10045.2.1", "ECDSA"), HMAC("HMAC", "", "");
+	RSA("RSA", "1.2.840.113549.1.1.1", "RSA/ECB/PKCS1Padding"), DSA("DSA", "1.2.840.10040.4.1", "DSA"), ECDSA("ECDSA", "1.2.840.10045.2.1", "ECDSA"), HMAC("HMAC", "", ""), RSASSA_PSS("RSASSA_PSS", "1.2.840.113549.1.1.10",""), RSA_MGF1("RSA_MGF1", "1.2.840.113549.1.1.8", "");
 
 	private String name;
 	private String oid;
