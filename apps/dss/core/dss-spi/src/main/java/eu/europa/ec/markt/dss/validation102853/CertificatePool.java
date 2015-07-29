@@ -110,10 +110,10 @@ public class CertificatePool implements Serializable {
 	 *
 	 * @param x509Certificate {@code X509Certificate} to add to the pool
 	 * @param sources         {@code List} of {@code CertificateSourceType} associated to the certificate
-	 * @param services        {@code List} of {@code ServiceInfo} associated to the certificate
+	 * @param serviceInfoList {@code List} of {@code ServiceInfo} associated to the certificate
 	 * @return an existing or newly created instance of the {@code CertificateToken}
 	 */
-	public CertificateToken getInstance(final X509Certificate x509Certificate, final List<CertificateSourceType> sources, final List<ServiceInfo> services) {
+	public CertificateToken getInstance(final X509Certificate x509Certificate, final List<CertificateSourceType> sources, final List<ServiceInfo> serviceInfoList) {
 
 		if (x509Certificate == null) {
 			throw new DSSNullException(X509Certificate.class);
@@ -129,8 +129,8 @@ public class CertificatePool implements Serializable {
 		for (final CertificateSourceType sourceType : sources) {
 			certToken.addSourceType(sourceType);
 		}
-		if (services != null) {
-			for (final ServiceInfo serviceInfo : services) {
+		if (serviceInfoList != null) {
+			for (final ServiceInfo serviceInfo : serviceInfoList) {
 				certToken.addServiceInfo(serviceInfo);
 			}
 		}

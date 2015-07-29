@@ -126,28 +126,28 @@ public class ServiceInfo implements Serializable {
 	/**
 	 * Retrieves all the qualifiers for which the corresponding conditionEntry is true.
 	 *
-	 * @param certificateToken
-	 * @return
+	 * @param certificateToken {@code CertificateToken} to be checked
+	 * @return the {@code List} of qualifiers associated to the given {@code certificateToken}
 	 */
-	public List<String> getQualifiers(CertificateToken certificateToken) {
+	public List<String> getQualifiers(final CertificateToken certificateToken) {
 
 		LOG.trace("--> GET_QUALIFIERS()");
-		List<String> list = new ArrayList<String>();
-		for (Entry<String, List<Condition>> conditionEntry : qualifiersAndConditions.entrySet()) {
+		final List<String> qualifierList = new ArrayList<String>();
+		for (final Entry<String, List<Condition>> conditionEntry : qualifiersAndConditions.entrySet()) {
 
-			List<Condition> conditions = conditionEntry.getValue();
+			final List<Condition> conditions = conditionEntry.getValue();
 			LOG.trace("  --> " + conditions);
 			for (final Condition condition : conditions) {
 
 				if (condition.check(certificateToken)) {
 
 					LOG.trace("    --> CONDITION TRUE / " + conditionEntry.getKey());
-					list.add(conditionEntry.getKey());
+					qualifierList.add(conditionEntry.getKey());
 					break;
 				}
 			}
 		}
-		return list;
+		return qualifierList;
 	}
 
 	/**

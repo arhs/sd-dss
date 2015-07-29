@@ -218,12 +218,14 @@ public final class DSSXMLUtils {
 	}
 
 	/**
+	 * Creates an {@code XPathExpression} providing the access to compiled XPath expressions.
+	 *
 	 * @param xpathString XPath query string
-	 * @return
+	 * @return {@code XPathExpression} base on the provide {@code xpathString}
+	 * @throws {@code DSSException} if an {@code XPathExpressionException} is raised
 	 */
 	private static XPathExpression createXPathExpression(final String xpathString) {
 
-      /* XPath */
 		final XPath xpath = factory.newXPath();
 		xpath.setNamespaceContext(namespacePrefixMapper);
 		try {
@@ -235,7 +237,7 @@ public final class DSSXMLUtils {
 	}
 
 	/**
-	 * Return the Element corresponding to the XPath query.
+	 * Returns the Element corresponding to the XPath query.
 	 *
 	 * @param xmlNode     The node where the search should be performed.
 	 * @param xPathString XPath query string
@@ -247,7 +249,7 @@ public final class DSSXMLUtils {
 	}
 
 	/**
-	 * Return the Node corresponding to the XPath query.
+	 * Returns the Node corresponding to the XPath query.
 	 *
 	 * @param xmlNode     The node where the search should be performed.
 	 * @param xPathString XPath query string

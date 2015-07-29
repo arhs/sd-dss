@@ -795,5 +795,4 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		final boolean xPointer = uri.startsWith("#xpointer(") || uri.startsWith("#xmlns(");
 		return xPointer;
 	}
-
 }

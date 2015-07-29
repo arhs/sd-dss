@@ -74,7 +74,12 @@ public class SignatureQualification {
 		// SIG[Q3][Q3] = SignatureType.AdES;
 	}
 
-	static public SignatureType getSignatureType(CertificateQualification certQualif, TLQualification tlQualif) {
+	/**
+	 * @param certQualif {@code CertificateQualification}
+	 * @param tlQualif   {@code TLQualification}
+	 * @return {@code SignatureType} depending on the certificate and the related service in the TSL
+	 */
+	static public SignatureType getSignatureType(final CertificateQualification certQualif, final TLQualification tlQualif) {
 
 		int q1 = QCPs[certQualif.qcp][certQualif.qcpp][certQualif.qcc][certQualif.qcsscd];
 		if (q1 == 0) {
@@ -86,7 +91,6 @@ public class SignatureQualification {
 		}
 		SignatureType signatureType = SIG[q1 - 1][q2 - 1];
 		if (signatureType == null) {
-
 			signatureType = SignatureType.AdES;
 		}
 		return signatureType;
