@@ -41,7 +41,6 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.qualified.ETSIQCObjectIdentifiers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -53,7 +52,6 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.EncryptionAlgorithm;
-import eu.europa.ec.markt.dss.OID;
 import eu.europa.ec.markt.dss.SignatureAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
@@ -71,9 +69,6 @@ import eu.europa.ec.markt.dss.validation102853.bean.SignatureProductionPlace;
 import eu.europa.ec.markt.dss.validation102853.cades.CAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.cades.CMSDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
-import eu.europa.ec.markt.dss.validation102853.condition.Condition;
-import eu.europa.ec.markt.dss.validation102853.condition.PolicyIdCondition;
-import eu.europa.ec.markt.dss.validation102853.condition.QcStatementCondition;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.ObjectFactory;
@@ -184,14 +179,6 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	 * This variable contains the reference to the diagnostic data.
 	 */
 	protected eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData jaxbDiagnosticData; // JAXB object
-
-	private final Condition qcp = new PolicyIdCondition(OID.id_etsi_qcp_public.getId());
-
-	private final Condition qcpPlus = new PolicyIdCondition(OID.id_etsi_qcp_public_with_sscd.getId());
-
-	private final Condition qcCompliance = new QcStatementCondition(ETSIQCObjectIdentifiers.id_etsi_qcs_QcCompliance);
-
-	private final Condition qcsscd = new QcStatementCondition(ETSIQCObjectIdentifiers.id_etsi_qcs_QcSSCD);
 
 	// Single policy document to use with all signatures.
 	private File policyDocument;
@@ -827,10 +814,10 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 			/// System.out.println("--> QCStatement for: " + certToken.getAbbreviation());
 			final XmlQCStatement xmlQCS = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlQCStatement();
-			xmlQCS.setQCP(qcp.check(certToken));
-			xmlQCS.setQCPPlus(qcpPlus.check(certToken));
-			xmlQCS.setQCC(qcCompliance.check(certToken));
-			xmlQCS.setQCSSCD(qcsscd.check(certToken));
+			xmlQCS.setQCP(certToken.isQCP());
+			xmlQCS.setQCPPlus(certToken.isQCPPlus());
+			xmlQCS.setQCC(certToken.isQCC());
+			xmlQCS.setQCSSCD(certToken.isQCSSCD());
 			xmlCert.setQCStatement(xmlQCS);
 		}
 	}
@@ -1010,12 +997,12 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 			return;
 		}
-		final List<ServiceInfo> services = trustAnchor.getAssociatedTSPS();
-		if (services == null) {
+		final List<ServiceInfo> serviceInfoList = trustAnchor.getAssociatedTSPS();
+		if (serviceInfoList == null) {
 
 			return;
 		}
-		for (final ServiceInfo serviceInfo : services) {
+		for (final ServiceInfo serviceInfo : serviceInfoList) {
 
 			//			System.out.println("---------------------------------------------");
 			//			System.out.println(serviceInfo);

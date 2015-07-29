@@ -44,6 +44,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.qualified.ETSIQCObjectIdentifiers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +55,7 @@ import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.OID;
 import eu.europa.ec.markt.dss.SignatureAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 
@@ -148,7 +150,7 @@ public class CertificateToken extends Token {
 	 * @param id   DSS unique certificate identifier
 	 * @return
 	 */
-	static CertificateToken newInstance(X509Certificate cert, int id) {
+	static CertificateToken newInstance(final X509Certificate cert, final int id) {
 
 		return new CertificateToken(cert, id);
 	}
@@ -160,7 +162,8 @@ public class CertificateToken extends Token {
 	 * @param x509Certificate X509Certificate
 	 * @param id              DSS internal id (unique certificate's identifier)
 	 */
-	protected CertificateToken(X509Certificate x509Certificate, int id) {
+	// TODO-Bob (29/07/2015):  null check should be performed of x509Certificate
+	protected CertificateToken(final X509Certificate x509Certificate, final int id) {
 
 		this.dssId = id;
 		this.x509Certificate = x509Certificate;
@@ -234,10 +237,9 @@ public class CertificateToken extends Token {
 	}
 
 	/**
-	 * @param revocationToken This is the reference to the CertificateStatus. The object type is used because of the organisation
-	 *                        of module.
+	 * @param revocationToken {code RevocationToken} to be associated with this {@code CertificateToken}
 	 */
-	public void setRevocationToken(RevocationToken revocationToken) {
+	public void setRevocationToken(final RevocationToken revocationToken) {
 
 		this.revocationToken = revocationToken;
 	}
@@ -292,15 +294,31 @@ public class CertificateToken extends Token {
 	/**
 	 * Checks if the certificate is expired on the given date.
 	 *
-	 * @param date
-	 * @return
+	 * @param date {@code Date} against which the check is performed
+	 * @return {@code true} if the certificate is expired at the given date, {@code false} otherwise
+	 * @throws DSSNullException If the {@code date} is {@code null} then {@code DSSNullException} is raised
 	 */
-	public boolean isExpiredOn(final Date date) {
+	public boolean isExpiredOn(final Date date) throws DSSNullException {
 
 		if (x509Certificate == null || date == null) {
-			return true;
+			throw new DSSNullException(Date.class);
 		}
 		return x509Certificate.getNotAfter().before(date);
+	}
+
+	/**
+	 * Checks if the certificate is not yet valid on the given date.
+	 *
+	 * @param date {@code Date} against which the check is performed
+	 * @return {@code true} if the certificate is not yet valid at the given date, {@code false} otherwise
+	 * @throws DSSNullException If the {@code date} is {@code null} then {@code DSSNullException} is raised
+	 */
+	public boolean isNotYetValidOn(final Date date) throws DSSNullException {
+
+		if (x509Certificate == null || date == null) {
+			throw new DSSNullException(Date.class);
+		}
+		return x509Certificate.getNotBefore().after(date);
 	}
 
 	/**
@@ -325,9 +343,9 @@ public class CertificateToken extends Token {
 	}
 
 	/**
-	 * This method indicates if the encapsulated certificate is revoked.
+	 * This method indicates if the encapsulated certificate is revoked. In the case of a trusted certificate {@code false} is always returned.
 	 *
-	 * @return null if the revocation data cannot be checked, or true or false
+	 * @return {@code null} if the revocation data cannot be checked, or {@code true} or {@code false}
 	 */
 	public Boolean isRevoked() {
 
@@ -337,18 +355,17 @@ public class CertificateToken extends Token {
 		if (revocationToken == null) {
 			return null;
 		}
-		Boolean status = revocationToken.getStatus();
+		final Boolean status = revocationToken.getStatus();
 		if (status == null) {
 			return null;
 		}
-		status = !status;
-		return status;
+		return !status;
 	}
 
 	/**
 	 * Checks if the certificate is provided by the trusted source.
 	 *
-	 * @return
+	 * @return {@code true} if the certificate is a part of a trusted list or trusted store
 	 */
 	public boolean isTrusted() {
 
@@ -356,9 +373,9 @@ public class CertificateToken extends Token {
 	}
 
 	/**
-	 * Checks if the certificate is self-signed.
+	 * Checks if the certificate is self-signed. Note that the signature is not checked. The result is only based on the comparison of the subject name and issuer name.
 	 *
-	 * @return
+	 * @return {@code true} if the certificate is self-signed
 	 */
 	public boolean isSelfSigned() {
 
@@ -369,32 +386,6 @@ public class CertificateToken extends Token {
 			selfSigned = n1.equals(n2);
 		}
 		return selfSigned;
-	}
-
-	/**
-	 * Compares a given one-off id with this of the wrapped certificate.
-	 *
-	 * @param id The DSS validation process one-off certificate's id
-	 * @return
-	 */
-	public boolean equals(final int id) {
-
-		return this.dssId == id;
-	}
-
-	@Override
-	public int hashCode() {
-
-		return dssId;
-	}
-
-	@Override
-	public boolean equals(final Object obj) {
-
-		if (obj == null || this.getClass() != obj.getClass()) {
-			return false;
-		}
-		return dssId == ((CertificateToken) obj).dssId;
 	}
 
 	/**
@@ -583,16 +574,6 @@ public class CertificateToken extends Token {
 		return false;
 	}
 
-	/**
-	 * Returns the object managing the validation extra info.
-	 *
-	 * @return
-	 */
-	public CertificateTokenValidationExtraInfo extraInfo() {
-
-		return extraInfo;
-	}
-
 	public DigestAlgorithm getDigestAlgorithm() {
 		return digestAlgorithm;
 	}
@@ -620,21 +601,18 @@ public class CertificateToken extends Token {
 	}
 
 	/**
-	 * Returns the trust anchor associated with the certificate. If it is the self-signed certificate then {@code this} is returned.
+	 * If it is the self-signed certificate then {@code this} is returned.
 	 *
-	 * @return
+	 * @return the trust anchor associated with the certificate or {@code null} otherwise
 	 */
 	public CertificateToken getTrustAnchor() {
 
 		if (isSelfSigned() && isTrusted()) {
-
 			return this;
 		}
 		CertificateToken issuerCertToken = getIssuerToken();
 		while (issuerCertToken != null) {
-
 			if (issuerCertToken.isTrusted()) {
-
 				return issuerCertToken;
 			}
 			issuerCertToken = issuerCertToken.getIssuerToken();
@@ -679,6 +657,42 @@ public class CertificateToken extends Token {
 	 */
 	public boolean checkKeyUsage(final int index) {
 		return x509Certificate.getKeyUsage()[index];
+	}
+
+	/**
+	 * Returns the object managing the validation extra info.
+	 *
+	 * @return
+	 */
+	public CertificateTokenValidationExtraInfo extraInfo() {
+
+		return extraInfo;
+	}
+
+	/**
+	 * Compares a given one-off id with this of the wrapped certificate.
+	 *
+	 * @param id The DSS validation process unique certificate's id
+	 * @return
+	 */
+	public boolean equals(final int id) {
+
+		return this.dssId == id;
+	}
+
+	@Override
+	public int hashCode() {
+
+		return dssId;
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+
+		if (obj == null || this.getClass() != obj.getClass()) {
+			return false;
+		}
+		return dssId == ((CertificateToken) obj).dssId;
 	}
 
 	@Override
@@ -825,6 +839,30 @@ public class CertificateToken extends Token {
 			qcStatementsIdList = DSSUtils.getQCStatementsIdList(x509Certificate);
 		}
 		return qcStatementsIdList;
+	}
+
+	public boolean isQCP() {
+
+		final List<String> policyIdentifiers = getPolicyIdentifiers();
+		return policyIdentifiers.contains(OID.id_etsi_qcp_public.getId());
+	}
+
+	public boolean isQCPPlus() {
+
+		final List<String> policyIdentifiers = getPolicyIdentifiers();
+		return policyIdentifiers.contains(OID.id_etsi_qcp_public_with_sscd.getId());
+	}
+
+	public boolean isQCC() {
+
+		final List<String> qcStatementsIdList = getQCStatementsIdList();
+		return qcStatementsIdList.contains(ETSIQCObjectIdentifiers.id_etsi_qcs_QcCompliance.getId());
+	}
+
+	public boolean isQCSSCD() {
+
+		final List<String> qcStatementsIdList = getQCStatementsIdList();
+		return qcStatementsIdList.contains(ETSIQCObjectIdentifiers.id_etsi_qcs_QcSSCD.getId());
 	}
 
 	/**
