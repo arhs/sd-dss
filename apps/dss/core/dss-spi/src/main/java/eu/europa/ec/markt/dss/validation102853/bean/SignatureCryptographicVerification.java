@@ -20,6 +20,9 @@
 package eu.europa.ec.markt.dss.validation102853.bean;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class SignatureCryptographicVerification implements Serializable {
 
@@ -31,6 +34,72 @@ public class SignatureCryptographicVerification implements Serializable {
 	 * This can be true but the {@code signatureValid} can be false
 	 */
 	private boolean signatureIntact;
+
+	private List<SignatureReference> signatureReferences = new ArrayList<SignatureReference>();
+
+	public static class SignatureReference {
+
+		String type;
+		String uri;
+		boolean referenceDataFound;
+		boolean referenceDataIntact;
+
+		List<SignatureReference> manifestReferences = null;
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public String getUri() {
+			return uri;
+		}
+
+		public void setUri(String uri) {
+			this.uri = uri;
+		}
+
+		public boolean isReferenceDataFound() {
+			return referenceDataFound;
+		}
+
+		public void setReferenceDataFound(boolean referenceDataFound) {
+			this.referenceDataFound = referenceDataFound;
+		}
+
+		public boolean isReferenceDataIntact() {
+			return referenceDataIntact;
+		}
+
+		public void setReferenceDataIntact(boolean referenceDataIntact) {
+			this.referenceDataIntact = referenceDataIntact;
+		}
+
+		/**
+		 * This method allows to add a new reference.
+		 *
+		 * @return {@code SignatureReference}
+		 */
+		public SignatureReference addManifestReference() {
+
+			if (manifestReferences == null) {
+				manifestReferences = new ArrayList<SignatureReference>();
+			}
+			final SignatureReference manifestReference = new SignatureReference();
+			manifestReferences.add(manifestReference);
+			return manifestReference;
+		}
+
+		public List<SignatureReference> getManifestReferences() {
+			if (manifestReferences == null) {
+				return null;
+			}
+			return Collections.unmodifiableList(manifestReferences);
+		}
+	}
 
 	private String errorMessage = "";
 
@@ -86,6 +155,28 @@ public class SignatureCryptographicVerification implements Serializable {
 
 			this.errorMessage = errorMessage;
 		}
+	}
+
+	/**
+	 * This method allows to add a new reference.
+	 *
+	 * @return {@code SignatureReference}
+	 */
+	public SignatureReference addReference() {
+
+		final SignatureReference signatureReference = new SignatureReference();
+		signatureReferences.add(signatureReference);
+		return signatureReference;
+	}
+
+	/**
+	 * This method returns an unmodifiable {@code List} of {@code SignatureReference}s.
+	 *
+	 * @return {@code List} of {@code SignatureReference}s
+	 */
+	public List<SignatureReference> getSignatureReferences() {
+
+		return Collections.unmodifiableList(signatureReferences);
 	}
 
 	@Override

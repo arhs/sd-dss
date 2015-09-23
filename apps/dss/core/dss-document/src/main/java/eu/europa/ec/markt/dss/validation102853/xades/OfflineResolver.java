@@ -44,16 +44,36 @@ public class OfflineResolver extends ResourceResolverSpi {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OfflineResolver.class);
 
-	private final List<DSSDocument> documents;
-
 	static {
 
 		Init.init();
 	}
 
+	private final List<DSSDocument> documents;
+
 	public OfflineResolver(final List<DSSDocument> documents) {
 
 		this.documents = documents;
+	}
+
+	private static boolean isRightDocument(final String documentUri, final DSSDocument document) {
+
+		final String documentUri_ = document.getName();
+		if (documentUri.equals(documentUri_)) {
+
+			return true;
+		}
+		final int length = documentUri.length();
+		final int length_ = documentUri_.length();
+		// For the file name as "/toto.txt"
+		final boolean case1 = documentUri.startsWith("/") && length - 1 == length_;
+		// For the file name as "./toto.txt"
+		final boolean case2 = documentUri.startsWith("./") && length - 2 == length_;
+		if (documentUri.endsWith(documentUri_) && (case1 || case2)) {
+
+			return true;
+		}
+		return false;
 	}
 
 	@Override
@@ -118,11 +138,11 @@ public class OfflineResolver extends ResourceResolverSpi {
 			// TODO-Bob (05/09/2014):  There is an error concerning the input streams base64 encoded. Some extra bytes are added within the santuario which breaks the HASH.
 			// TODO-Vin (05/09/2014): Can you create an isolated test-case JIRA DSS-?
 			InputStream inputStream = document.openStream();
-//
-				final byte[] bytes = DSSUtils.toByteArray(inputStream);
-				System.out.println("####: " + DSSUtils.base64Encode(bytes));
-				inputStream = DSSUtils.toInputStream(bytes);
-//
+			//
+			final byte[] bytes = DSSUtils.toByteArray(inputStream);
+			//				System.out.println("####: " + DSSUtils.base64Encode(bytes));
+			inputStream = DSSUtils.toInputStream(bytes);
+			//
 			final XMLSignatureInput result = new XMLSignatureInput(inputStream);
 			result.setSourceURI(documentUri);
 			final MimeType mimeType = document.getMimeType();
@@ -155,26 +175,6 @@ public class OfflineResolver extends ResourceResolverSpi {
 			}
 		}
 		return null;
-	}
-
-	private static boolean isRightDocument(final String documentUri, final DSSDocument document) {
-
-		final String documentUri_ = document.getName();
-		if (documentUri.equals(documentUri_)) {
-
-			return true;
-		}
-		final int length = documentUri.length();
-		final int length_ = documentUri_.length();
-		// For the file name as "/toto.txt"
-		final boolean case1 = documentUri.startsWith("/") && length - 1 == length_;
-		// For the file name as "./toto.txt"
-		final boolean case2 = documentUri.startsWith("./") && length - 2 == length_;
-		if (documentUri.endsWith(documentUri_) && (case1 || case2)) {
-
-			return true;
-		}
-		return false;
 	}
 
 	private DSSDocument getDocument(final String documentUri) {

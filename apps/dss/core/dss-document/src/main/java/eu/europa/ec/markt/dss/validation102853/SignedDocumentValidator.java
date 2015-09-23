@@ -71,6 +71,7 @@ import eu.europa.ec.markt.dss.validation102853.cades.CMSDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.ObjectFactory;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlBasicSignatureType;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertificate;
@@ -88,6 +89,8 @@ import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlMessage;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlPolicy;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlQCStatement;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlQualifiers;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlReference;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlReferencesType;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlRevocationType;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignature;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlSignatureProductionPlace;
@@ -105,6 +108,7 @@ import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.pades.PAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.pades.PDFDocumentValidator;
+import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.EtsiValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.report.Reports;
@@ -151,12 +155,13 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	protected CertificatePool validationCertPool;
 
 	/**
-	 * The document to validated (with the signature(s))
+	 * The document to validate (with the signature(s))
 	 */
 	protected DSSDocument document;
 
 	/**
-	 * In case of a detached signature this {@code List} contains the signed documents.
+	 * - In case of a detached signature this {@code List} contains the signed documents.
+	 * - In case of a signed manifest file this {@code List} contains the documents to be validated against the manifest file.
 	 */
 	protected List<DSSDocument> detachedContents = new ArrayList<DSSDocument>();
 
@@ -165,7 +170,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	private ValidationPolicy countersignatureValidationPolicy;
 
 	/**
-	 * The reference to the certificate verifier. The current DSS implementation proposes {@link eu.europa.ec.markt.dss.validation102853.CommonCertificateVerifier}. This verifier
+	 * The reference to the certificate verifier. The current DSS implementation proposes {@link CryptographicSourceProvider}. This verifier
 	 * encapsulates the references to different sources used in the signature validation process.
 	 */
 	protected CertificateVerifier certificateVerifier;
@@ -178,7 +183,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	/**
 	 * This variable contains the reference to the diagnostic data.
 	 */
-	protected eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData jaxbDiagnosticData; // JAXB object
+	protected DiagnosticData jaxbDiagnosticData; // JAXB object
 
 	// Single policy document to use with all signatures.
 	private File policyDocument;
@@ -404,7 +409,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		}
 		executor.setCountersignatureValidationPolicy(countersignatureValidationPolicy);
 
-		final eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData jaxbDiagnosticData = generateDiagnosticData();
+		final DiagnosticData jaxbDiagnosticData = generateDiagnosticData();
 
 		final Document diagnosticDataDom = ValidationResourceManager.convert(jaxbDiagnosticData);
 		executor.setDiagnosticDataDom(diagnosticDataDom);
@@ -448,7 +453,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	 * This method generates the diagnostic data. This is the set of all data extracted from the signature, associated certificates and trusted lists. The diagnostic data contains
 	 * also the results of basic computations (hash check, signature integrity, certificates chain...
 	 */
-	private eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData generateDiagnosticData() {
+	private DiagnosticData generateDiagnosticData() {
 
 		prepareDiagnosticData();
 
@@ -475,7 +480,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		validationContext.setCurrentTime(processExecutor.getCurrentTime());
 		validationContext.validate();
 
-		// For each validated signature present in the document to be validated the extraction of diagnostic data is launched.
+		// For each signature present in the document to be validated the extraction of diagnostic data is launched.
 		final Set<DigestAlgorithm> usedCertificatesDigestAlgorithms = new HashSet<DigestAlgorithm>();
 		for (final AdvancedSignature signature : allSignatureList) {
 
@@ -506,7 +511,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	}
 
 	/**
-	 * This method returns the list of all signatures including the countersignatures.
+	 * This method returns the list of all signatures including the countersignatures to be validated.
 	 *
 	 * @return {@code List} of {@code AdvancedSignature} to validate
 	 */
@@ -584,24 +589,24 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		final XmlSignature xmlSignature = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlSignature();
 		try {
 
-			final CertificateToken signingToken = dealSignature(signature, xmlSignature);
+			final CertificateToken signingToken = dealWithSignature(signature, xmlSignature);
 
-			dealPolicy(signature, xmlSignature);
+			dealWithPolicy(signature, xmlSignature);
 
-			dealCertificateChain(xmlSignature, signingToken);
+			dealWithCertificateChain(xmlSignature, signingToken);
 
 			signature.validateTimestamps();
 
 			XmlTimestamps xmlTimestamps = null;
-			xmlTimestamps = dealTimestamps(xmlTimestamps, signature.getContentTimestamps());
+			xmlTimestamps = dealWithTimestamps(xmlTimestamps, signature.getContentTimestamps());
 
-			xmlTimestamps = dealTimestamps(xmlTimestamps, signature.getSignatureTimestamps());
+			xmlTimestamps = dealWithTimestamps(xmlTimestamps, signature.getSignatureTimestamps());
 
-			xmlTimestamps = dealTimestamps(xmlTimestamps, signature.getTimestampsX1());
+			xmlTimestamps = dealWithTimestamps(xmlTimestamps, signature.getTimestampsX1());
 
-			xmlTimestamps = dealTimestamps(xmlTimestamps, signature.getTimestampsX2());
+			xmlTimestamps = dealWithTimestamps(xmlTimestamps, signature.getTimestampsX2());
 
-			xmlTimestamps = dealTimestamps(xmlTimestamps, signature.getArchiveTimestamps());
+			xmlTimestamps = dealWithTimestamps(xmlTimestamps, signature.getArchiveTimestamps());
 
 			xmlSignature.setTimestamps(xmlTimestamps);
 		} catch (Exception e) {
@@ -636,7 +641,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	 * @param xmlTimestamps
 	 * @param timestampTokens
 	 */
-	private XmlTimestamps dealTimestamps(XmlTimestamps xmlTimestamps, final List<TimestampToken> timestampTokens) {
+	private XmlTimestamps dealWithTimestamps(XmlTimestamps xmlTimestamps, final List<TimestampToken> timestampTokens) {
 
 		if (!timestampTokens.isEmpty()) {
 
@@ -971,7 +976,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	 * @param xmlSignature The JAXB object containing all diagnostic data pertaining to the signature
 	 * @param signingToken {@code CertificateToken} relative to the current signature
 	 */
-	private void dealCertificateChain(final XmlSignature xmlSignature, final CertificateToken signingToken) {
+	private void dealWithCertificateChain(final XmlSignature xmlSignature, final CertificateToken signingToken) {
 
 		if (signingToken != null) {
 
@@ -1104,7 +1109,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	 * @param signature    Signature to be validated (can be XAdES, CAdES, PAdES).
 	 * @param xmlSignature The JAXB object containing all diagnostic data pertaining to the signature
 	 */
-	private void dealPolicy(final AdvancedSignature signature, final XmlSignature xmlSignature) {
+	private void dealWithPolicy(final AdvancedSignature signature, final XmlSignature xmlSignature) {
 
 		SignaturePolicy signaturePolicy = null;
 		try {
@@ -1265,14 +1270,9 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	 * @param xmlSignature The JAXB object containing all diagnostic data pertaining to the signature
 	 * @return
 	 */
-	private CertificateToken dealSignature(final AdvancedSignature signature, final XmlSignature xmlSignature) {
+	private CertificateToken dealWithSignature(final AdvancedSignature signature, final XmlSignature xmlSignature) {
 
-		final AdvancedSignature masterSignature = signature.getMasterSignature();
-		if (masterSignature != null) {
-
-			xmlSignature.setType(AttributeValue.COUNTERSIGNATURE);
-			xmlSignature.setParentId(masterSignature.getId());
-		}
+		checkIfCountersignature(signature, xmlSignature);
 		performStructuralValidation(signature, xmlSignature);
 		performSignatureCryptographicValidation(signature, xmlSignature);
 		xmlSignature.setId(signature.getId());
@@ -1317,10 +1317,24 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		return signingCertificateToken;
 	}
 
+	private void checkIfCountersignature(AdvancedSignature signature, XmlSignature xmlSignature) {
+
+		final AdvancedSignature masterSignature = signature.getMasterSignature();
+		if (masterSignature != null) {
+
+			xmlSignature.setType(AttributeValue.COUNTERSIGNATURE);
+			xmlSignature.setParentId(masterSignature.getId());
+		}
+	}
+
 	private void performStructuralValidation(final AdvancedSignature signature, final XmlSignature xmlSignature) {
 
 		final ValidationPolicy validationPolicy = provideProcessExecutorInstance().getValidationPolicy();
-		if (validationPolicy == null || validationPolicy.getStructuralValidationConstraint() == null) {
+		if (validationPolicy == null) {
+			return;
+		}
+		final Constraint structuralValidationConstraint = validationPolicy.getStructuralValidationConstraint();
+		if (structuralValidationConstraint == null || Constraint.Level.IGNORE.equals(structuralValidationConstraint.getLevel())) {
 			return;
 		}
 		final String structureValid = signature.validateStructure();
@@ -1453,6 +1467,36 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		xmlBasicSignature.setReferenceDataIntact(scv.isReferenceDataIntact());
 		xmlBasicSignature.setSignatureIntact(scv.isSignatureIntact());
 		xmlBasicSignature.setSignatureValid(scv.isSignatureValid());
+		final XmlReferencesType xmlReferences = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlReferencesType();
+		final List<XmlReference> referenceList = xmlReferences.getReference();
+		final List<SignatureCryptographicVerification.SignatureReference> signatureReferences = scv.getSignatureReferences();
+		for (final SignatureCryptographicVerification.SignatureReference signatureReference : signatureReferences) {
+
+			final XmlReference xmlReference = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlReference();
+			xmlReference.setType(signatureReference.getType());
+			xmlReference.setURI(signatureReference.getUri());
+			xmlReference.setReferenceDataFound(signatureReference.isReferenceDataFound());
+			xmlReference.setReferenceDataIntact(signatureReference.isReferenceDataIntact());
+			final List<SignatureCryptographicVerification.SignatureReference> manifestReferences = signatureReference.getManifestReferences();
+			if (manifestReferences != null) {
+
+				final XmlReferencesType xmlManifestReferences = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlReferencesType();
+				final List<XmlReference> manifestReferenceList = xmlManifestReferences.getReference();
+				for (final SignatureCryptographicVerification.SignatureReference manifestReference : manifestReferences) {
+
+					final XmlReference xmlManifestReference = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlReference();
+					xmlManifestReference.setType(manifestReference.getType());
+					xmlManifestReference.setURI(manifestReference.getUri());
+					xmlManifestReference.setReferenceDataFound(manifestReference.isReferenceDataFound());
+					xmlManifestReference.setReferenceDataIntact(manifestReference.isReferenceDataIntact());
+					manifestReferenceList.add(xmlManifestReference);
+				}
+				xmlReference.setManifestReferences(xmlManifestReferences);
+			}
+			referenceList.add(xmlReference);
+		}
+		xmlBasicSignature.setReferences(xmlReferences);
+
 		xmlSignature.setBasicSignature(xmlBasicSignature);
 		if (!scv.getErrorMessage().isEmpty()) {
 
