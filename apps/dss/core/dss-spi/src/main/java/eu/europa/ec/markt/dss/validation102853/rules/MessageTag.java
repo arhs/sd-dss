@@ -33,6 +33,8 @@ public enum MessageTag {
 	BBB_CV_IRDOI_ANS("The reference data object(s) is not intact!"),
 	BBB_CV_ISI("Is the signature intact?"),
 	BBB_CV_ISI_ANS("The signature is not intact!"),
+	BBB_CV_IMRI("Is the manifest reference intact?"),
+	BBB_CV_IMRI_ANS("The manifest reference is not intact!"),
 
 	BBB_ICS_ISCI("Is there an identified candidate for the signing certificate?"),
 	BBB_ICS_ISCI_ANS("There is no candidate for the signing certificate!"),

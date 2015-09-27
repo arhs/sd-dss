@@ -731,5 +731,12 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedUnsignedQProperties/SignatureTimestamp";
 		return getElementNumberConstraint(XP_ROOT);
 	}
+
+	@Override
+	public ElementNumberConstraint getManifestReferenceIntactConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/MainSignature/Manifest/ValidReference";
+		return getElementNumberConstraint(XP_ROOT);
+	}
 }
 

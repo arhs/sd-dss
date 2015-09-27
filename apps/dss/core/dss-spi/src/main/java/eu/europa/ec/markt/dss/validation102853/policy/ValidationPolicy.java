@@ -422,5 +422,7 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract ElementNumberConstraint getValidSignatureNumberConstraint();
 
 	public abstract ElementNumberConstraint getSignatureTimestampNumberConstraint();
+
+	public abstract ElementNumberConstraint getManifestReferenceIntactConstraint();
 }
 

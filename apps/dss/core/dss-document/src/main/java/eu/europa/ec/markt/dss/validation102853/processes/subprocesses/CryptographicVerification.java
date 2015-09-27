@@ -24,6 +24,7 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
+import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.processes.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
@@ -36,6 +37,8 @@ import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRI;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRI_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IRDOF;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IRDOF_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IRDOI;
@@ -82,15 +85,16 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IS
  *
  * @author bielecro
  */
-public class CryptographicVerification implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class CryptographicVerification extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
 
 	/**
 	 * See {@link ProcessParameters#getCurrentValidationPolicy()}
 	 */
-	private ValidationPolicy constraintData;
+	private ValidationPolicy validationPolicy;
+
+	private XmlDom diagnosticData;
 
 	private XmlDom contextElement;
-
 	/**
 	 * This node is used to add the constraint nodes.
 	 */
@@ -98,7 +102,8 @@ public class CryptographicVerification implements Indication, SubIndication, Nod
 
 	private void prepareParameters(final ProcessParameters params) {
 
-		this.constraintData = params.getCurrentValidationPolicy();
+		this.validationPolicy = params.getCurrentValidationPolicy();
+		this.diagnosticData = params.getDiagnosticData();
 		this.contextElement = params.getContextElement();
 
 		isInitialised();
@@ -106,9 +111,8 @@ public class CryptographicVerification implements Indication, SubIndication, Nod
 
 	private void isInitialised() {
 
-		if (constraintData == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "validationPolicy"));
-		}
+		assertDiagnosticData(diagnosticData, getClass());
+		assertValidationPolicy(validationPolicy, getClass());
 		if (contextElement == null) {
 			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "signature"));
 		}
@@ -162,9 +166,22 @@ public class CryptographicVerification implements Indication, SubIndication, Nod
 		if (!checkSignatureIntactConstraint(conclusion)) {
 			return conclusion;
 		}
+		if (existsManifestReference()) {
+
+			if (!checkManifestReferenceIntactConstraint(conclusion)) {
+				return conclusion;
+			}
+		}
+
 		// This validation process returns VALID
 		conclusion.setIndication(VALID);
 		return conclusion;
+	}
+
+	private boolean existsManifestReference() {
+
+		final boolean manifestReferenceFound = contextElement.getBooleanValue(XP_MANIFEST_REFERENCE_FOUND);
+		return manifestReferenceFound;
 	}
 
 	/**
@@ -177,7 +194,7 @@ public class CryptographicVerification implements Indication, SubIndication, Nod
 	 */
 	private boolean checkReferenceDataExistenceConstraint(Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getReferenceDataExistenceConstraint();
+		final Constraint constraint = validationPolicy.getReferenceDataExistenceConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -199,7 +216,7 @@ public class CryptographicVerification implements Indication, SubIndication, Nod
 	 */
 	private boolean checkReferenceDataIntactConstraint(Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getReferenceDataIntactConstraint();
+		final Constraint constraint = validationPolicy.getReferenceDataIntactConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -223,7 +240,7 @@ public class CryptographicVerification implements Indication, SubIndication, Nod
 	 */
 	private boolean checkSignatureIntactConstraint(Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getSignatureIntactConstraint();
+		final Constraint constraint = validationPolicy.getSignatureIntactConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -231,6 +248,23 @@ public class CryptographicVerification implements Indication, SubIndication, Nod
 		final boolean signatureIntact = contextElement.getBoolValue(XP_SIGNATURE_INTACT);
 		constraint.setValue(signatureIntact);
 		constraint.setIndications(INVALID, SIG_CRYPTO_FAILURE, BBB_CV_ISI_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
+	}
+
+	private boolean checkManifestReferenceIntactConstraint(Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getManifestReferenceIntactConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessNode, BBB_CV_IMRI);
+		final String manifestReferenceUri = contextElement.getValue(XP_MANIFEST_REFERENCE_URI);
+		constraint.setAttribute(MANIFEST_REFERENCE_URI, manifestReferenceUri);
+		final boolean manifestReferenceIntact = contextElement.getBoolValue(XP_MANIFEST_REFERENCE_INTACT);
+		constraint.setValue(manifestReferenceIntact);
+		constraint.setIndications(INVALID, SIG_CRYPTO_FAILURE, BBB_CV_IMRI_ANS);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

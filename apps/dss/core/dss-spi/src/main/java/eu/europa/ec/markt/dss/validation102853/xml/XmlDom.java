@@ -55,10 +55,8 @@ import eu.europa.ec.markt.dss.exception.DSSException;
  */
 public class XmlDom {
 
-	private static final Logger LOG = LoggerFactory.getLogger(XmlDom.class);
-
 	public static final String NAMESPACE = "http://dss.markt.ec.europa.eu/validation/diagnostic";
-
+	private static final Logger LOG = LoggerFactory.getLogger(XmlDom.class);
 	private static final String NS_PREFIX = "dss";
 
 	private static final XPathFactory factory = XPathFactory.newInstance();
@@ -117,6 +115,143 @@ public class XmlDom {
 	}
 
 	/**
+	 * @param xPath
+	 * @param params
+	 * @return
+	 */
+	private static String format(final String xPath, final Object... params) {
+
+		String formattedXPath;
+		if (params.length > 0) {
+
+			formattedXPath = String.format(xPath, params);
+		} else {
+
+			formattedXPath = xPath;
+		}
+		formattedXPath = addNamespacePrefix(formattedXPath);
+		return formattedXPath;
+	}
+
+	private static String addNamespacePrefix(final String formatedXPath) {
+
+		if (formatedXPath.indexOf("/dss:") != -1) {
+			// Already formated.
+			return formatedXPath;
+		}
+		String formatedXPath_ = formatedXPath;
+		CharSequence from = "//";
+		CharSequence to = "{#double}/";
+		boolean special = formatedXPath_.indexOf("//") != -1;
+		if (special) {
+			formatedXPath_ = formatedXPath_.replace(from, to);
+		}
+		StringTokenizer tokenizer = new StringTokenizer(formatedXPath_, "/");
+
+		StringBuilder stringBuilder = new StringBuilder();
+
+		while (tokenizer.hasMoreTokens()) {
+
+			String token = tokenizer.nextToken();
+
+			final boolean isDot = ".".equals(token);
+			final boolean isCount = "count(".equals(token) || "count(.".equals(token);
+			final boolean isBoolean = "boolean(".equals(token) || "boolean(.".equals(token);
+			final boolean isDoubleDot = "..".equals(token);
+			final boolean isAt = token.startsWith("@");
+			final boolean isText = token.equals("text()");
+			final boolean isDoubleSlash = token.equals("{#double}");
+			final String slash = isDot || isCount || isBoolean || isDoubleSlash ? "" : "/";
+			String prefix = isDot || isCount || isBoolean || isDoubleDot || isAt || isText || isDoubleSlash ? "" : "dss:";
+
+			stringBuilder.append(slash).append(prefix).append(token);
+		}
+
+		// System.out.println("");
+		// System.out.println("--> " + formatedXPath);
+		// System.out.println("--> " + stringBuilder.toString());
+		String normalizedXPath = stringBuilder.toString();
+		if (special) {
+			normalizedXPath = normalizedXPath.replace(to, from);
+		}
+		return normalizedXPath;
+	}
+
+	/**
+	 * Converts the list of {@code XmlDom} to {@code List} of {@code String}. The children of the node are not taken
+	 * into account.
+	 *
+	 * @param xmlDomList the list of {@code XmlDom} to convert
+	 * @return converted {@code List} of {@code String}.
+	 */
+	public static List<String> convertToStringList(final List<XmlDom> xmlDomList) {
+
+		final List<String> stringList = new ArrayList<String>();
+		for (final XmlDom xmlDom : xmlDomList) {
+
+			stringList.add(xmlDom.getText());
+		}
+		return stringList;
+	}
+
+	/**
+	 * Converts the list of {@code XmlDom} to {@code Map} of {@code String}, {@code String}. The children of the node are not taken
+	 * into account.
+	 *
+	 * @param xmlDomList    the list of {@code XmlDom} to convert
+	 * @param attributeName the name of the attribute to use as value
+	 * @return converted {@code Map} of {@code String}, {@code String} corresponding to the element content and the attribute value.
+	 */
+	public static Map<String, String> convertToStringMap(final List<XmlDom> xmlDomList, final String attributeName) {
+
+		final Map<String, String> stringMap = new HashMap<String, String>();
+		for (final XmlDom xmlDom : xmlDomList) {
+
+			final String key = xmlDom.getText();
+			final String value = xmlDom.getAttribute(attributeName);
+			stringMap.put(key, value);
+		}
+		return stringMap;
+	}
+
+	/**
+	 * Converts the list of {@code XmlDom} to {@code Map} of {@code String}, {@code Date}. The children of the node are not taken
+	 * into account. If a problem is encountered during the conversion the pair key, value is ignored and a warning is logged.
+	 *
+	 * @param xmlDomList    the list of {@code XmlDom} to convert
+	 * @param attributeName the name of the attribute to use as value
+	 * @return converted {@code Map} of {@code String}, {@code Date} corresponding to the element content and the attribute value.
+	 */
+	public static Map<String, Date> convertToStringDateMap(final List<XmlDom> xmlDomList, final String attributeName) {
+
+		final Map<String, Date> stringMap = new HashMap<String, Date>();
+		for (final XmlDom xmlDom : xmlDomList) {
+
+			final String key = xmlDom.getText();
+			final String dateString = xmlDom.getAttribute(attributeName);
+			String format = xmlDom.getAttribute("Format");
+			if (DSSUtils.isBlank(format)) {
+				format = "yyyy-MM-dd";
+			}
+			if (DSSUtils.isBlank(dateString)) {
+
+				LOG.warn(String.format("The date is not defined for key '%s'!", key));
+				continue;
+			}
+			final Date date;
+			try {
+				date = DSSUtils.parseDate(format, dateString);
+			} catch (DSSException e) {
+
+				LOG.warn("The date conversion is not possible.", e);
+				continue;
+			}
+			stringMap.put(key, date);
+		}
+		return stringMap;
+	}
+
+	/**
 	 * The list of elements corresponding the given XPath query and parameters.
 	 *
 	 * @param xPath
@@ -171,71 +306,6 @@ public class XmlDom {
 	}
 
 	/**
-	 * @param xPath
-	 * @param params
-	 * @return
-	 */
-	private static String format(final String xPath, final Object... params) {
-
-		String formattedXPath;
-		if (params.length > 0) {
-
-			formattedXPath = String.format(xPath, params);
-		} else {
-
-			formattedXPath = xPath;
-		}
-		formattedXPath = addNamespacePrefix(formattedXPath);
-		return formattedXPath;
-	}
-
-	private static String addNamespacePrefix(final String formatedXPath) {
-
-		if (formatedXPath.startsWith("/dss:") || formatedXPath.startsWith("./dss:")) {
-
-			// Already formated.
-			return formatedXPath;
-		}
-		String formatedXPath_ = formatedXPath;
-		CharSequence from = "//";
-		CharSequence to = "{#double}/";
-		boolean special = formatedXPath_.indexOf("//") != -1;
-		if (special) {
-			formatedXPath_ = formatedXPath_.replace(from, to);
-		}
-		StringTokenizer tokenizer = new StringTokenizer(formatedXPath_, "/");
-
-		StringBuilder stringBuilder = new StringBuilder();
-
-		while (tokenizer.hasMoreTokens())
-
-		{
-
-			String token = tokenizer.nextToken();
-
-			final boolean isDot = ".".equals(token);
-			final boolean isCount = "count(".equals(token) || "count(.".equals(token);
-			final boolean isDoubleDot = "..".equals(token);
-			final boolean isAt = token.startsWith("@");
-			final boolean isText = token.equals("text()");
-			final boolean isDoubleSlash = token.equals("{#double}");
-			final String slash = isDot || isCount || isDoubleSlash ? "" : "/";
-			String prefix = isDot || isCount || isDoubleDot || isAt || isText || isDoubleSlash ? "" : "dss:";
-
-			stringBuilder.append(slash).append(prefix).append(token);
-		}
-
-		// System.out.println("");
-		// System.out.println("--> " + formatedXPath);
-		// System.out.println("--> " + stringBuilder.toString());
-		String normalizedXPath = stringBuilder.toString();
-		if (special) {
-			normalizedXPath = normalizedXPath.replace(to, from);
-		}
-		return normalizedXPath;
-	}
-
-	/**
 	 * This method never returns null.
 	 *
 	 * @param xPath
@@ -285,14 +355,27 @@ public class XmlDom {
 	public boolean getBoolValue(final String xPath, final Object... params) {
 
 		String value = getValue(xPath, params);
-		if (value.equals("true")) {
+		if ("true".equals(value)) {
 			return true;
-
-		} else if (value.isEmpty() || value.equals("false")) {
-
+		}
+		if (value.isEmpty() || "false".equals(value)) {
 			return false;
 		}
 		throw new DSSException("Expected values are: true, false and not '" + value + "'.");
+	}
+
+	public boolean getBooleanValue(final String xPath, final Object... params) {
+
+		String xpathString = format(xPath, params);
+		try {
+
+			XPathExpression xPathExpression = createXPathExpression(xpathString);
+			final Boolean number = (Boolean) xPathExpression.evaluate(rootElement, XPathConstants.BOOLEAN);
+			return number;
+		} catch (XPathExpressionException e) {
+
+			throw new RuntimeException(e);
+		}
 	}
 
 	public long getCountValue(final String xPath, final Object... params) {
@@ -371,80 +454,6 @@ public class XmlDom {
 	public NamedNodeMap getAttributes() {
 
 		return rootElement.getAttributes();
-	}
-
-	/**
-	 * Converts the list of {@code XmlDom} to {@code List} of {@code String}. The children of the node are not taken
-	 * into account.
-	 *
-	 * @param xmlDomList the list of {@code XmlDom} to convert
-	 * @return converted {@code List} of {@code String}.
-	 */
-	public static List<String> convertToStringList(final List<XmlDom> xmlDomList) {
-
-		final List<String> stringList = new ArrayList<String>();
-		for (final XmlDom xmlDom : xmlDomList) {
-
-			stringList.add(xmlDom.getText());
-		}
-		return stringList;
-	}
-
-	/**
-	 * Converts the list of {@code XmlDom} to {@code Map} of {@code String}, {@code String}. The children of the node are not taken
-	 * into account.
-	 *
-	 * @param xmlDomList    the list of {@code XmlDom} to convert
-	 * @param attributeName the name of the attribute to use as value
-	 * @return converted {@code Map} of {@code String}, {@code String} corresponding to the element content and the attribute value.
-	 */
-	public static Map<String, String> convertToStringMap(final List<XmlDom> xmlDomList, final String attributeName) {
-
-		final Map<String, String> stringMap = new HashMap<String, String>();
-		for (final XmlDom xmlDom : xmlDomList) {
-
-			final String key = xmlDom.getText();
-			final String value = xmlDom.getAttribute(attributeName);
-			stringMap.put(key, value);
-		}
-		return stringMap;
-	}
-
-	/**
-	 * Converts the list of {@code XmlDom} to {@code Map} of {@code String}, {@code Date}. The children of the node are not taken
-	 * into account. If a problem is encountered during the conversion the pair key, value is ignored and a warning is logged.
-	 *
-	 * @param xmlDomList    the list of {@code XmlDom} to convert
-	 * @param attributeName the name of the attribute to use as value
-	 * @return converted {@code Map} of {@code String}, {@code Date} corresponding to the element content and the attribute value.
-	 */
-	public static Map<String, Date> convertToStringDateMap(final List<XmlDom> xmlDomList, final String attributeName) {
-
-		final Map<String, Date> stringMap = new HashMap<String, Date>();
-		for (final XmlDom xmlDom : xmlDomList) {
-
-			final String key = xmlDom.getText();
-			final String dateString = xmlDom.getAttribute(attributeName);
-			String format = xmlDom.getAttribute("Format");
-			if (DSSUtils.isBlank(format)) {
-				format = "yyyy-MM-dd";
-			}
-			if (DSSUtils.isBlank(dateString)) {
-
-				LOG.warn(String.format("The date is not defined for key '%s'!", key));
-				continue;
-			}
-			final Date date;
-			try {
-				date = DSSUtils.parseDate(format, dateString);
-			} catch (DSSException e) {
-
-				LOG.warn("The date conversion is not possible.", e);
-				continue;
-			}
-			stringMap.put(key, date);
-		}
-		return stringMap;
 	}
 
 	public byte[] toByteArray() {

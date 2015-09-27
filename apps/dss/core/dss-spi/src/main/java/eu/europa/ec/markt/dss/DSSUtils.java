@@ -1777,6 +1777,25 @@ public final class DSSUtils {
 	}
 
 	/**
+	 * This method saves the given {@code InputStream} to a file representing by the provided path. The {@code InputStream} is not closed.
+	 *
+	 * @param inputStream {@code InputStream} to save
+	 * @param fileOutput        the path to the file to be created
+	 */
+	public static void saveToFile(final InputStream inputStream, final File fileOutput) {
+
+		FileOutputStream fileOutputStream = null;
+		try {
+
+			fileOutputStream = new FileOutputStream(fileOutput);
+			copy(inputStream, fileOutputStream);
+		} catch (FileNotFoundException e) {
+		} finally {
+			closeQuietly(fileOutputStream);
+		}
+	}
+
+	/**
 	 * @param certificate
 	 * @return
 	 */

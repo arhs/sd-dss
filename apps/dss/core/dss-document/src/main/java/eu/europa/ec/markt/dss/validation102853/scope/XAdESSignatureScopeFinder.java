@@ -30,8 +30,12 @@ import java.util.Set;
 
 import javax.xml.crypto.dsig.XMLSignature;
 
+import org.apache.xml.security.exceptions.XMLSecurityException;
+import org.apache.xml.security.signature.Reference;
+import org.apache.xml.security.transforms.Transform;
+import org.apache.xml.security.transforms.TransformationException;
+import org.apache.xml.security.transforms.Transforms;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
@@ -79,72 +83,102 @@ public class XAdESSignatureScopeFinder implements SignatureScopeFinder<XAdESSign
 		unsignedObjects.addAll(xadesSignature.getSignatureObjects());
 		final Set<Element> signedObjects = new HashSet<Element>();
 
-		final List<Element> signatureReferences = xadesSignature.getSignatureReferences();
-		for (final Element signatureReference : signatureReferences) {
+		final List<Reference> signatureReferences = xadesSignature.getReferences();
+		for (final Reference reference : signatureReferences) {
 
-			final String type = DSSXMLUtils.getValue(signatureReference, "@Type");
-			if (xadesSignature.getXPathQueryHolder().XADES_SIGNED_PROPERTIES.equals(type)) {
+			final String referenceType = reference.getType();
+			if (xadesSignature.getXPathQueryHolder().XADES_SIGNED_PROPERTIES.equals(referenceType)) {
 				continue;
 			}
-			final String uri = DSSXMLUtils.getValue(signatureReference, "@URI");
-			final List<String> transformations = getTransformationNames(signatureReference);
+			final String uri = reference.getURI();
+			final List<String> transformations = getTransformationNames(reference);
 			if (DSSUtils.isBlank(uri)) {
 				// self contained document
 				result.add(new XmlRootSignatureScope(transformations));
 			} else if (uri.startsWith("#")) {
+
 				// internal reference
+				final String xmlIdOfReferencedElement = uri.substring(1);
+				if (reference.typeIsReferenceToManifest()) {
+
+					result.add(new ManifestSignatureScope(xmlIdOfReferencedElement, transformations));
+					continue;
+				}
 				final boolean xPointerQuery = XPointerResourceResolver.isXPointerQuery(uri, true);
 				if (xPointerQuery) {
 
-					final String id = DSSXMLUtils.getIDIdentifier(signatureReference);
+					final String id = reference.getId();
 					final XPointerSignatureScope xPointerSignatureScope = new XPointerSignatureScope(id, uri);
 					result.add(xPointerSignatureScope);
 					continue;
 				}
-				final String xmlIdOfSignedElement = uri.substring(1);
-				final String xPathString = XPathQueryHolder.XPATH_OBJECT + "[@Id='" + xmlIdOfSignedElement + "']";
-				Element signedElement = DSSXMLUtils.getElement(xadesSignature.getSignatureElement(), xPathString);
+				final String xPathString = XPathQueryHolder.XPATH_OBJECT + "[@Id='" + xmlIdOfReferencedElement + "']";
+				final Element signatureElement = xadesSignature.getSignatureElement();
+				Element signedElement = DSSXMLUtils.getElement(signatureElement, xPathString);
 				if (signedElement != null) {
 					if (unsignedObjects.remove(signedElement)) {
 						signedObjects.add(signedElement);
-						result.add(new XmlElementSignatureScope(xmlIdOfSignedElement, transformations));
+						result.add(new XmlElementSignatureScope(xmlIdOfReferencedElement, transformations));
 					}
 				} else {
-					signedElement = DSSXMLUtils
-						  .getElement(xadesSignature.getSignatureElement().getOwnerDocument().getDocumentElement(), "//*" + "[@Id='" + xmlIdOfSignedElement + "']");
+					signedElement = DSSXMLUtils.getElement(signatureElement.getOwnerDocument().getDocumentElement(), "//*" + "[@Id='" + xmlIdOfReferencedElement + "']");
 					if (signedElement != null) {
 
 						final String namespaceURI = signedElement.getNamespaceURI();
 						if (namespaceURI == null || (!XAdESNamespaces.exists(namespaceURI) && !namespaceURI.equals(XMLSignature.XMLNS))) {
 							signedObjects.add(signedElement);
-							result.add(new XmlElementSignatureScope(xmlIdOfSignedElement, transformations));
+							result.add(new XmlElementSignatureScope(xmlIdOfReferencedElement, transformations));
 						}
 					}
 				}
 			} else {
 				// detached file
+				if (reference.typeIsReferenceToManifest()) {
+
+					result.add(new DetachedManifestSignatureScope(uri, transformations));
+					continue;
+				}
 				result.add(new FullSignatureScope(uri));
 			}
 		}
 		return result;
 	}
 
-	private List<String> getTransformationNames(final Element signatureReference) {
+	/**
+	 * If there an error occurs during th transformation processing then
+	 *
+	 * @param reference
+	 * @return
+	 */
+	private List<String> getTransformationNames(final Reference reference) {
 
-		final NodeList nodeList = DSSXMLUtils.getNodeList(signatureReference, "./ds:Transforms/ds:Transform");
-		final List<String> algorithms = new ArrayList<String>(nodeList.getLength());
-		for (int ii = 0; ii < nodeList.getLength(); ii++) {
+		final List<String> algorithms = new ArrayList<String>();
+		try {
 
-			final Element transformation = (Element) nodeList.item(ii);
-			final String algorithm = DSSXMLUtils.getValue(transformation, "@Algorithm");
-			if (transformationToIgnore.contains(algorithm)) {
-				continue;
+			final Transforms transforms = reference.getTransforms();
+			if (transforms == null) {
+				return algorithms;
 			}
-			if (presentableTransformationNames.containsKey(algorithm)) {
-				algorithms.add(presentableTransformationNames.get(algorithm));
-			} else {
-				algorithms.add(algorithm);
+			final int length = transforms.getLength();
+			for (int ii = 0; ii < length; ii++) {
+
+				try {
+					final Transform transformation = transforms.item(ii);
+					final String algorithm = transformation.getURI();
+					if (transformationToIgnore.contains(algorithm)) {
+						continue;
+					}
+					if (presentableTransformationNames.containsKey(algorithm)) {
+						algorithms.add(presentableTransformationNames.get(algorithm));
+					} else {
+						algorithms.add(algorithm);
+					}
+				} catch (TransformationException e) {
+					algorithms.add(e.getMessage());
+				}
 			}
+		} catch (XMLSecurityException e) {
+			algorithms.add(e.getMessage());
 		}
 		return algorithms;
 	}

@@ -187,22 +187,22 @@
 	<dependencyManagement>
 		<dependencies>
 			<!-- Internal Dependencies -->
-			<dependency>
-				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-				<artifactId>dss-demo-applet</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-				<artifactId>dss-demo-applet-package</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-				<artifactId>dss-demo-webapp</artifactId>
-				<type>war</type>
-				<version>${project.version}</version>
-			</dependency>
+			<!--<dependency>-->
+				<!--<groupId>eu.europa.ec.joinup.sd-dss</groupId>-->
+				<!--<artifactId>dss-demo-applet</artifactId>-->
+				<!--<version>${project.version}</version>-->
+			<!--</dependency>-->
+			<!--<dependency>-->
+				<!--<groupId>eu.europa.ec.joinup.sd-dss</groupId>-->
+				<!--<artifactId>dss-demo-applet-package</artifactId>-->
+				<!--<version>${project.version}</version>-->
+			<!--</dependency>-->
+			<!--<dependency>-->
+				<!--<groupId>eu.europa.ec.joinup.sd-dss</groupId>-->
+				<!--<artifactId>dss-demo-webapp</artifactId>-->
+				<!--<type>war</type>-->
+				<!--<version>${project.version}</version>-->
+			<!--</dependency>-->
 			<dependency>
 				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 				<artifactId>dss-spi</artifactId>
@@ -218,16 +218,16 @@
 				<artifactId>dss-document</artifactId>
 				<version>${project.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-				<artifactId>dss-webservices</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-				<artifactId>dss-webservices-client</artifactId>
-				<version>${project.version}</version>
-			</dependency>
+			<!--<dependency>-->
+				<!--<groupId>eu.europa.ec.joinup.sd-dss</groupId>-->
+				<!--<artifactId>dss-webservices</artifactId>-->
+				<!--<version>${project.version}</version>-->
+			<!--</dependency>-->
+			<!--<dependency>-->
+				<!--<groupId>eu.europa.ec.joinup.sd-dss</groupId>-->
+				<!--<artifactId>dss-webservices-client</artifactId>-->
+				<!--<version>${project.version}</version>-->
+			<!--</dependency>-->
 			<dependency>
 				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 				<artifactId>dss-common</artifactId>

@@ -20,7 +20,7 @@ public abstract class BasicValidationProcess {
 		}
 	}
 
-	protected void assertValidationPolicy(final ValidationPolicy validationPolicy, final Class<? extends BasicValidationProcess> aClass) {
+	protected static void assertValidationPolicy(final ValidationPolicy validationPolicy, final Class<? extends BasicValidationProcess> aClass) {
 
 		if (validationPolicy == null) {
 			throw new DSSException(String.format(ExceptionMessage.EXCEPTION_TCOPPNTBI, aClass.getSimpleName(), "validationPolicy"));
