@@ -34,6 +34,7 @@ import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.processes.ltv.PastSignatureValidation;
 import eu.europa.ec.markt.dss.validation102853.processes.ltv.PastSignatureValidationConclusion;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
+import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
@@ -78,25 +79,18 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_IPSVC
  * <p/>
  * The process does not necessarily fail when an intermediate time-stamp gives the status INVALID or INDETERMINATE
  * unless some validation constraints force the process to do so. If the validity of the signature can be ascertained
- * despite some time-stamps which were ignored due to INVALID (or INDETERLINATE) status, the SVA shall report this
+ * despite some time-stamps which were ignored due to INVALID (or INDETERMINATE) status, the SVA shall report this
  * information to the DA. What the DA does with this information is out of the scope of the present document.
  *
  * @author bielecro
  */
-public class LongTermValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class LongTermValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LongTermValidation.class);
 
 	ProcessParameters params;
 
 	// Primary inputs
-	/**
-	 * See {@link eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters#getDiagnosticData()}
-	 *
-	 * @return
-	 */
-	private XmlDom diagnosticData;
-
 	private XmlDom timestampValidationData; // Basic Building Blocks for timestamps
 
 	private XmlDom adestValidationData;
@@ -108,20 +102,8 @@ public class LongTermValidation implements Indication, SubIndication, NodeName, 
 	// This object represents the set of POEs.
 	private EtsiPOEExtraction poe;
 
-	private void prepareParameters(final XmlNode mainNode) {
-
-		this.diagnosticData = params.getDiagnosticData();
-		isInitialised(mainNode);
-	}
-
 	private void isInitialised(final XmlNode mainNode) {
 
-		if (diagnosticData == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "diagnosticData"));
-		}
-		if (params.getValidationPolicy() == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "validationPolicy"));
-		}
 		if (adestValidationData == null) {
 
 			/**
@@ -159,18 +141,28 @@ public class LongTermValidation implements Indication, SubIndication, NodeName, 
 	 * 9.3.4 Processing<br>
 	 * The following steps shall be performed:
 	 *
-	 * @param params
-	 * @return
+	 * @param mainNode {@code XmlNode} container for the detailed report
+	 * @param params   {@code ProcessParameters}
+	 * @return {@code XmlDom} containing the part of the detailed report related to the current validation process
 	 */
 	public XmlDom run(final XmlNode mainNode, final ProcessParameters params) {
 
 		this.params = params;
-		prepareParameters(mainNode);
-		LOG.debug(this.getClass().getSimpleName() + ": start.");
+		assertDiagnosticData(params.getDiagnosticData(), getClass());
+		assertValidationPolicy(params.getValidationPolicy(), getClass());
+
+		final GeneralStructure generalStructure = new GeneralStructure();
+		final Conclusion conclusion = generalStructure.run(params);
+		mainNode.addChild(conclusion.getValidationData());
+
+		isInitialised(mainNode);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(this.getClass().getSimpleName() + ": start.");
+		}
 
 		XmlNode longTermValidationData = mainNode.addChild(LONG_TERM_VALIDATION_DATA);
 
-		final List<XmlDom> signatures = diagnosticData.getElements("/DiagnosticData/Signature");
+		final List<XmlDom> signatures = params.getDiagnosticData().getElements("/DiagnosticData/Signature");
 
 		for (final XmlDom signature : signatures) {
 

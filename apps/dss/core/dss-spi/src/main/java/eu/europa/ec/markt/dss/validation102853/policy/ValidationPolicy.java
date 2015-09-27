@@ -41,6 +41,7 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 
 		super(document);
 	}
+
 	/**
 	 * @return
 	 */
@@ -403,5 +404,23 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract Constraint getCounterSignatureReferenceDataIntactConstraint();
 
 	public abstract Constraint getCounterSignatureIntactConstraint();
+
+	/**
+	 * This constraint is related to the global structure.
+	 * It defines the number of required signatures.
+	 *
+	 * @return {@code ElementNumberConstraint}
+	 */
+	public abstract ElementNumberConstraint getSignatureNumberConstraint();
+
+	/**
+	 * This constraint is related to the global structure.
+	 * It defines the number of VALID signatures.
+	 *
+	 * @return {@code ElementNumberConstraint}
+	 */
+	public abstract ElementNumberConstraint getValidSignatureNumberConstraint();
+
+	public abstract ElementNumberConstraint getSignatureTimestampNumberConstraint();
 }
 

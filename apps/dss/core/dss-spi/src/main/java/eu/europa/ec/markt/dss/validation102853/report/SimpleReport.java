@@ -47,81 +47,21 @@ public class SimpleReport extends XmlDom {
 	}
 
 	/**
-	 * This method returns the validation time.
-	 *
-	 * @return
+	 * @return {@code String} This method returns the path of the validated document containing the signature(s).
+	 */
+	public Date getDocumentName() {
+
+		final Date documentName = getTimeValue("/SimpleReport/DocumentName/text()");
+		return documentName;
+	}
+
+	/**
+	 * @return {@code Date} This method returns the validation time.
 	 */
 	public Date getValidationTime() {
 
 		final Date validationTime = getTimeValue("/SimpleReport/ValidationTime/text()");
 		return validationTime;
-	}
-
-	/**
-	 * This method returns the indication obtained after the validation of the signature.
-	 *
-	 * @param signatureId DSS unique identifier of the signature
-	 * @return
-	 */
-	public String getIndication(final String signatureId) {
-
-		final String indication = getValue("/SimpleReport/Signature[@Id='%s']/Indication/text()", signatureId);
-		return indication;
-	}
-
-	/**
-	 * This method returns the sub-indication obtained after the validation of the signature.
-	 *
-	 * @param signatureId DSS unique identifier of the signature
-	 * @return
-	 */
-	public String getSubIndication(final String signatureId) {
-
-		final String subIndication = getValue("/SimpleReport/Signature[@Id='%s']/SubIndication/text()", signatureId);
-		return subIndication;
-	}
-
-	/**
-	 * @param signatureId the signature id to test
-	 * @return true if the signature Indication element is equals to {@link Indication#VALID}
-	 */
-	public boolean isSignatureValid(final String signatureId) {
-
-		final String indicationValue = getIndication(signatureId);
-		return Indication.VALID.equals(indicationValue);
-	}
-
-	/**
-	 * Returns the signature type: QES, AdES, AdESqc, NA
-	 *
-	 * @param signatureId
-	 * @return {@code SignatureType}
-	 */
-	public SignatureType getSignatureLevel(final String signatureId) {
-
-		final String signatureTypeString = getValue("/SimpleReport/Signature[@Id='%s']/SignatureLevel/text()", signatureId);
-		SignatureType signatureType;
-		try {
-			signatureType = SignatureType.valueOf(signatureTypeString);
-		} catch (IllegalArgumentException e) {
-			signatureType = SignatureType.NA;
-		}
-		return signatureType;
-	}
-
-	/**
-	 * @return the list of signature id contained in the simpleReport
-	 * @deprecated FROM 4.3.0-RC, use getSignatureIdList()
-	 */
-	@Deprecated
-	public List<String> getSignatureIds() {
-
-		final List<String> signatureIdList = new ArrayList<String>();
-		final List<XmlDom> signatures = getElements("/SimpleReport/Signature");
-		for (final XmlDom signature : signatures) {
-			signatureIdList.add(signature.getAttribute("Id"));
-		}
-		return signatureIdList;
 	}
 
 	/**
@@ -138,9 +78,7 @@ public class SimpleReport extends XmlDom {
 	}
 
 	/**
-	 * This method returns the first signature id.
-	 *
-	 * @return
+	 * @return {@code String} This method returns the first signature id.
 	 */
 	public String getFirstSignatureId() {
 
@@ -152,13 +90,75 @@ public class SimpleReport extends XmlDom {
 	}
 
 	/**
-	 * @deprecated since 4.3.2-SNAPSHOT, use {@link #getInfoList(String)} instead
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code String} This method returns the indication obtained after the validation of the signature.
 	 */
-	@Deprecated
-	public List<Conclusion.BasicInfo> getInfo(final String signatureId) {
-		return getInfoList(signatureId);
+	public String getIndication(final String signatureId) {
+
+		final String indication = getValue("/SimpleReport/Signature[@Id='%s']/Indication/text()", signatureId);
+		return indication;
 	}
 
+	/**
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code String} This method returns the sub-indication obtained after the validation of the signature.
+	 */
+	public String getSubIndication(final String signatureId) {
+
+		final String subIndication = getValue("/SimpleReport/Signature[@Id='%s']/SubIndication/text()", signatureId);
+		return subIndication;
+	}
+
+	/**
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code true} if the signature Indication element is equals to {@link Indication#VALID}
+	 */
+	public boolean isSignatureValid(final String signatureId) {
+
+		final String indicationValue = getIndication(signatureId);
+		return Indication.VALID.equals(indicationValue);
+	}
+
+	/**
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code Date} This method returns the validation time.
+	 */
+	public Date getSigningTime(final String signatureId) {
+
+		final Date signingTime = getTimeValue("/SimpleReport/Signature[@Id='%s']/SigningTime/text()", signatureId);
+		return signingTime;
+	}
+
+	/**
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code SignatureType} Returns the signature type: QES, AdES, AdESqc, NA
+	 */
+	public SignatureType getSignatureLevel(final String signatureId) {
+
+		final String signatureTypeString = getValue("/SimpleReport/Signature[@Id='%s']/SignatureLevel/text()", signatureId);
+		SignatureType signatureType;
+		try {
+			signatureType = SignatureType.valueOf(signatureTypeString);
+		} catch (IllegalArgumentException e) {
+			signatureType = SignatureType.NA;
+		}
+		return signatureType;
+	}
+
+	/**
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code String} This method returns the signature format (XAdES_BASELINE_B...)
+	 */
+	public String getSignatureFormat(final String signatureId) {
+
+		final String indication = getValue("/SimpleReport/Signature[@Id='%s']/@SignatureFormat", signatureId);
+		return indication;
+	}
+
+	/**
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code List} of {@code Conclusion.BasicInfo} containing all "Info" messages
+	 */
 	public List<Conclusion.BasicInfo> getInfoList(final String signatureId) {
 
 		final List<Conclusion.BasicInfo> infoList = getBasicInfo(signatureId, "Info");
@@ -166,14 +166,9 @@ public class SimpleReport extends XmlDom {
 	}
 
 	/**
-	 * @deprecated since 4.3.2-SNAPSHOT, use {@link #getWarningList(String)} instead
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code List} of {@code Conclusion.BasicInfo} containing all "Warning" messages
 	 */
-	@Deprecated
-	public List<Conclusion.BasicInfo> getWarnings(final String signatureId) {
-
-		return getWarningList(signatureId);
-	}
-
 	public List<Conclusion.BasicInfo> getWarningList(final String signatureId) {
 
 		final List<Conclusion.BasicInfo> errorList = getBasicInfo(signatureId, "Warning");
@@ -181,27 +176,27 @@ public class SimpleReport extends XmlDom {
 	}
 
 	/**
-	 * @deprecated since 4.3.2-SNAPSHOT, use {@link #getErrorList(String)} instead
+	 * @param signatureId DSS unique identifier of the signature
+	 * @return {@code List} of {@code Conclusion.BasicInfo} containing all "Error" messages
 	 */
-	@Deprecated
-	public List<Conclusion.BasicInfo> getErrors(final String signatureId) {
-
-		return getErrorList(signatureId);
-	}
-
 	public List<Conclusion.BasicInfo> getErrorList(final String signatureId) {
 
 		final List<Conclusion.BasicInfo> errorList = getBasicInfo(signatureId, "Error");
 		return errorList;
 	}
 
+	/**
+	 * @param signatureId   DSS unique identifier of the signature
+	 * @param basicInfoType the Type of the messages to be returned: Info, Warning or Error
+	 * @return {@code List} of {@code Conclusion.BasicInfo} containing all messages of the specified type.
+	 */
 	private List<Conclusion.BasicInfo> getBasicInfo(final String signatureId, final String basicInfoType) {
 
 		final List<XmlDom> elementList = getElements("/SimpleReport/Signature[@Id='%s']/" + basicInfoType, signatureId);
 		final List<Conclusion.BasicInfo> infoList = new ArrayList<Conclusion.BasicInfo>();
 		for (final XmlDom infoElement : elementList) {
 
-			Conclusion.BasicInfo basicInfo = new Conclusion.BasicInfo(basicInfoType);
+			final Conclusion.BasicInfo basicInfo = new Conclusion.BasicInfo(basicInfoType);
 			basicInfo.setValue(infoElement.getText());
 			final NamedNodeMap attributes = infoElement.getAttributes();
 			for (int index = 0; index < attributes.getLength(); index++) {
@@ -215,14 +210,21 @@ public class SimpleReport extends XmlDom {
 	}
 
 	/**
-	 * This method returns the signature format (XAdES_BASELINE_B...)
-	 *
-	 * @param signatureId
-	 * @return
+	 * @return {@code String} This method returns the global indication obtained after the validation of the signatures.
 	 */
-	public String getSignatureFormat(final String signatureId) {
+	public String getGlobalIndication() {
 
-		final String indication = getValue("/SimpleReport/Signature[@Id='%s']/@SignatureFormat", signatureId);
+		final String indication = getValue("/SimpleReport/Global/Indication/text()");
 		return indication;
 	}
+
+	/**
+	 * @return {@code String} This method returns the global sub-indication obtained after the validation of the signatures.
+	 */
+	public String getGlobalSubIndication() {
+
+		final String subIndication = getValue("/SimpleReport/Global/SubIndication/text()");
+		return subIndication;
+	}
+
 }

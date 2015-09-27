@@ -11,6 +11,10 @@ package eu.europa.ec.markt.dss.validation102853.rules;
  */
 public enum MessageTag {
 
+	// General Structure
+	BBB_GS_DNSCVP("Does the number of 'signatures' comply with the validation policy?"),
+	BBB_GS_DNSCVP_ANS("The number of 'signatures' doesn't comply with the validation policy!"),
+
 	ADEST_IMIDF("Is message imprint data found?"),
 	ADEST_IMIDF_ANS("The timestamp message imprint data is not found!"),
 	ADEST_IMIVC("Is message imprint verification conclusive?"),
@@ -54,7 +58,7 @@ public enum MessageTag {
 	BBB_SAV_ISSV_ANS("The structure of the signature is not valid!"),
 	BBB_SAV_ICERRM("Is the certified role mandated?"),
 	BBB_SAV_ICERRM_ANS("The requested certified role is not present!"),
-	BBB_SAV_ICRM("The requested claimed role is not present!"),
+	BBB_SAV_ICRM("Is the claimed role mandated?"),
 	BBB_SAV_ICRM_ANS("The requested claimed role is not present!"),
 	BBB_SAV_ISQPCTP("Is signed qualifying property: 'content-type' present?"),
 	BBB_SAV_ISQPCTP_ANS("The signed qualifying property: 'content-type' is not present!"),
@@ -70,6 +74,8 @@ public enum MessageTag {
 	BBB_SAV_ISQPSTP_ANS("The signed qualifying property: 'signing-time' is not present!"),
 	BBB_SAV_ISQPXTIP("Is signed qualifying property: 'commitment-type-indication' present?"),
 	BBB_SAV_ISQPXTIP_ANS("The signed qualifying property: 'commitment-type-indication' is not present!"),
+	BBB_SAV_DNSTCVP("Does the number of 'signature timestamps' comply with the validation policy?"),
+	BBB_SAV_DNSTCVP_ANS("The number of 'signature timestamps' doesn't comply with the validation policy!"),
 
 	BBB_VCI_ISPK("Is the signature policy known?"),
 	BBB_VCI_ISPK_ANS_1("The signature policy is mandatory!"),

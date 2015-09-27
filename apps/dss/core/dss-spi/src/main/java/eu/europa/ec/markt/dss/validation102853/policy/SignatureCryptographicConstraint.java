@@ -103,7 +103,7 @@ public class SignatureCryptographicConstraint extends Constraint {
 	private String keyLength;
 
 	/**
-	 * This is the See {@link eu.europa.ec.markt.dss.validation102853.engine.rules.ProcessParameters#getCurrentTime()}
+	 * This is the See {@link ProcessParameters#getCurrentTime()}
 	 */
 	protected Date currentTime;
 

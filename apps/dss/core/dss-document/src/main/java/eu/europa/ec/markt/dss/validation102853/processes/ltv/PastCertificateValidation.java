@@ -105,7 +105,7 @@ public class PastCertificateValidation extends X509CertificateValidation {
 	 */
 	private void prepareParameters(final ProcessParameters params) {
 
-		this.constraintData = params.getCurrentValidationPolicy();
+		this.currentValidationPolicy = params.getCurrentValidationPolicy();
 		isInitialised();
 	}
 
@@ -114,7 +114,7 @@ public class PastCertificateValidation extends X509CertificateValidation {
 	 */
 	private void isInitialised() {
 
-		if (constraintData == null) {
+		if (currentValidationPolicy == null) {
 			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "validationPolicy"));
 		}
 	}
@@ -395,19 +395,19 @@ public class PastCertificateValidation extends X509CertificateValidation {
 
 			final XmlDom signingCertificate = params.getCertificate(signingCertificateId);
 
-			final QualifiedCertificate qc = new QualifiedCertificate(constraintData);
+			final QualifiedCertificate qc = new QualifiedCertificate(currentValidationPolicy);
 			boolean isQC = qc.run(signingCertificate);
 			if (!checkSigningCertificateQualificationConstraint(conclusion, isQC)) {
 				return conclusion;
 			}
 
-			final SSCD sscd = new SSCD(constraintData);
+			final SSCD sscd = new SSCD(currentValidationPolicy);
 			final Boolean isSSCD = sscd.run(signingCertificate);
 			if (!checkSigningCertificateSupportedBySSCDConstraint(conclusion, isSSCD)) {
 				return conclusion;
 			}
 
-			final ForLegalPerson forLegalPerson = new ForLegalPerson(constraintData);
+			final ForLegalPerson forLegalPerson = new ForLegalPerson(currentValidationPolicy);
 			final Boolean isForLegalPerson = forLegalPerson.run(signingCertificate);
 			if (!checkSigningCertificateIssuedToLegalPersonConstraint(conclusion, isForLegalPerson)) {
 				return conclusion;

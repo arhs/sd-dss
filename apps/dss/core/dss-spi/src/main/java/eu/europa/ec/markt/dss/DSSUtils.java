@@ -137,23 +137,8 @@ import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
  */
 public final class DSSUtils {
 
-	private static final Logger LOG = LoggerFactory.getLogger(DSSUtils.class);
-
 	public static final String CERT_BEGIN = "-----BEGIN CERTIFICATE-----\n";
 	public static final String CERT_END = "-----END CERTIFICATE-----";
-
-	private static final BouncyCastleProvider securityProvider = new BouncyCastleProvider();
-
-	/**
-	 * Used to build output as Hex
-	 */
-	private static final char[] DIGITS_LOWER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-	/**
-	 * Used to build output as Hex
-	 */
-	private static final char[] DIGITS_UPPER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
 	/**
 	 * FROM: Apache
 	 * The index value when an element is not found in a list or array: {@code -1}.
@@ -161,35 +146,42 @@ public final class DSSUtils {
 	 * various method from {@link java.util.List}.
 	 */
 	public static final int INDEX_NOT_FOUND = -1;
-
 	/**
 	 * The empty String {@code ""}.
 	 *
 	 * @since 2.0
 	 */
 	public static final String EMPTY = "";
-
-	/**
-	 * <p>The maximum size to which the padding constant(s) can expand.</p>
-	 */
-	private static final int PAD_LIMIT = 8192;
-
-	private static final CertificateFactory certificateFactory;
 	public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
-	/**
-	 * This date is used in the deterministic identifier computation when the signing time is unknown.
-	 */
-	private static final Date deterministicDate = DSSUtils.getUtcDate(1970, 04, 23);
-
 	public static final String DEFAULT_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 	/**
 	 * The default date pattern: "yyyy-MM-dd"
 	 */
 	public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
-
+	private static final Logger LOG = LoggerFactory.getLogger(DSSUtils.class);
+	private static final BouncyCastleProvider securityProvider = new BouncyCastleProvider();
+	/**
+	 * Used to build output as Hex
+	 */
+	private static final char[] DIGITS_LOWER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+	/**
+	 * Used to build output as Hex
+	 */
+	private static final char[] DIGITS_UPPER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+	/**
+	 * <p>The maximum size to which the padding constant(s) can expand.</p>
+	 */
+	private static final int PAD_LIMIT = 8192;
+	private static final CertificateFactory certificateFactory;
+	/**
+	 * This date is used in the deterministic identifier computation when the signing time is unknown.
+	 */
+	private static final Date deterministicDate = DSSUtils.getUtcDate(1970, 04, 23);
+	/**
+	 * The default buffer size to use.
+	 */
+	private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 	private static MessageDigest sha1Digester;
-
 	private static JcaDigestCalculatorProviderBuilder jcaDigestCalculatorProviderBuilder;
 
 	static {
@@ -219,11 +211,6 @@ public final class DSSUtils {
 			throw new DSSException("The digest algorithm is not supported", e);
 		}
 	}
-
-	/**
-	 * The default buffer size to use.
-	 */
-	private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
 	/**
 	 * This class is an utility class and cannot be instantiated.
@@ -3306,5 +3293,34 @@ public final class DSSUtils {
 		} catch (IOException e) {
 			throw new DSSException(e);
 		}
+	}
+
+	/**
+	 * @param minStr
+	 * @return
+	 */
+	public static int parseIntSilently(final String minStr, final int defaultValue) {
+
+		try {
+			return Integer.parseInt(minStr);
+		} catch (NumberFormatException e) {
+		}
+		return defaultValue;
+	}
+
+	/**
+	 * @param minStr
+	 * @return
+	 */
+	public static Integer parseIntegerSilently(final String minStr, final Integer defaultValue) {
+
+		if (DSSUtils.isBlank(minStr)) {
+			return null;
+		}
+		try {
+			return Integer.parseInt(minStr);
+		} catch (NumberFormatException e) {
+		}
+		return defaultValue;
 	}
 }

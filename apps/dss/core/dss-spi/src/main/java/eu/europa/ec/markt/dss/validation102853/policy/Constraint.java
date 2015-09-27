@@ -90,7 +90,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	protected Map<String, String> messageAttributes = new HashMap<String, String>();
 	protected Conclusion conclusion;
 
-	public static enum Level {IGNORE, INFORM, WARN, FAIL}
+	public enum Level {IGNORE, INFORM, WARN, FAIL}
 
 	private Level level;
 
@@ -105,7 +105,6 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 		try {
 			this.level = Level.valueOf(level.trim().toUpperCase());
 		} catch (IllegalArgumentException e) {
-
 			throw new DSSException("The validation policy configuration file should be checked: " + e.getMessage(), e);
 		}
 	}
@@ -238,7 +237,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 			}
 			node.addChild(STATUS, KO);
 			if (DSSUtils.isNotBlank(expectedValue) && !expectedValue.equals("true") && !expectedValue.equals("false")) {
-				node.addChild(INFO).setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
+				node.addChild(ERROR).setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
 			}
 			if (DSSUtils.isNotBlank(indication)) {
 
@@ -291,7 +290,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 				return true;
 			}
 			node.addChild(STATUS, KO);
-			node.addChild(INFO).setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
+			node.addChild(ERROR).setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
 			conclusion.setIndication(indication, subIndication);
 			conclusion.addError(failureMessageTag, messageAttributes);
 			return false;

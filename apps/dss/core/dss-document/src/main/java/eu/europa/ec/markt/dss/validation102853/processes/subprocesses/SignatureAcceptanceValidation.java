@@ -28,9 +28,11 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
+import eu.europa.ec.markt.dss.validation102853.policy.ElementNumberConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
+import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.processes.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
@@ -49,6 +51,8 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMI
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICERRM;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICERRM_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICRM;
@@ -107,7 +111,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
-public class SignatureAcceptanceValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class SignatureAcceptanceValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
 
 	/**
 	 * The following variables are used only in order to simplify the writing of the rules!
@@ -116,7 +120,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	/**
 	 * See {@link ProcessParameters#getCurrentValidationPolicy()}
 	 */
-	private ValidationPolicy constraintData;
+	private ValidationPolicy validationPolicy;
 
 	/**
 	 * See {@link ProcessParameters#getCurrentTime()}
@@ -135,7 +139,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 
 	private void prepareParameters(final ProcessParameters params) {
 
-		this.constraintData = params.getCurrentValidationPolicy();
+		this.validationPolicy = params.getCurrentValidationPolicy();
 		this.signatureContext = params.getSignatureContext();
 		this.currentTime = params.getCurrentTime();
 
@@ -144,9 +148,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 
 	private void isInitialised() {
 
-		if (constraintData == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "validationPolicy"));
-		}
+		assertValidationPolicy(validationPolicy, getClass());
 		if (signatureContext == null) {
 			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "signatureContext"));
 		}
@@ -180,7 +182,6 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	public Conclusion run(final ProcessParameters params, final XmlNode processNode) {
 
 		if (processNode == null) {
-
 			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "processNode"));
 		}
 		prepareParameters(params);
@@ -207,7 +208,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 
 		final Conclusion conclusion = new Conclusion();
 
-		// structural validation (only for XAdES)
+		// XSD structural validation (only for XAdES)
 		if (!checkStructuralValidationConstraint(conclusion)) {
 			return conclusion;
 		}
@@ -273,6 +274,10 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 			return conclusion;
 		}
 
+		if (!checkSignatureTimestampNumberConstraint(conclusion)) {
+			return conclusion;
+		}
+
 		/**
 		 * 5.5.4.2 Processing signing certificate reference constraint
 		 * If the SigningCertificate property contains references to other certificates in the path, the verifier shall check
@@ -335,12 +340,12 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 		 */
 
 		// TODO: (Bob: 2014 Mar 23) To be converted to the WARNING system
-		final boolean checkIfCertifiedRoleIsPresent = constraintData.shouldCheckIfCertifiedRoleIsPresent();
+		final boolean checkIfCertifiedRoleIsPresent = validationPolicy.shouldCheckIfCertifiedRoleIsPresent();
 		if (checkIfCertifiedRoleIsPresent) {
 
 			final XmlNode constraintNode = addConstraint(BBB_SAV_ICERRM);
 
-			final List<String> requestedCertifiedRoles = constraintData.getCertifiedRoles();
+			final List<String> requestedCertifiedRoles = validationPolicy.getCertifiedRoles();
 			final String requestedCertifiedRolesString = RuleUtils.toString(requestedCertifiedRoles);
 
 			final List<XmlDom> certifiedRolesXmlDom = signatureContext.getElements("./CertifiedRoles/CertifiedRole");
@@ -390,7 +395,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkStructuralValidationConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getStructuralValidationConstraint();
+		final Constraint constraint = validationPolicy.getStructuralValidationConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -421,7 +426,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkSigningTimeConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getSigningTimeConstraint();
+		final Constraint constraint = validationPolicy.getSigningTimeConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -442,7 +447,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkContentTypeConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getContentTypeConstraint();
+		final Constraint constraint = validationPolicy.getContentTypeConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -463,7 +468,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkContentHintsConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getContentHintsConstraint();
+		final Constraint constraint = validationPolicy.getContentHintsConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -484,7 +489,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkContentIdentifierConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getContentIdentifierConstraint();
+		final Constraint constraint = validationPolicy.getContentIdentifierConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -506,7 +511,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkCommitmentTypeIndicationConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getCommitmentTypeIndicationConstraint();
+		final Constraint constraint = validationPolicy.getCommitmentTypeIndicationConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -534,7 +539,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkSignerLocationConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getSignerLocationConstraint();
+		final Constraint constraint = validationPolicy.getSignerLocationConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -568,7 +573,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkContentTimeStampConstraints(final Conclusion conclusion) {
 
-		final Constraint constraint1 = constraintData.getContentTimestampPresenceConstraint();
+		final Constraint constraint1 = validationPolicy.getContentTimestampPresenceConstraint();
 		if (constraint1 == null) {
 			return true;
 		}
@@ -584,7 +589,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 		constraint1.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPCTSIP_ANS);
 		constraint1.setConclusionReceiver(conclusion);
 
-		final Constraint constraint2 = constraintData.getContentTimestampImprintFoundConstraint();
+		final Constraint constraint2 = validationPolicy.getContentTimestampImprintFoundConstraint();
 		if (constraint2 == null) {
 			return constraint1.check();
 		}
@@ -593,7 +598,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 		constraint2.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, ADEST_IMIDF_ANS);
 		constraint2.setConclusionReceiver(conclusion);
 
-		final Constraint constraint3 = constraintData.getContentTimestampImprintIntactConstraint();
+		final Constraint constraint3 = validationPolicy.getContentTimestampImprintIntactConstraint();
 		if (constraint3 == null) {
 			return constraint1.check() && constraint2.check();
 		}
@@ -611,7 +616,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkContentTimestampImprintFoundConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getContentTimestampPresenceConstraint();
+		final Constraint constraint = validationPolicy.getContentTimestampPresenceConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -638,15 +643,15 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkClaimedRoleConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getClaimedRoleConstraint();
+		final Constraint constraint = validationPolicy.getClaimedRoleConstraint();
 		if (constraint == null) {
 			return true;
 		}
 		constraint.create(subProcessNode, BBB_SAV_ICRM);
 		final List<XmlDom> claimedRolesXmlDom = signatureContext.getElements("./ClaimedRoles/ClaimedRole");
 		final List<String> claimedRoles = XmlDom.convertToStringList(claimedRolesXmlDom);
-		// TODO (Bob) to be implemented fro each claimed role. Attendance must be taken into account.
-		final String attendance = constraintData.getCertifiedRolesAttendance();
+		// TODO (Bob) to be implemented for each claimed role. Attendance must be taken into account.
+		final String attendance = validationPolicy.getCertifiedRolesAttendance();
 		String claimedRole = null;
 		for (String claimedRole_ : claimedRoles) {
 
@@ -664,6 +669,28 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	}
 
 	/**
+	 * Check of unsigned qualifying property: SignatureTimestamp
+	 * The number of detected SignatureTimestamps is check against the validation policy. Even not valid timestamps are taken into account.
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check.
+	 * @return false if the check failed and the process should stop, true otherwise.
+	 */
+	private boolean checkSignatureTimestampNumberConstraint(final Conclusion conclusion) {
+
+		ElementNumberConstraint constraint = validationPolicy.getSignatureTimestampNumberConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessNode, BBB_SAV_DNSTCVP);
+		final List<XmlDom> signatureTimestampXmlDom = signatureContext.getElements("./Timestamps/Timestamp[@Type='SIGNATURE_TIMESTAMP']");
+		constraint.setIntValue(signatureTimestampXmlDom.size());
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNSTCVP_ANS);
+		constraint.setConclusionReceiver(conclusion);
+		boolean check = constraint.check();
+		return check;
+	}
+
+	/**
 	 * Check of: main signature cryptographic verification
 	 *
 	 * @param conclusion the conclusion to use to add the result of the check.
@@ -671,7 +698,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	private boolean checkMainSignatureCryptographicConstraint(final Conclusion conclusion) {
 
-		final SignatureCryptographicConstraint constraint = constraintData.getSignatureCryptographicConstraint(MAIN_SIGNATURE);
+		final SignatureCryptographicConstraint constraint = validationPolicy.getSignatureCryptographicConstraint(MAIN_SIGNATURE);
 		if (constraint == null) {
 			return true;
 		}
@@ -705,7 +732,7 @@ public class SignatureAcceptanceValidation implements Indication, SubIndication,
 	 */
 	/*private boolean checkCounterSignatureConstraints(Conclusion conclusion) {
 		//get countersignatures
-		final Constraint constraint = constraintData.getCounterSignatureConstraint();
+		final Constraint constraint = validationPolicy.getCounterSignatureConstraint();
 		if (constraint == null) {
 			return true;
 		}

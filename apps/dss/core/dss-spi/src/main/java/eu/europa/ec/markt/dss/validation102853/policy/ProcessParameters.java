@@ -24,6 +24,7 @@ import java.util.Date;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.process.POEExtraction;
+import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.report.DiagnosticData;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
@@ -47,55 +48,46 @@ public class ProcessParameters implements ExceptionMessage {
 	 * ValidationContextInitialisation sub process will fail.
 	 */
 	protected ValidationPolicy validationPolicy;
-
-	/**
-	 * This is the countersignature policy data to be used by the validation process. This data are not mandatory but in this case the
-	 * ValidationContextInitialisation sub process will fail.
-	 */
-	private ValidationPolicy countersignatureValidationPolicy;
-
 	/**
 	 * This is the current validation policy (either signature or countersignature).
 	 */
 	protected ValidationPolicy currentValidationPolicy;
-
 	/**
 	 * This is the current time against which the validation process is carried out.
 	 */
 	protected Date currentTime;
-
-	/**
-	 * This variable contains the Signing Certificate Id. It is initialised by
-	 * IdentificationOfTheSignersCertificate sub process.
-	 * This variable is different for each context.
-	 */
-	private String signingCertificateId;
-
-	/**
-	 * This variable contains the Signing Certificate Node from diagnostic data. It is initialised by
-	 * IdentificationOfTheSignersCertificate sub process.
-	 * This variable is different for each context.
-	 */
-	private XmlDom signingCertificate;
-
 	/**
 	 * Represents the current main signature DOM element being validated. This element provides general information used
 	 * in validation process like the list of used certificates.
 	 */
 	protected XmlDom signatureContext;
-
 	/**
 	 * Represents the current signature DOM element being validated:<br>
 	 * in the case of main signature validation {@code contextElement} is the signature element being validated;<br>
 	 * in case of Timestamp signature validation {@code contextElement} is the timestamp element being validated.
 	 */
 	protected XmlDom contextElement;
-
 	/**
 	 * Indicates the current validation element like: MainSignature, SigningCertificate...
 	 */
 	protected String contextName;
-
+	/**
+	 * This is the countersignature policy data to be used by the validation process. This data are not mandatory but in this case the
+	 * ValidationContextInitialisation sub process will fail.
+	 */
+	private ValidationPolicy countersignatureValidationPolicy;
+	/**
+	 * This variable contains the Signing Certificate Id. It is initialised by
+	 * IdentificationOfTheSignersCertificate sub process.
+	 * This variable is different for each context.
+	 */
+	private String signingCertificateId;
+	/**
+	 * This variable contains the Signing Certificate Node from diagnostic data. It is initialised by
+	 * IdentificationOfTheSignersCertificate sub process.
+	 * This variable is different for each context.
+	 */
+	private XmlDom signingCertificate;
 	/**
 	 * This {@code XmlDom} is returned by the Basic Building Blocks process (see BasicBuildingBlocks) and
 	 * it depicts the validation detailed report.
@@ -129,6 +121,7 @@ public class ProcessParameters implements ExceptionMessage {
 	private XmlDom certPool;
 
 	private POEExtraction poe;
+	private Conclusion generalStructureConclusion;
 
 	/**
 	 * See {@link #diagnosticData}
@@ -166,12 +159,12 @@ public class ProcessParameters implements ExceptionMessage {
 		this.validationPolicy = validationPolicy;
 	}
 
-	public void setCountersignatureValidationPolicy(final ValidationPolicy countersignatureValidationPolicy) {
-		this.countersignatureValidationPolicy = countersignatureValidationPolicy;
-	}
-
 	public ValidationPolicy getCountersignatureValidationPolicy() {
 		return countersignatureValidationPolicy;
+	}
+
+	public void setCountersignatureValidationPolicy(final ValidationPolicy countersignatureValidationPolicy) {
+		this.countersignatureValidationPolicy = countersignatureValidationPolicy;
 	}
 
 	/**
@@ -242,8 +235,8 @@ public class ProcessParameters implements ExceptionMessage {
 	 *
 	 * @return
 	 */
-	public void setBBBData(final XmlDom bbbData) {
-		this.basicBuildingBlocksReport = bbbData;
+	public void setBasicBuildingBlocksReport(final XmlDom basicBuildingBlocksReport) {
+		this.basicBuildingBlocksReport = basicBuildingBlocksReport;
 	}
 
 	/**
@@ -450,5 +443,13 @@ public class ProcessParameters implements ExceptionMessage {
 
 			return super.toString();
 		}
+	}
+
+	public void setGeneralStructureConclusion(final Conclusion generalStructureConclusion) {
+		this.generalStructureConclusion = generalStructureConclusion;
+	}
+
+	public Conclusion getGeneralStructureConclusion() {
+		return generalStructureConclusion;
 	}
 }

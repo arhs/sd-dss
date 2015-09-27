@@ -538,17 +538,61 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	}
 
 	@Override
-	protected Constraint getBasicConstraint(final String XP_ROOT, final boolean defaultExpectedValue) {
+	protected Constraint getBasicConstraint(final String xpRoot, final boolean defaultExpectedValue) {
 
-		final String level = getValue(XP_ROOT + "/@Level");
+		final String level = getValue(xpRoot + "/@Level");
 		if (DSSUtils.isNotBlank(level)) {
 
 			final Constraint constraint = new Constraint(level);
-			String expectedValue = getValue(XP_ROOT + "/text()");
+			String expectedValue = getValue(xpRoot + "/text()");
 			if (DSSUtils.isBlank(expectedValue)) {
 				expectedValue = defaultExpectedValue ? TRUE : FALSE;
 			}
 			constraint.setExpectedValue(expectedValue);
+			return constraint;
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the constraint object checking a given number against a defined interval
+	 *
+	 * @param xpRoot
+	 * @return
+	 */
+	private ElementNumberConstraint getElementNumberConstraint(final String xpRoot) {
+
+		final String level = getValue(xpRoot + "/@Level");
+		if (DSSUtils.isNotBlank(level)) {
+
+			final String minStr = getValue(xpRoot + "/@Min");
+			final int min = DSSUtils.parseIntSilently(minStr, 0);
+			final String maxStr = getValue(xpRoot + "/@Max");
+			final int max = DSSUtils.parseIntSilently(maxStr, 999);
+
+			final ElementNumberConstraint constraint = new ElementNumberConstraint(level, min, max);
+			return constraint;
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the constraint object checking the given numbers (valid elements and total elements) against the defined constraint.
+	 *
+	 * @param xpRoot
+	 * @return
+	 */
+	private OkKoElementNumberConstraint getOkKoElementNumberConstraint(final String xpRoot) {
+
+		final String level = getValue(xpRoot + "/@Level");
+		if (DSSUtils.isNotBlank(level)) {
+
+			final String minStr = getValue(xpRoot + "/@Min");
+			final Integer min = DSSUtils.parseIntegerSilently(minStr, 0);
+			final String maxStr = getValue(xpRoot + "/@Max");
+			final Integer max = DSSUtils.parseIntegerSilently(maxStr, 999);
+
+			final OkKoElementNumberConstraint constraint = new OkKoElementNumberConstraint(level, min, max);
 			return constraint;
 		}
 		return null;
@@ -665,6 +709,27 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 
 		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedUnsignedQProperties/CounterSignature/SignatureIntact";
 		return getBasicConstraint(XP_ROOT, true);
+	}
+
+	@Override
+	public ElementNumberConstraint getSignatureNumberConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/GlobalStructure/SignatureNumber";
+		return getElementNumberConstraint(XP_ROOT);
+	}
+
+	@Override
+	public ElementNumberConstraint getValidSignatureNumberConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/GlobalStructure/Valid";
+		return getElementNumberConstraint(XP_ROOT);
+	}
+
+	@Override
+	public ElementNumberConstraint getSignatureTimestampNumberConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedUnsignedQProperties/SignatureTimestamp";
+		return getElementNumberConstraint(XP_ROOT);
 	}
 }
 

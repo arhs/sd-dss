@@ -25,7 +25,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.CryptographicVerification;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.IdentificationOfTheSignersCertificate;
@@ -46,29 +45,18 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
  * This class creates the validation data (Basic Building Blocks) for all signatures.
  * <p/>
  * 5. Basic Building Blocks<br>
- * This clause presents basic building blocks that are useable in the signature validation process. Later clauses will
+ * This clause presents basic building blocks that are usable in the signature validation process. Later clauses will
  * use these blocks to construct validation algorithms for specific scenarios.
  *
  * @author bielecro
  */
-public class BasicBuildingBlocks implements NodeName, NodeValue, AttributeName, AttributeValue, Indication, ExceptionMessage {
+public class BasicBuildingBlocks extends BasicValidationProcess implements NodeName, NodeValue, AttributeName, AttributeValue, Indication, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BasicBuildingBlocks.class);
 
-	private XmlDom diagnosticData;
+	private void isInitialised(final ProcessParameters params) {
 
-	private void prepareParameters(final ProcessParameters params) {
-
-		this.diagnosticData = params.getDiagnosticData();
-		isInitialised();
-	}
-
-	private void isInitialised() {
-
-		if (diagnosticData == null) {
-			final String message = String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "diagnosticData");
-			throw new DSSException(message);
-		}
+		assertDiagnosticData(params.getDiagnosticData(), getClass());
 	}
 
 	/**
@@ -79,15 +67,14 @@ public class BasicBuildingBlocks implements NodeName, NodeValue, AttributeName, 
 	 */
 	public XmlDom run(final XmlNode mainNode, final ProcessParameters params) {
 
-		prepareParameters(params);
+		isInitialised(params);
 		LOG.debug(this.getClass().getSimpleName() + ": start.");
 
 		params.setContextName(SIGNING_CERTIFICATE);
 
 		final XmlNode basicBuildingBlocksNode = mainNode.addChild(BASIC_BUILDING_BLOCKS);
 
-		final List<XmlDom> signatures = diagnosticData.getElements("/DiagnosticData/Signature");
-
+		final List<XmlDom> signatures = params.getDiagnosticData().getElements("/DiagnosticData/Signature");
 		for (final XmlDom signature : signatures) {
 
 			final String type = signature.getValue("./@Type");
@@ -188,8 +175,8 @@ public class BasicBuildingBlocks implements NodeName, NodeValue, AttributeName, 
 			final XmlNode conclusionXmlNode = conclusion.toXmlNode();
 			signatureNode.addChild(conclusionXmlNode);
 		}
-		final XmlDom bbbDom = basicBuildingBlocksNode.toXmlDom();
-		params.setBBBData(bbbDom);
-		return bbbDom;
+		final XmlDom BasicBuildingBlocksReportDom = basicBuildingBlocksNode.toXmlDom();
+		params.setBasicBuildingBlocksReport(BasicBuildingBlocksReportDom);
+		return BasicBuildingBlocksReportDom;
 	}
 }

@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 
 /**
@@ -60,7 +59,7 @@ public class CertificateExpirationConstraint extends Constraint {
 	protected Date expiredCertsRevocationInfo;
 
 	/**
-	 * This is the See {@link eu.europa.ec.markt.dss.validation102853.engine.rules.ProcessParameters#getCurrentTime()}
+	 * This is the See {@link ProcessParameters#getCurrentTime()}
 	 */
 	protected Date currentTime;
 

@@ -534,6 +534,26 @@ public class DiagnosticData extends XmlDom {
 	}
 
 	/**
+	 * @param dssCertificateId DSS certificate identifier to be checked
+	 * @return {@code Date} not after attribute value
+	 */
+	public Date getCertificateNotAfter(final int dssCertificateId) {
+
+		final Date notAfter = getTimeValue("/DiagnosticData/UsedCertificates/Certificate[@Id='%s']/NotAfter/text()", dssCertificateId);
+		return notAfter;
+	}
+
+	/**
+	 * @param dssCertificateId DSS certificate identifier to be checked
+	 * @return {@code Date} not before attribute value
+	 */
+	public Date getCertificateNotBefore(final int dssCertificateId) {
+
+		final Date notBefore = getTimeValue("/DiagnosticData/UsedCertificates/Certificate[@Id='%s']/NotBefore/text()", dssCertificateId);
+		return notBefore;
+	}
+
+	/**
 	 * This method returns the validity of the certificate at the validation time.
 	 *
 	 * @param dssCertificateId DSS certificate identifier to be checked
@@ -648,6 +668,38 @@ public class DiagnosticData extends XmlDom {
 		final String qualification = getValue("/DiagnosticData/UsedCertificates/Certificate[@Id='%s']/TrustedServiceProvider/Qualifiers/Qualifier[" + condition + "]/text()",
 			  dssCertificateId);
 		return !qualification.isEmpty();
+	}
+
+	/**
+	 * @param dssCertificateId DSS certificate identifier to be checked
+	 * @return This method returns the {@code List} of key usage for a given certificate.
+	 */
+	public List<String> getCertificateKeyUsageList(final int dssCertificateId) {
+
+		List<String> keyUsageIdList = new ArrayList<String>();
+		final List<XmlDom> keyUsages = getElements("/DiagnosticData/UsedCertificates/Certificate[@Id='%s']/KeyUsageBits/KeyUsage", dssCertificateId);
+		for (final XmlDom keyUsage : keyUsages) {
+
+			final String keyUsageText = keyUsage.getText();
+			keyUsageIdList.add(keyUsageText);
+		}
+		return keyUsageIdList;
+	}
+
+	/**
+	 * @param dssCertificateId DSS certificate identifier to be checked
+	 * @return This method returns the {@code List} of policies for a given certificate.
+	 */
+	public List<String> getCertificatePolicyList(final int dssCertificateId) {
+
+		List<String> policyIdList = new ArrayList<String>();
+		final List<XmlDom> policies = getElements("/DiagnosticData/UsedCertificates/Certificate[@Id='%s']/CertificatePolicies/CertificatePolicy", dssCertificateId);
+		for (final XmlDom policy : policies) {
+
+			final String policyText = policy.getText();
+			policyIdList.add(policyText);
+		}
+		return policyIdList;
 	}
 
 	/**

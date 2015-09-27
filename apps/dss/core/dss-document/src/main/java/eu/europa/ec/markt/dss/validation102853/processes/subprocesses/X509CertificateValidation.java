@@ -32,6 +32,7 @@ import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
+import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.processes.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.ForLegalPerson;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.QualifiedCertificate;
@@ -84,7 +85,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
 
-public class X509CertificateValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, RuleConstant, ValidationXPathQueryHolder {
+public class X509CertificateValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, RuleConstant, ValidationXPathQueryHolder {
 
 	/**
 	 * The following variables are used only in order to simplify the writing of the rules!
@@ -98,7 +99,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	/**
 	 * See {@link ProcessParameters#getCurrentValidationPolicy()}
 	 */
-	protected ValidationPolicy constraintData;
+	protected ValidationPolicy currentValidationPolicy;
 
 	/**
 	 * See {@link ProcessParameters#getCurrentTime()}
@@ -138,7 +139,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	private void prepareParameters(final ProcessParameters params) {
 
 		this.diagnosticData = params.getDiagnosticData();
-		this.constraintData = params.getCurrentValidationPolicy();
+		this.currentValidationPolicy = params.getCurrentValidationPolicy();
 
 		this.signatureContext = params.getSignatureContext();
 		this.contextElement = params.getContextElement();
@@ -152,12 +153,8 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 
 	private void isInitialised(final ProcessParameters params) {
 
-		if (diagnosticData == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "diagnosticData"));
-		}
-		if (constraintData == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "validationPolicy"));
-		}
+		assertDiagnosticData(diagnosticData, getClass());
+		assertValidationPolicy(currentValidationPolicy, getClass());
 		if (currentTime == null) {
 			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "currentTime"));
 		}
@@ -183,7 +180,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 * This method carry out the XCV process.
 	 *
 	 * @param params validation process parameters
-	 * @return false if the validation failed, true otherwise
+	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
 	public Conclusion run(final ProcessParameters params, final String contextName) {
 
@@ -379,19 +376,19 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		 */
 		if (MAIN_SIGNATURE.equals(contextName)) {
 
-			final QualifiedCertificate qc = new QualifiedCertificate(constraintData);
+			final QualifiedCertificate qc = new QualifiedCertificate(currentValidationPolicy);
 			final boolean isQC = qc.run(signingCertificate);
 			if (!checkSigningCertificateQualificationConstraint(conclusion, isQC)) {
 				return conclusion;
 			}
 
-			final SSCD sscd = new SSCD(constraintData);
+			final SSCD sscd = new SSCD(currentValidationPolicy);
 			final Boolean isSSCD = sscd.run(signingCertificate);
 			if (!checkSigningCertificateSupportedBySSCDConstraint(conclusion, isSSCD)) {
 				return conclusion;
 			}
 
-			final ForLegalPerson forLegalPerson = new ForLegalPerson(constraintData);
+			final ForLegalPerson forLegalPerson = new ForLegalPerson(currentValidationPolicy);
 			final Boolean isForLegalPerson = forLegalPerson.run(signingCertificate);
 			if (!checkSigningCertificateIssuedToLegalPersonConstraint(conclusion, isForLegalPerson)) {
 				return conclusion;
@@ -435,7 +432,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	private boolean prepareRevocationFreshnessCheck(String revocationIssuingTimeString) {
 
-		boolean revocationFreshnessToBeChecked = constraintData.isRevocationFreshnessToBeChecked();
+		boolean revocationFreshnessToBeChecked = currentValidationPolicy.isRevocationFreshnessToBeChecked();
 		boolean revocationFresh = !revocationFreshnessToBeChecked;
 
 		if (revocationFreshnessToBeChecked && !revocationIssuingTimeString.isEmpty()) {
@@ -443,7 +440,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 			final Date revocationIssuingTime = DSSUtils.parseDate(revocationIssuingTimeString);
 			final long revocationDeltaTime = currentTime.getTime() - revocationIssuingTime.getTime();
 
-			if (revocationDeltaTime <= constraintData.getMaxRevocationFreshness()) {
+			if (revocationDeltaTime <= currentValidationPolicy.getMaxRevocationFreshness()) {
 
 				revocationFresh = true;
 			}
@@ -470,7 +467,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	private boolean checkCertificateExpirationConstraint(final Conclusion conclusion, final String context, final String subContext) {
 
-		final CertificateExpirationConstraint constraint = constraintData.getSigningCertificateExpirationConstraint(context, subContext);
+		final CertificateExpirationConstraint constraint = currentValidationPolicy.getSigningCertificateExpirationConstraint(context, subContext);
 		if (constraint == null) {
 			return true;
 		}
@@ -495,7 +492,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	protected boolean checkProspectiveCertificateChainConstraint(final Conclusion conclusion, boolean trustedProspectiveCertificateChain) {
 
-		final Constraint constraint = constraintData.getProspectiveCertificateChainConstraint(contextName);
+		final Constraint constraint = currentValidationPolicy.getProspectiveCertificateChainConstraint(contextName);
 		if (constraint == null) {
 			return true;
 		}
@@ -547,7 +544,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	private boolean checkCertificateSignatureConstraint(final Conclusion conclusion, final String certificateId, final XmlDom certificateXmlDom, final String subContext) {
 
-		final Constraint constraint = constraintData.getCertificateSignatureConstraint(contextName, subContext);
+		final Constraint constraint = currentValidationPolicy.getCertificateSignatureConstraint(contextName, subContext);
 		if (constraint == null) {
 			return true;
 		}
@@ -571,7 +568,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	private boolean checkRevocationDataAvailableConstraint(final Conclusion conclusion, final String certificateId, final XmlDom certificateXmlDom, String subContext) {
 
-		final Constraint constraint = constraintData.getRevocationDataAvailableConstraint(contextName, subContext);
+		final Constraint constraint = currentValidationPolicy.getRevocationDataAvailableConstraint(contextName, subContext);
 		if (constraint == null) {
 			return true;
 		}
@@ -601,7 +598,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	private boolean checkRevocationDataIsTrustedConstraint(Conclusion conclusion, String certificateId, XmlDom certificateXmlDom, String subContext) {
 
-		final Constraint constraint = constraintData.getRevocationDataIsTrustedConstraint(contextName, subContext);
+		final Constraint constraint = currentValidationPolicy.getRevocationDataIsTrustedConstraint(contextName, subContext);
 		if (constraint == null) {
 			return true;
 		}
@@ -642,7 +639,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 			return true;
 		}
 
-		final Constraint constraint = constraintData.getRevocationDataFreshnessConstraint(contextName, subContext);
+		final Constraint constraint = currentValidationPolicy.getRevocationDataFreshnessConstraint(contextName, subContext);
 		if (constraint == null) {
 			return true;
 		}
@@ -652,7 +649,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		constraint.setAttribute(REVOCATION_NEXT_UPDATE, revocationNextUpdate);
 		constraint.setAttribute(REVOCATION_ISSUING_TIME, revocationIssuingTimeString);
-		constraint.setAttribute(MAXIMUM_REVOCATION_FRESHNESS, constraintData.getFormatedMaxRevocationFreshness());
+		constraint.setAttribute(MAXIMUM_REVOCATION_FRESHNESS, currentValidationPolicy.getFormatedMaxRevocationFreshness());
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -668,7 +665,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	private boolean checkKeyUsageConstraint(Conclusion conclusion, String certificateId, XmlDom certificateXmlDom) {
 
-		final Constraint constraint = constraintData.getSigningCertificateKeyUsageConstraint(contextName);
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateKeyUsageConstraint(contextName);
 		if (constraint == null) {
 			return true;
 		}
@@ -700,7 +697,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	private boolean checkSigningCertificateRevokedConstraint(final Conclusion conclusion, final String certificateId, boolean revocationStatus, final String revocationReason,
 	                                                         final String revocationDatetime, String subContext) {
 
-		final Constraint constraint = constraintData.getSigningCertificateRevokedConstraint(contextName, subContext);
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateRevokedConstraint(contextName, subContext);
 		if (constraint == null) {
 			return true;
 		}
@@ -740,7 +737,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	private boolean checkSigningCertificateOnHoldConstraint(final Conclusion conclusion, final String certificateId, final boolean revocationStatus, final String revocationReason,
 	                                                        final String revocationDatetime, final String revocationNextUpdate, String subContext) {
 
-		final Constraint constraint = constraintData.getSigningCertificateOnHoldConstraint(contextName, subContext);
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateOnHoldConstraint(contextName, subContext);
 		if (constraint == null) {
 			return true;
 		}
@@ -774,7 +771,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 			return true;
 		}
 
-		final Constraint constraint = constraintData.getSigningCertificateTSLValidityConstraint(contextName);
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateTSLValidityConstraint(contextName);
 		if (constraint == null) {
 			return true;
 		}
@@ -821,7 +818,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 			return true;
 		}
 
-		final Constraint constraint = constraintData.getSigningCertificateTSLStatusConstraint(contextName);
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateTSLStatusConstraint(contextName);
 		if (constraint == null) {
 			return true;
 		}
@@ -864,7 +861,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 			return true;
 		}
 
-		final Constraint constraint = constraintData.getSigningCertificateTSLStatusAndValidityConstraint(contextName);
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateTSLStatusAndValidityConstraint(contextName);
 		if (constraint == null) {
 			return true;
 		}
@@ -918,7 +915,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	private boolean checkIntermediateCertificateRevokedConstraint(final Conclusion conclusion, final String certificateId, final boolean revocationStatus,
 	                                                              final String revocationReason, final String revocationDatetime, String subContext) {
 
-		final Constraint constraint = constraintData.getIntermediateCertificateRevokedConstraint(contextName);
+		final Constraint constraint = currentValidationPolicy.getIntermediateCertificateRevokedConstraint(contextName);
 		if (constraint == null) {
 			return true;
 		}
@@ -947,7 +944,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	private boolean checkChainConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getChainConstraint();
+		final Constraint constraint = currentValidationPolicy.getChainConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -969,7 +966,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	protected boolean checkSigningCertificateQualificationConstraint(final Conclusion conclusion, final boolean qualifiedCertificate) {
 
-		final Constraint constraint = constraintData.getSigningCertificateQualificationConstraint();
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateQualificationConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -990,7 +987,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	protected boolean checkSigningCertificateSupportedBySSCDConstraint(final Conclusion conclusion, final boolean supportedBySSCD) {
 
-		final Constraint constraint = constraintData.getSigningCertificateSupportedBySSCDConstraint();
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateSupportedBySSCDConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -1011,7 +1008,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 	 */
 	protected boolean checkSigningCertificateIssuedToLegalPersonConstraint(final Conclusion conclusion, final boolean issuedToLegalPerson) {
 
-		final Constraint constraint = constraintData.getSigningCertificateIssuedToLegalPersonConstraint();
+		final Constraint constraint = currentValidationPolicy.getSigningCertificateIssuedToLegalPersonConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -1035,7 +1032,7 @@ public class X509CertificateValidation implements Indication, SubIndication, Nod
 		if (contextXmlDom == null) {
 			return true;
 		}
-		final SignatureCryptographicConstraint constraint = constraintData.getSignatureCryptographicConstraint(context, subContext);
+		final SignatureCryptographicConstraint constraint = currentValidationPolicy.getSignatureCryptographicConstraint(context, subContext);
 		if (constraint == null) {
 			return true;
 		}

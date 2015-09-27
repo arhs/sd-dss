@@ -77,6 +77,24 @@ public class SimpleReportBuilder {
 	}
 
 	/**
+	 * @param signatureNode
+	 * @param exception
+	 */
+	private static void notifyException(final XmlNode signatureNode, final Exception exception) {
+
+		LOG.error(exception.getMessage(), exception);
+
+		signatureNode.removeChild(NodeName.INDICATION);
+		signatureNode.removeChild(NodeName.SUB_INDICATION);
+
+		signatureNode.addChild(NodeName.INDICATION, Indication.INDETERMINATE);
+		signatureNode.addChild(NodeName.SUB_INDICATION, SubIndication.UNEXPECTED_ERROR);
+
+		final String message = DSSUtils.getSummaryMessage(exception, SimpleReportBuilder.class);
+		signatureNode.addChild(NodeName.INFO, message);
+	}
+
+	/**
 	 * This method generates the validation simpleReport.
 	 *
 	 * @param params validation process parameters
@@ -97,7 +115,7 @@ public class SimpleReportBuilder {
 
 			addSignatures(params, simpleReport);
 
-			addStatistics(simpleReport);
+			addGlobalResult(params, simpleReport);
 		} catch (Exception e) {
 
 			if (!"WAS TREATED".equals(e.getMessage())) {
@@ -141,10 +159,28 @@ public class SimpleReportBuilder {
 		}
 	}
 
-	private void addStatistics(XmlNode report) {
+	private void addGlobalResult(final ProcessParameters params, XmlNode report) {
 
-		report.addChild(NodeName.VALID_SIGNATURES_COUNT, Integer.toString(validSignatureCount));
-		report.addChild(NodeName.SIGNATURES_COUNT, Integer.toString(totalSignatureCount));
+		final XmlNode globalXmlNode = report.addChild(NodeName.GLOBAL);
+		final Conclusion generalStructureConclusion = params.getGeneralStructureConclusion();
+		final String generalStructureIndication = generalStructureConclusion.getIndication();
+		if (!Indication.VALID.equals(generalStructureIndication)) {
+
+			globalXmlNode.addChild(NodeName.INDICATION, generalStructureIndication);
+			final String generalStructureSubIndication = generalStructureConclusion.getSubIndication();
+			globalXmlNode.addChild(NodeName.SUB_INDICATION, generalStructureSubIndication);
+		} else {
+
+			if (validSignatureCount != totalSignatureCount) {
+
+				globalXmlNode.addChild(NodeName.INDICATION, Indication.INDETERMINATE);
+				globalXmlNode.addChild(NodeName.SUB_INDICATION, SubIndication.SOME_NOT_VALID_SIGNATURES);
+			} else {
+				globalXmlNode.addChild(NodeName.INDICATION, Indication.VALID);
+			}
+		}
+		globalXmlNode.addChild(NodeName.VALID_SIGNATURES_COUNT, Integer.toString(validSignatureCount));
+		globalXmlNode.addChild(NodeName.SIGNATURES_COUNT, Integer.toString(totalSignatureCount));
 	}
 
 	/**
@@ -346,23 +382,5 @@ public class SimpleReportBuilder {
 
 		final SignatureType signatureType = SignatureQualification.getSignatureType(certQualification, trustedListQualification);
 		return signatureType;
-	}
-
-	/**
-	 * @param signatureNode
-	 * @param exception
-	 */
-	private static void notifyException(final XmlNode signatureNode, final Exception exception) {
-
-		LOG.error(exception.getMessage(), exception);
-
-		signatureNode.removeChild(NodeName.INDICATION);
-		signatureNode.removeChild(NodeName.SUB_INDICATION);
-
-		signatureNode.addChild(NodeName.INDICATION, Indication.INDETERMINATE);
-		signatureNode.addChild(NodeName.SUB_INDICATION, SubIndication.UNEXPECTED_ERROR);
-
-		final String message = DSSUtils.getSummaryMessage(exception, SimpleReportBuilder.class);
-		signatureNode.addChild(NodeName.INFO, message);
 	}
 }

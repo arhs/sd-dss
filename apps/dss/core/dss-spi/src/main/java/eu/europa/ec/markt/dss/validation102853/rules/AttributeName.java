@@ -25,10 +25,14 @@ public interface AttributeName {
 	public static final String CATEGORY = "Category";
 	public static final String CERTIFIED_ROLES = "CertifiedRoles";
 	public static final String CONSTRAINT_VALUE = "ConstraintValue";
+	public static final String CONSTRAINT_OK_VALUE = "ConstraintOkValue";
+	public static final String CONSTRAINT_KO_VALUE = "ConstraintKoValue";
 	public static final String CONTEXT = "Context";
 	public static final String SUB_CONTEXT = "SubContext";
 	public static final String DATE = "Date";
 	public static final String EXPECTED_VALUE = "ExpectedValue";
+	public static final String EXPECTED_MIN_VALUE = "ExpectedMinValue";
+	public static final String EXPECTED_MAX_VALUE = "ExpectedMaxValue";
 	public static final String FIELD = "Field";
 	public static final String GENERATION_TIME = "GenerationTime";
 	public static final String ID = "Id";

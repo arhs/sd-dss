@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.policy.BasicValidationProcessValidConstraint;
@@ -93,17 +92,11 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.TSV_WACRA
  *
  * @author bielecro
  */
-public class AdESTValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class AdESTValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AdESTValidation.class);
 
 	// Primary inputs
-	/**
-	 * See {@link eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters#getDiagnosticData()}
-	 *
-	 * @return
-	 */
-	private XmlDom diagnosticData;
 
 	/**
 	 * See {@link eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters#getValidationPolicy()}
@@ -113,12 +106,6 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 	private ValidationPolicy constraintData;
 
 	// Secondary inputs
-	/**
-	 * See {@link eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters#getCurrentTime()}
-	 *
-	 * @return
-	 */
-	private Date currentTime;
 
 	/**
 	 * See {@link eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters#getBvData()}
@@ -163,11 +150,28 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 
 	private Date bestSignatureTime;
 
-	private void prepareParameters(final XmlNode mainNode, final ProcessParameters params) {
+	private static Date getLatestDate(Date firstDate, final Date secondDate) {
 
-		this.diagnosticData = params.getDiagnosticData();
-		this.currentTime = params.getCurrentTime();
-		isInitialised(mainNode, params);
+		if (firstDate != null && secondDate != null) {
+			if (firstDate.before(secondDate)) {
+				firstDate = secondDate;
+			}
+		} else if (secondDate != null) {
+			firstDate = secondDate;
+		}
+		return firstDate;
+	}
+
+	private static Date getEarliestDate(Date firstDate, final Date secondDate) {
+
+		if (firstDate != null && secondDate != null) {
+			if (firstDate.after(secondDate)) {
+				firstDate = secondDate;
+			}
+		} else if (secondDate != null) {
+			firstDate = secondDate;
+		}
+		return firstDate;
 	}
 
 	/**
@@ -178,15 +182,15 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 	 */
 	private void isInitialised(final XmlNode mainNode, final ProcessParameters params) {
 
-		if (diagnosticData == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "diagnosticData"));
-		}
-		if (params.getValidationPolicy() == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "validationPolicy"));
-		}
+		assertDiagnosticData(params.getDiagnosticData(), getClass());
+		assertValidationPolicy(params.getValidationPolicy(), getClass());
+		Date currentTime = params.getCurrentTime();
 		if (currentTime == null) {
 
 			currentTime = new Date();
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Validation time set to: " + currentTime);
+			}
 			params.setCurrentTime(currentTime);
 		}
 		if (basicValidationData == null) {
@@ -226,15 +230,15 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 	 * 8.4 Processing<BR>
 	 * The following steps shall be performed:
 	 *
-	 * @param params
-	 * @return
+	 * @param mainNode {@code XmlNode} container for the detailed report
+	 * @param params {@code ProcessParameters}
+	 * @return {@code XmlDom} containing the part of the detailed report related to the current validation process
 	 */
 	public XmlDom run(final XmlNode mainNode, final ProcessParameters params) {
 
-		prepareParameters(mainNode, params);
+		isInitialised(mainNode, params);
 		LOG.debug(this.getClass().getSimpleName() + ": start.");
 
-		// This script is a validation process for AdES-T signatures.
 		XmlNode adestValidationData = mainNode.addChild(ADEST_VALIDATION_DATA);
 
 		/**
@@ -244,7 +248,7 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 		 * NOTE 1: Best-signature-time is an internal variable for the algorithm denoting the earliest time when it can be
 		 * proven that a signature has existed.
 		 */
-		final List<XmlDom> signatures = diagnosticData.getElements("/DiagnosticData/Signature");
+		final List<XmlDom> signatures = params.getDiagnosticData().getElements("/DiagnosticData/Signature");
 		for (final XmlDom signature : signatures) {
 
 			signatureXmlDom = signature;
@@ -262,7 +266,7 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 			signatureXmlNode.setAttribute(ID, signatureId);
 
 			// current time
-			bestSignatureTime = currentTime;
+			bestSignatureTime = params.getCurrentTime();
 
 			final Conclusion conclusion = process();
 
@@ -892,30 +896,6 @@ public class AdESTValidation implements Indication, SubIndication, NodeName, Nod
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
-	}
-
-	private static Date getLatestDate(Date firstDate, final Date secondDate) {
-
-		if (firstDate != null && secondDate != null) {
-			if (firstDate.before(secondDate)) {
-				firstDate = secondDate;
-			}
-		} else if (secondDate != null) {
-			firstDate = secondDate;
-		}
-		return firstDate;
-	}
-
-	private static Date getEarliestDate(Date firstDate, final Date secondDate) {
-
-		if (firstDate != null && secondDate != null) {
-			if (firstDate.after(secondDate)) {
-				firstDate = secondDate;
-			}
-		} else if (secondDate != null) {
-			firstDate = secondDate;
-		}
-		return firstDate;
 	}
 
 	/**
