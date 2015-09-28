@@ -27,10 +27,10 @@ public interface RuleConstant extends TSLConstant {
     /**
      * The validation process accepts any policy. The used policy is only showed, no particular treatment is done.
      */
-    public static final String ANY_POLICY = "ANY_POLICY";
+    String ANY_POLICY = "ANY_POLICY";
 
     /**
      * This is the value returned by BouncyCastle when the certificate is revoked and on hold.
      */
-    public static final String CRL_REASON_CERTIFICATE_HOLD = "CRLReason: certificateHold";
+    String CRL_REASON_CERTIFICATE_HOLD = "CRLReason: certificateHold";
 }

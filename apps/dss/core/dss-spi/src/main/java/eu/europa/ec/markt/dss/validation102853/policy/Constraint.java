@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
@@ -67,31 +68,23 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	 * This field represents the simple {@code String} value of the constraint
 	 */
 	protected String value;
-
-	/**
-	 * This field represent the {@code List} of {@code String} values of the constraint
-	 */
-	private List<String> valueList;
-
 	/**
 	 * This field represents the simple {@code String} expected value of the constraint
 	 */
 	protected String expectedValue;
-
 	/**
 	 * This field represents the list of acceptable identifiers
 	 */
 	protected List<String> identifiers;
 	protected String indication;
-
 	protected String subIndication;
-
 	protected MessageTag failureMessageTag;
 	protected Map<String, String> messageAttributes = new HashMap<String, String>();
 	protected Conclusion conclusion;
-
-	public enum Level {IGNORE, INFORM, WARN, FAIL}
-
+	/**
+	 * This field represent the {@code List} of {@code String} values of the constraint
+	 */
+	private List<String> valueList;
 	private Level level;
 
 	/**
@@ -170,6 +163,13 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	}
 
 	/**
+	 * @return the simple value of the constraint.
+	 */
+	public String getValue() {
+		return value;
+	}
+
+	/**
 	 * Sets the list of real values.
 	 *
 	 * @param stringList {@code List} of {@code String}s
@@ -177,13 +177,6 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	public void setValue(final List<String> stringList) {
 
 		this.valueList = stringList;
-	}
-
-	/**
-	 * @return the simple value of the constraint.
-	 */
-	public String getValue() {
-		return value;
 	}
 
 	public String getExpectedValue() {
@@ -195,6 +188,14 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	 */
 	public void setExpectedValue(final String expectedValue) {
 		this.expectedValue = expectedValue;
+	}
+
+	/**
+	 * @param validationDataXmlNode this {@code XmlNode} is used to add the constraint nodes
+	 * @param conclusion the {@code Conclusion} which indicates the result of the process
+	 */
+	public boolean checkCustomized(final XmlNode validationDataXmlNode, final Conclusion conclusion) {
+		return true;
 	}
 
 	/**
@@ -326,15 +327,15 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 		this.conclusion = conclusion;
 	}
 
+	public List<String> getIdentifiers() {
+		return identifiers;
+	}
+
 	/**
 	 * @param identifiers the {@code List} of identifiers to set.
 	 */
 	public void setIdentifiers(final List<String> identifiers) {
 		this.identifiers = identifiers;
-	}
-
-	public List<String> getIdentifiers() {
-		return identifiers;
 	}
 
 	/**
@@ -356,6 +357,14 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	 */
 	public Level getLevel() {
 		return level;
+	}
+
+	public void setLevel(final Level level) {
+
+		if (level == null) {
+			throw new DSSNullException(Level.class);
+		}
+		this.level = level;
 	}
 
 	/**
@@ -393,4 +402,6 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	public boolean fail() {
 		return level.equals(Level.FAIL);
 	}
+
+	public enum Level {IGNORE, INFORM, WARN, FAIL}
 }

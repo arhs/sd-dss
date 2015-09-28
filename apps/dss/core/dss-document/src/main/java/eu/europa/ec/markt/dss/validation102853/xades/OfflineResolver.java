@@ -50,6 +50,7 @@ public class OfflineResolver extends ResourceResolverSpi {
 	}
 
 	private final List<DSSDocument> documents;
+	private String lastUri;
 
 	public OfflineResolver(final List<DSSDocument> documents) {
 
@@ -84,6 +85,7 @@ public class OfflineResolver extends ResourceResolverSpi {
 
 		String documentUri = uriAttr.getNodeValue();
 		documentUri = decodeUrl(documentUri);
+		lastUri = documentUri;
 		if (documentUri.equals("") || documentUri.startsWith("#")) {
 			return false;
 		}
@@ -133,6 +135,7 @@ public class OfflineResolver extends ResourceResolverSpi {
 		final DSSDocument document = getDocument(documentUri);
 		if (document != null) {
 
+			lastUri = document.getName();
 			// The input stream is closed automatically by XMLSignatureInput class
 
 			// TODO-Bob (05/09/2014):  There is an error concerning the input streams base64 encoded. Some extra bytes are added within the santuario which breaks the HASH.
@@ -193,5 +196,13 @@ public class OfflineResolver extends ResourceResolverSpi {
 	private boolean doesContainOnlyOneDocument() {
 
 		return documents != null && documents.size() == 1;
+	}
+
+	public String getLastUri() {
+		return lastUri;
+	}
+
+	public void setLastUri(String lastUri) {
+		this.lastUri = lastUri;
 	}
 }

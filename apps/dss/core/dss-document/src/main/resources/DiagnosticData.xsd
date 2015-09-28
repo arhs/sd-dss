@@ -182,9 +182,11 @@
 			<xs:element name="Reference" minOccurs="1" maxOccurs="unbounded">
 				<xs:complexType>
 					<xs:sequence>
-						<xs:element type="xs:string" name="URI"/>
+						<xs:element type="xs:string" name="Uri"/>
+						<xs:element type="xs:string" name="RealUri"/>
 						<xs:element type="xs:boolean" name="ReferenceDataFound"/>
 						<xs:element type="xs:boolean" name="ReferenceDataIntact"/>
+						<xs:element type="xs:string" name="DigestMethod"/>
 						<xs:element type="ReferencesType" name="ManifestReferences" minOccurs="0"/>
 					</xs:sequence>
 					<xs:attribute type="xs:string" name="Type"/>

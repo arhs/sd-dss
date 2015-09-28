@@ -42,6 +42,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.xml.security.Init;
 import org.apache.xml.security.algorithms.JCEMapper;
+import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
 import org.apache.xml.security.keys.KeyInfo;
 import org.apache.xml.security.keys.keyresolver.KeyResolverException;
 import org.apache.xml.security.signature.Manifest;
@@ -72,6 +73,7 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNotETSICompliantException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.exception.DSSNullReturnedException;
+import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
 import eu.europa.ec.markt.dss.validation102853.AdvancedSignature;
 import eu.europa.ec.markt.dss.validation102853.ArchiveTimestampType;
@@ -1321,7 +1323,6 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 					final Document manifestDocument = DSSXMLUtils.buildDOM(referencedBytes);
 					final Manifest manifest = new Manifest(manifestDocument.getDocumentElement(), null);
 					manifest.addResourceResolver(offlineResolver);
-					//					manifest.verifyReferences();
 					final int length1 = manifest.getLength();
 					for (int jj = 0; jj < length1; jj++) {
 
@@ -1335,10 +1336,23 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 								manifestReference.setType(manifestItemType);
 							}
 							manifestReference.setUri(manifestItem.getURI());
+							manifestReference.setRealUri(offlineResolver.getLastUri());
 							manifestReference.setReferenceDataFound(manifestItem.getReferenceData() != null);
 							manifestReference.setReferenceDataIntact(manifestReferenceVerified);
+							final MessageDigestAlgorithm messageDigestAlgorithm = manifestItem.getMessageDigestAlgorithm();
+							final String algorithm = messageDigestAlgorithm.getAlgorithm().getAlgorithm();
+							manifestReference.setDigestMethod(DigestAlgorithm.forName(algorithm).getName());
 						}
-						System.out.println("--> " + DSSUtils.base64Encode(manifestItem.getDigestValue()));
+						//						System.out.println("--> " + DSSUtils.base64Encode(manifestItem.getDigestValue()));
+					}
+					if (signatureReference.getManifestReferences() == null) {
+						if (detachedContents != null) {
+							for (final DSSDocument detachedContent : detachedContents) {
+
+								final SignatureCryptographicVerification.SignatureReference manifestReference = signatureReference.addManifestReference();
+								manifestReference.setRealUri(detachedContent.getName());
+							}
+						}
 					}
 				}
 				references.add(reference);

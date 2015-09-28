@@ -20,6 +20,7 @@
 
 package eu.europa.ec.markt.dss.validation102853.policy;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -326,6 +327,28 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 			final List<XmlDom> miniPublicKeySizeList = getElements(rootXPathQuery + "/MiniPublicKeySize/Algo");
 			final Map<String, String> miniPublicKeySizeStringMap = XmlDom.convertToStringMap(miniPublicKeySizeList, SIZE);
 			constraint.setMinimumPublicKeySizes(miniPublicKeySizeStringMap);
+
+			final List<XmlDom> algoExpirationDateList = getElements("/ConstraintsParameters/Cryptographic/AlgoExpirationDate/Algo");
+			final Map<String, Date> algoExpirationDateStringMap = XmlDom.convertToStringDateMap(algoExpirationDateList, DATE);
+			constraint.setAlgorithmExpirationDates(algoExpirationDateStringMap);
+
+			return constraint;
+		}
+		return null;
+	}
+
+	@Override
+	public ManifestCryptographicConstraint getManifestCryptographicConstraint() {
+
+		final String rootXPathQuery = "/ConstraintsParameters/MainSignature/Manifest/Cryptographic";
+		final String level = getValue(rootXPathQuery + "/@Level");
+		if (DSSUtils.isNotBlank(level)) {
+
+			final ManifestCryptographicConstraint constraint = new ManifestCryptographicConstraint(level);
+
+			final List<XmlDom> digestAlgoList = getElements(rootXPathQuery + "/AcceptableDigestAlgo/Algo");
+			final List<String> digestAlgoStringList = XmlDom.convertToStringList(digestAlgoList);
+			constraint.setDigestAlgorithms(digestAlgoStringList);
 
 			final List<XmlDom> algoExpirationDateList = getElements("/ConstraintsParameters/Cryptographic/AlgoExpirationDate/Algo");
 			final Map<String, Date> algoExpirationDateStringMap = XmlDom.convertToStringDateMap(algoExpirationDateList, DATE);
@@ -733,10 +756,40 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	}
 
 	@Override
-	public ElementNumberConstraint getManifestReferenceIntactConstraint() {
+	public Constraint getManifestReferenceDataExistenceConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/MainSignature/Manifest/DataExistence";
+		return getBasicConstraint(XP_ROOT, true);
+	}
+
+	@Override
+	public Constraint getManifestReferenceIntactConstraint() {
 
 		final String XP_ROOT = "/ConstraintsParameters/MainSignature/Manifest/ValidReference";
-		return getElementNumberConstraint(XP_ROOT);
+		return getBasicConstraint(XP_ROOT, true);
+	}
+
+	@Override
+	public List<Constraint> getISCCustomizedConstraints() {
+
+		final List<Constraint> customizedConstraintList = new ArrayList<Constraint>();
+		final List<XmlDom> customizedConstraintXmlDomList = getElements("/ConstraintsParameters/MainSignature/SigningCertificate/Customized/Constraint");
+		for (final XmlDom constraintXmlDom : customizedConstraintXmlDomList) {
+
+			final String name = constraintXmlDom.getAttribute("Name");
+			final String levelString = constraintXmlDom.getAttribute("Level");
+			final Constraint.Level level = Constraint.Level.valueOf(levelString);
+			if (customConstraintMap == null) {
+				throw new DSSException("The customized constraints are not defined!");
+			}
+			final Constraint constraint = customConstraintMap.get(name);
+			if (constraint == null) {
+				throw new DSSException("The customized constraint with name '" + name + "' not found!");
+			}
+			constraint.setLevel(level);
+			customizedConstraintList.add(constraint);
+		}
+		return customizedConstraintList;
 	}
 }
 

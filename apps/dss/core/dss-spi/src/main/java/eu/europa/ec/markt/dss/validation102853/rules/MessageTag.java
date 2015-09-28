@@ -33,6 +33,8 @@ public enum MessageTag {
 	BBB_CV_IRDOI_ANS("The reference data object(s) is not intact!"),
 	BBB_CV_ISI("Is the signature intact?"),
 	BBB_CV_ISI_ANS("The signature is not intact!"),
+	BBB_CV_IMRDF("Is there a manifest reference to the provided data?"),
+	BBB_CV_IMRDF_ANS("The manifest reference to the provided data cannot be found!"),
 	BBB_CV_IMRI("Is the manifest reference intact?"),
 	BBB_CV_IMRI_ANS("The manifest reference is not intact!"),
 
@@ -55,6 +57,7 @@ public enum MessageTag {
 	ASCCM_ANS_3("The public key size is to small!"),
 	ASCCM_ANS_4("The algorithm expiration date not found!"),
 	ASCCM_ANS_5("The algorithm is expired!"),
+	AMCCM("Are manifest cryptographic constraints met?"),
 
 	BBB_SAV_ISSV("Is the structure of the signature valid?"),
 	BBB_SAV_ISSV_ANS("The structure of the signature is not valid!"),
@@ -159,6 +162,10 @@ public enum MessageTag {
 
 	LABEL_TINTWS("Additional assurance on the signing time may be needed to prove the validity of the signature."),
 	LABEL_TINVTWS("There is no valid timestamp within the signature."),
+
+	// Custom
+	BBB_ICS_1("Is the signing certificate in the authorized signers list?"),
+	BBB_ICS_1_ANS("The signing certificate isn't in the authorized signers list?!"),
 
 	EMPTY("");
 

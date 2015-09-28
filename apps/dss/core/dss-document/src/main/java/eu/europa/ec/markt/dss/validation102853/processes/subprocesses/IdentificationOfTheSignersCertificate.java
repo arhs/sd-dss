@@ -20,10 +20,13 @@
 
 package eu.europa.ec.markt.dss.validation102853.processes.subprocesses;
 
+import java.util.List;
+
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
+import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
@@ -196,9 +199,28 @@ public class IdentificationOfTheSignersCertificate extends BasicValidationProces
 				return conclusion;
 			}
 		}
+		// Custom constraints
+		if (MAIN_SIGNATURE.equals(contextName)) {
+
+			final List<Constraint> customizedConstraintList = getCustomizedConstraints();
+			if (!customizedConstraintList.isEmpty()) {
+				for (final Constraint customizedConstraint : customizedConstraintList) {
+					if (!customizedConstraint.checkCustomized(validationDataXmlNode, conclusion)) {
+						return conclusion;
+					}
+				}
+			}
+		}
 		// This validation process returns VALID
 		conclusion.setIndication(VALID);
 		return conclusion;
+	}
+
+	private List<Constraint> getCustomizedConstraints() {
+
+		final ValidationPolicy currentValidationPolicy = params.getCurrentValidationPolicy();
+		final List<Constraint> customizedConstraintList = currentValidationPolicy.getISCCustomizedConstraints();
+		return customizedConstraintList;
 	}
 
 	/**

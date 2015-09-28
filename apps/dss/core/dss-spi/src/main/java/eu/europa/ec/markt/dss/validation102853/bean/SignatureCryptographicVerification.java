@@ -44,7 +44,11 @@ public class SignatureCryptographicVerification implements Serializable {
 		boolean referenceDataFound;
 		boolean referenceDataIntact;
 
+		// the real document URI, can be different from manifest reference URI
+		String realUri;
+
 		List<SignatureReference> manifestReferences = null;
+		private String digestMethod;
 
 		public String getType() {
 			return type;
@@ -98,6 +102,22 @@ public class SignatureCryptographicVerification implements Serializable {
 				return null;
 			}
 			return Collections.unmodifiableList(manifestReferences);
+		}
+
+		public void setRealUri(String realUri) {
+			this.realUri = realUri;
+		}
+
+		public String getRealUri() {
+			return realUri;
+		}
+
+		public String getDigestMethod() {
+			return digestMethod;
+		}
+
+		public void setDigestMethod(String digestMethod) {
+			this.digestMethod = digestMethod;
 		}
 	}
 

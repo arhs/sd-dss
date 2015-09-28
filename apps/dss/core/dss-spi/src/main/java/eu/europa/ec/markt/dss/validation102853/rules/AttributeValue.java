@@ -47,6 +47,7 @@ public interface AttributeValue {
 	String MINIMUM_PUBLIC_KEY_SIZE = "MinimumPublicKeySize";
 
 	String MANIFEST_REFERENCE_URI = "ManifestReferenceUri";
+	String MANIFEST_REFERENCE_REAL_URI = "ManifestReferenceRealUri";
 
 	String COUNTERSIGNATURE = "COUNTERSIGNATURE";
 

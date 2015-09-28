@@ -20,8 +20,11 @@
 
 package eu.europa.ec.markt.dss.validation102853.processes.subprocesses;
 
+import java.util.Date;
+
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
+import eu.europa.ec.markt.dss.validation102853.policy.ManifestCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
@@ -37,6 +40,9 @@ import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.AMCCM;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRDF;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRDF_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRI;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRI_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IRDOF;
@@ -45,6 +51,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IR
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IRDOI_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_ISI;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_ISI_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
 
 /**
  * This class executes the cryptographic signature verification. It can be for the document signatures or timestamp
@@ -95,6 +102,9 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	private XmlDom diagnosticData;
 
 	private XmlDom contextElement;
+
+	private Date currentTime;
+
 	/**
 	 * This node is used to add the constraint nodes.
 	 */
@@ -105,6 +115,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		this.validationPolicy = params.getCurrentValidationPolicy();
 		this.diagnosticData = params.getDiagnosticData();
 		this.contextElement = params.getContextElement();
+		this.currentTime = params.getCurrentTime();
 
 		isInitialised();
 	}
@@ -168,7 +179,13 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		}
 		if (existsManifestReference()) {
 
+			if (!checkManifestReferenceDataExistenceConstraint(conclusion)) {
+				return conclusion;
+			}
 			if (!checkManifestReferenceIntactConstraint(conclusion)) {
+				return conclusion;
+			}
+			if (!checkManifestCryptographicConstraint(conclusion)) {
 				return conclusion;
 			}
 		}
@@ -180,8 +197,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 
 	private boolean existsManifestReference() {
 
-		final boolean manifestReferenceFound = contextElement.getBooleanValue(XP_MANIFEST_REFERENCE_FOUND);
-		return manifestReferenceFound;
+		return contextElement.getBooleanValue(XP_MANIFEST_REFERENCE_FOUND);
 	}
 
 	/**
@@ -235,10 +251,10 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	 * verification outputs a success indication, terminate with VALID. Otherwise, terminate with
 	 * INVALID/SIG_CRYPTO_FAILURE.
 	 *
-	 * @param conclusion the conclusion to use to add the result of the check.
-	 * @return false if the check failed and the process should stop, true otherwise.
+	 * @param conclusion the conclusion to use to add the result of the check
+	 * @return false if the check failed and the process should stop, true otherwise
 	 */
-	private boolean checkSignatureIntactConstraint(Conclusion conclusion) {
+	private boolean checkSignatureIntactConstraint(final Conclusion conclusion) {
 
 		final Constraint constraint = validationPolicy.getSignatureIntactConstraint();
 		if (constraint == null) {
@@ -253,7 +269,34 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		return constraint.check();
 	}
 
-	private boolean checkManifestReferenceIntactConstraint(Conclusion conclusion) {
+	/**
+	 * This method checks if the manifest data can be found.
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check
+	 * @return false if the check failed and the process should stop, true otherwise
+	 */
+	private boolean checkManifestReferenceDataExistenceConstraint(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getManifestReferenceDataExistenceConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessNode, BBB_CV_IMRDF);
+		final String manifestReferenceRealUri = contextElement.getValue(XP_MANIFEST_REFERENCE_REAL_URI);
+		constraint.setAttribute(MANIFEST_REFERENCE_REAL_URI, manifestReferenceRealUri);
+		final boolean manifestReferenceDataFound = contextElement.getBoolValue(XP_MANIFEST_REFERENCE_DATA_FOUND);
+		constraint.setValue(manifestReferenceDataFound);
+		constraint.setIndications(INVALID, SIG_CRYPTO_FAILURE, BBB_CV_IMRDF_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
+	}
+
+	/**
+	 * @param conclusion
+	 * @return
+	 */
+	private boolean checkManifestReferenceIntactConstraint(final Conclusion conclusion) {
 
 		final Constraint constraint = validationPolicy.getManifestReferenceIntactConstraint();
 		if (constraint == null) {
@@ -265,6 +308,27 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		final boolean manifestReferenceIntact = contextElement.getBoolValue(XP_MANIFEST_REFERENCE_INTACT);
 		constraint.setValue(manifestReferenceIntact);
 		constraint.setIndications(INVALID, SIG_CRYPTO_FAILURE, BBB_CV_IMRI_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
+	}
+
+	/**
+	 * Check of: main signature cryptographic verification
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check.
+	 * @return false if the check failed and the process should stop, true otherwise.
+	 */
+	private boolean checkManifestCryptographicConstraint(final Conclusion conclusion) {
+
+		final ManifestCryptographicConstraint constraint = validationPolicy.getManifestCryptographicConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessNode, AMCCM);
+		constraint.setCurrentTime(currentTime);
+		constraint.setDigestAlgorithm(contextElement.getValue(XP_MANIFEST_DIGEST_ALGORITHM));
+		constraint.setIndications(INDETERMINATE, CRYPTO_CONSTRAINTS_FAILURE, EMPTY);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

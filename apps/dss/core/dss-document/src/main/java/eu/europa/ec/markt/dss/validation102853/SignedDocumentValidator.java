@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -129,26 +130,21 @@ import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
  */
 public abstract class SignedDocumentValidator implements DocumentValidator {
 
-	private static final Logger LOG = LoggerFactory.getLogger(SignedDocumentValidator.class);
-
-	private static final byte[] xmlPreamble = new byte[]{'<', '?', 'x', 'm', 'l'};
-	private static final byte[] xmlUtf8 = new byte[]{-17, -69, -65, '<', '?'};
-	private static final byte[] pdfPreamble = new byte[]{'%', 'P', 'D', 'F', '-'};
-
-	/**
-	 * This variable can hold a specific {@code ProcessExecutor}
-	 */
-	protected ProcessExecutor processExecutor = null;
-
-	protected SignatureScopeFinder<CAdESSignature> cadesSignatureScopeFinder = null;
-	protected SignatureScopeFinder<PAdESSignature> padesSignatureScopeFinder = null;
-	protected SignatureScopeFinder<XAdESSignature> xadesSignatureScopeFinder = null;
-
 	/*
 	 * The factory used to create DiagnosticData
 	 */
 	protected static final ObjectFactory DIAGNOSTIC_DATA_OBJECT_FACTORY = new ObjectFactory();
-
+	private static final Logger LOG = LoggerFactory.getLogger(SignedDocumentValidator.class);
+	private static final byte[] xmlPreamble = new byte[]{'<', '?', 'x', 'm', 'l'};
+	private static final byte[] xmlUtf8 = new byte[]{-17, -69, -65, '<', '?'};
+	private static final byte[] pdfPreamble = new byte[]{'%', 'P', 'D', 'F', '-'};
+	/**
+	 * This variable can hold a specific {@code ProcessExecutor}
+	 */
+	protected ProcessExecutor processExecutor = null;
+	protected SignatureScopeFinder<CAdESSignature> cadesSignatureScopeFinder = null;
+	protected SignatureScopeFinder<PAdESSignature> padesSignatureScopeFinder = null;
+	protected SignatureScopeFinder<XAdESSignature> xadesSignatureScopeFinder = null;
 	/**
 	 * This is the pool of certificates used in the validation process. The pools present in the certificate verifier are merged and added to this pool.
 	 */
@@ -166,28 +162,23 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	protected List<DSSDocument> detachedContents = new ArrayList<DSSDocument>();
 
 	protected CertificateToken providedSigningCertificateToken = null;
-
-	private ValidationPolicy countersignatureValidationPolicy;
-
 	/**
 	 * The reference to the certificate verifier. The current DSS implementation proposes {@link CryptographicSourceProvider}. This verifier
 	 * encapsulates the references to different sources used in the signature validation process.
 	 */
 	protected CertificateVerifier certificateVerifier;
-
 	/**
 	 * This list contains the list of signatures
 	 */
 	protected List<AdvancedSignature> signatures = null;
-
 	/**
 	 * This variable contains the reference to the diagnostic data.
 	 */
 	protected DiagnosticData jaxbDiagnosticData; // JAXB object
-
+	protected Map<String, Constraint> customConstraintMap;
+	private ValidationPolicy countersignatureValidationPolicy;
 	// Single policy document to use with all signatures.
 	private File policyDocument;
-
 	private HashMap<String, File> policyDocuments;
 
 	/**
@@ -252,6 +243,12 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	}
 
 	@Override
+	public void setDetachedContents(final List<DSSDocument> detachedContents) {
+
+		this.detachedContents = detachedContents;
+	}
+
+	@Override
 	public void defineSigningCertificate(final X509Certificate x509Certificate) {
 
 		if (x509Certificate == null) {
@@ -275,12 +272,6 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 		this.certificateVerifier = certificateVerifier;
 		validationCertPool = certificateVerifier.createValidationPool();
-	}
-
-	@Override
-	public void setDetachedContents(final List<DSSDocument> detachedContents) {
-
-		this.detachedContents = detachedContents;
 	}
 
 	/**
@@ -401,6 +392,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			date1 = new Date();
 		}
 		final ProcessExecutor executor = provideProcessExecutorInstance();
+		validationPolicy.setCustomConstraintMap(customConstraintMap);
 		executor.setValidationPolicy(validationPolicy);
 		if (countersignatureValidationPolicy == null) {
 
@@ -1474,7 +1466,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 			final XmlReference xmlReference = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlReference();
 			xmlReference.setType(signatureReference.getType());
-			xmlReference.setURI(signatureReference.getUri());
+			xmlReference.setUri(signatureReference.getUri());
 			xmlReference.setReferenceDataFound(signatureReference.isReferenceDataFound());
 			xmlReference.setReferenceDataIntact(signatureReference.isReferenceDataIntact());
 			final List<SignatureCryptographicVerification.SignatureReference> manifestReferences = signatureReference.getManifestReferences();
@@ -1486,9 +1478,11 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 					final XmlReference xmlManifestReference = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlReference();
 					xmlManifestReference.setType(manifestReference.getType());
-					xmlManifestReference.setURI(manifestReference.getUri());
+					xmlManifestReference.setUri(manifestReference.getUri());
+					xmlManifestReference.setRealUri(manifestReference.getRealUri());
 					xmlManifestReference.setReferenceDataFound(manifestReference.isReferenceDataFound());
 					xmlManifestReference.setReferenceDataIntact(manifestReference.isReferenceDataIntact());
+					xmlManifestReference.setDigestMethod(manifestReference.getDigestMethod());
 					manifestReferenceList.add(xmlManifestReference);
 				}
 				xmlReference.setManifestReferences(xmlManifestReferences);
@@ -1598,6 +1592,11 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 	protected abstract SignatureScopeFinder getSignatureScopeFinder();
 
+	@Override
+	public DocumentValidator getNextValidator() {
+		return null;
+	}
+
 	/**
 	 * This method allows to define the sequence of the validator related to a document to validate. It's only used with ASiC-E container.
 	 *
@@ -1608,12 +1607,25 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	}
 
 	@Override
-	public DocumentValidator getNextValidator() {
+	public DocumentValidator getSubordinatedValidator() {
 		return null;
 	}
 
-	@Override
-	public DocumentValidator getSubordinatedValidator() {
-		return null;
+	/**
+	 * @param name
+	 * @param constraint
+	 */
+	public void defineCustomConstraint(final String name, final Constraint constraint) {
+
+		if (DSSUtils.isBlank(name)) {
+			throw new DSSNullException(String.class, "name", "The constraint should have a well defined name!");
+		}
+		if (constraint == null) {
+			throw new DSSNullException(Constraint.class, "constraint");
+		}
+		if (customConstraintMap == null) {
+			customConstraintMap = new HashMap<String, Constraint>();
+		}
+		customConstraintMap.put(name, constraint);
 	}
 }

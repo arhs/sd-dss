@@ -23,7 +23,13 @@ public interface ValidationXPathQueryHolder {
 	String XP_DIGEST_ALGO_USED_TO_SIGN_THIS_TOKEN = "./BasicSignature/DigestAlgoUsedToSignThisToken/text()";
 	String XP_KEY_LENGTH_USED_TO_SIGN_THIS_TOKEN = "./BasicSignature/KeyLengthUsedToSignThisToken/text()";
 
-	String XP_MANIFEST_REFERENCE_FOUND = "boolean(./dss:BasicSignature/dss:References/dss:Reference[@Type='http://www.w3.org/2000/09/xmldsig#Manifest'])";
-	String XP_MANIFEST_REFERENCE_INTACT = "./dss:BasicSignature/dss:References/dss:Reference[@Type='http://www.w3.org/2000/09/xmldsig#Manifest']/dss:ManifestReferences/dss:Reference/dss:ReferenceDataIntact/text()";
-	String XP_MANIFEST_REFERENCE_URI = "./dss:BasicSignature/dss:References/dss:Reference[@Type='http://www.w3.org/2000/09/xmldsig#Manifest']/dss:ManifestReferences/dss:Reference/dss:URI/text()";
+	String XP_MANIFEST_ROOT = "./dss:BasicSignature/dss:References/dss:Reference[@Type='http://www.w3.org/2000/09/xmldsig#Manifest']";
+	String XP_MANIFEST_REFERENCE_FOUND = "boolean(" + XP_MANIFEST_ROOT + ")";
+	String XP_MANIFEST_REFERENCE = "/dss:ManifestReferences/dss:Reference";
+	String XP_MANIFEST_REFERENCE_INTACT = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "/dss:ReferenceDataIntact/text()";
+	String XP_MANIFEST_REFERENCE_DATA_FOUND = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "/dss:ReferenceDataFound/text()";
+	String XP_MANIFEST_REFERENCE_URI = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "/dss:Uri/text()";
+	String XP_MANIFEST_REFERENCE_REAL_URI = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "/dss:RealUri/text()";
+	String XP_MANIFEST_DIGEST_ALGORITHM = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "/dss:DigestMethod/text()";
+
 }

@@ -22,6 +22,7 @@ package eu.europa.ec.markt.dss.validation102853.policy;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Document;
 
@@ -37,9 +38,19 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
  */
 public abstract class ValidationPolicy extends XmlDom implements RuleConstant, AttributeName {
 
+	protected Map<String, Constraint> customConstraintMap;
+
 	public ValidationPolicy(final Document document) {
 
 		super(document);
+	}
+
+	/**
+	 *
+	 * @param customConstraintMap
+	 */
+	public void setCustomConstraintMap(final Map<String, Constraint> customConstraintMap) {
+		this.customConstraintMap = customConstraintMap;
 	}
 
 	/**
@@ -47,6 +58,10 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 */
 	public abstract boolean isRevocationFreshnessToBeChecked();
 
+	/**
+	 *
+	 * @return
+	 */
 	public abstract String getFormatedMaxRevocationFreshness();
 
 	/**
@@ -210,6 +225,12 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 * @return {@code SignatureCryptographicConstraint} if AcceptableEncryptionAlgo for a given context element is present in the constraint file, null otherwise.
 	 */
 	protected abstract SignatureCryptographicConstraint getSignatureCryptographicConstraint_(String rootXPathQuery, String context, String subContext);
+
+	/**
+	 *
+	 * @return
+	 */
+	public abstract ManifestCryptographicConstraint getManifestCryptographicConstraint();
 
 	/**
 	 * @param context
@@ -423,6 +444,10 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 
 	public abstract ElementNumberConstraint getSignatureTimestampNumberConstraint();
 
-	public abstract ElementNumberConstraint getManifestReferenceIntactConstraint();
+	public abstract Constraint getManifestReferenceDataExistenceConstraint();
+
+	public abstract Constraint getManifestReferenceIntactConstraint();
+
+	public abstract List<Constraint> getISCCustomizedConstraints();
 }
 
