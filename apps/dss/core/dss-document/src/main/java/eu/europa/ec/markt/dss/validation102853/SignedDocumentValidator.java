@@ -82,6 +82,7 @@ import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCertifiedRoles
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlChainCertificate;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlClaimedRoles;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlCommitmentTypeIndication;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlDetachedContents;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlDigestAlgAndValueType;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlDistinguishedName;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlInfoType;
@@ -500,6 +501,17 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			absolutePath = document.getName();
 		}
 		jaxbDiagnosticData.setDocumentName(absolutePath);
+
+		if (detachedContents.size() > 0) {
+
+			final XmlDetachedContents xmlDetachedContents = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlDetachedContents();
+			final List<String> documentNameList = xmlDetachedContents.getDocumentName();
+			for (final DSSDocument detachedContent : this.detachedContents) {
+
+				documentNameList.add(detachedContent.getAbsolutePath());
+			}
+			jaxbDiagnosticData.setDetachedContents(xmlDetachedContents);
+		}
 	}
 
 	/**
@@ -1399,6 +1411,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	}
 
 	private void dealWithCommitmentTypeIndication(AdvancedSignature signature, XmlSignature xmlSignature) {
+
 		CommitmentType commitmentTypeIndication = null;
 		try {
 			commitmentTypeIndication = signature.getCommitmentTypeIndication();

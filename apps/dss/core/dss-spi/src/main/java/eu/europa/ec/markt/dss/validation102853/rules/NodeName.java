@@ -67,12 +67,18 @@ public interface NodeName {
 
     String SIMPLE_REPORT = "SimpleReport";
     String VALIDATION_TIME = "ValidationTime";
-    String DOCUMENT_NAME = "DocumentName";
+	String DOCUMENT_NAME = "DocumentName";
     String SIGNATURES_COUNT = "SignaturesCount";
     String VALID_SIGNATURES_COUNT = "ValidSignaturesCount";
     String SIGNATURE_FORMAT = "SignatureFormat";
     String SIGNATURE_LEVEL = "SignatureLevel";
-    String SIGNED_BY = "SignedBy";
+	String DETACHED_CONTENTS = "DetachedContents";
 
+    String SIGNED_BY = "SignedBy";
+	String SUBJECT_DISTINGUISHED_NAME = "SubjectDistinguishedName";
 	String GLOBAL = "Global";
+	String NOT_BEFORE = "NotBefore";
+	String NOT_AFTER = "NotAfter";
+	String TIMESTAMPS = "Timestamps";
+	String PRODUCTION_TIME = "ProductionTime";
 }

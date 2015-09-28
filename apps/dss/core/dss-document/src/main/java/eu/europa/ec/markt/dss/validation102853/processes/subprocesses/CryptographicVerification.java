@@ -112,12 +112,14 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	 * This node is used to add the constraint nodes.
 	 */
 	private XmlNode subProcessNode;
+	private String contextName;
 
 	private void prepareParameters(final ProcessParameters params) {
 
 		this.validationPolicy = params.getCurrentValidationPolicy();
 		this.diagnosticData = params.getDiagnosticData();
 		this.contextElement = params.getContextElement();
+		this.contextName = params.getContextName();
 		this.currentTime = params.getCurrentTime();
 
 		isInitialised();
@@ -180,7 +182,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		if (!checkSignatureIntactConstraint(conclusion)) {
 			return conclusion;
 		}
-		if (existsManifestReference()) {
+		if (testManifestReference()) {
 
 			if (!checkManifestReferenceNumberConstraint(conclusion)) {
 				return conclusion;
@@ -201,9 +203,9 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		return conclusion;
 	}
 
-	private boolean existsManifestReference() {
+	private boolean testManifestReference() {
 
-		return contextElement.getBooleanValue(XP_MANIFEST_REFERENCE_FOUND) || validationPolicy.getBooleanValue(XP_MANIFEST_CONSTRAINT);
+		return !"Timestamp".equals(contextName) && (contextElement.getBooleanValue(XP_MANIFEST_REFERENCE_FOUND) || validationPolicy.getBooleanValue(XP_MANIFEST_CONSTRAINT));
 	}
 
 	/**

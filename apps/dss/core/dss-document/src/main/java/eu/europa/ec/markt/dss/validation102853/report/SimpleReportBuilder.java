@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import javax.security.auth.x500.X500Principal;
+
 import org.apache.commons.lang.StringEscapeUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jce.X509Principal;
@@ -113,7 +115,7 @@ public class SimpleReportBuilder {
 
 			addValidationTime(params, simpleReport);
 
-			addDocumentName(simpleReport);
+			addDocumentsName(simpleReport);
 
 			addSignatures(params, simpleReport);
 
@@ -144,10 +146,20 @@ public class SimpleReportBuilder {
 		report.addChild(NodeName.VALIDATION_TIME, DSSUtils.formatDate(validationTime));
 	}
 
-	private void addDocumentName(final XmlNode report) {
+	private void addDocumentsName(final XmlNode report) {
 
 		final String documentName = diagnosticData.getValue("/DiagnosticData/DocumentName/text()");
 		report.addChild(NodeName.DOCUMENT_NAME, documentName);
+
+		final List<XmlDom> detachedDocumentNameList = diagnosticData.getElements("/DiagnosticData/DetachedContents/DocumentName");
+		if (detachedDocumentNameList.size() > 0) {
+
+			final XmlNode detachedContentsXmlNode = report.addChild(NodeName.DETACHED_CONTENTS, documentName);
+			for (final XmlDom detachedDocumentName : detachedDocumentNameList) {
+
+				detachedContentsXmlNode.addChild(NodeName.DOCUMENT_NAME, detachedDocumentName.getText().trim());
+			}
+		}
 	}
 
 	private void addSignatures(final ProcessParameters params, final XmlNode simpleReport) throws DSSException {
@@ -299,10 +311,40 @@ public class SimpleReportBuilder {
 
 			final XmlDom signatureScopes = diagnosticSignature.getElement("./SignatureScopes");
 			addSignatureScope(signatureNode, signatureScopes);
+
+			final List<XmlDom> timestamps = diagnosticSignature.getElements("./Timestamps/Timestamp");
+			addTimestamps(params, signatureNode, timestamps);
 		} catch (Exception e) {
 
 			notifyException(signatureNode, e);
 			throw new DSSException("WAS TREATED", e);
+		}
+	}
+
+	private void addTimestamps(ProcessParameters params, final XmlNode signatureNode, final List<XmlDom> timestamps) {
+
+		if (timestamps.isEmpty()) {
+			return;
+		}
+		final XmlNode timestampsXmlNode = signatureNode.addChild(NodeName.TIMESTAMPS);
+		for (final XmlDom timestamp : timestamps) {
+
+			final String attributeValue = timestamp.getAttribute(AttributeName.TYPE);
+			final XmlNode timestampXmlNode = timestampsXmlNode.addChild(NodeName.TIMESTAMP).setAttribute(AttributeName.TYPE, attributeValue);
+			final String productionTime = timestamp.getValue("./ProductionTime/text()");
+			timestampXmlNode.addChild(NodeName.PRODUCTION_TIME, productionTime);
+			final String timestampSigningCertificateId = timestamp.getValue("./SigningCertificate/@Id");
+			final XmlDom signCertificate = params.getCertificate(timestampSigningCertificateId);
+
+			final String dn = signCertificate.getValue("./SubjectDistinguishedName[@Format='RFC2253']/text()");
+			final X500Principal x500Principal = new X500Principal(dn);
+			final String sdnString = x500Principal.toString();
+			timestampXmlNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, sdnString);
+
+			final String notBefore = signCertificate.getValue("./NotBefore/text()");
+			final String notAfter = signCertificate.getValue("./NotAfter/text()");
+			timestampXmlNode.addChild(NodeName.NOT_BEFORE, notBefore);
+			timestampXmlNode.addChild(NodeName.NOT_AFTER, notAfter);
 		}
 	}
 
@@ -339,11 +381,14 @@ public class SimpleReportBuilder {
 	private void addSignedBy(final XmlNode signatureNode, final XmlDom signCert) {
 
 		String signedBy = "?";
+		String sdnString = "?";
 		if (signCert != null) {
 
 			final String dn = signCert.getValue("./SubjectDistinguishedName[@Format='RFC2253']/text()");
-			final X509Principal principal = new X509Principal(dn);
-			final Vector<?> values = principal.getValues(new ASN1ObjectIdentifier("2.5.4.3"));
+			final X500Principal x500Principal = new X500Principal(dn);
+			sdnString = x500Principal.toString();
+			final X509Principal x509Principal = new X509Principal(dn);
+			final Vector<?> values = x509Principal.getValues(new ASN1ObjectIdentifier("2.5.4.3"));
 			if (values != null && values.size() > 0) {
 
 				final String string = (String) values.get(0);
@@ -356,6 +401,12 @@ public class SimpleReportBuilder {
 			}
 		}
 		signatureNode.addChild(NodeName.SIGNED_BY, signedBy);
+		signatureNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, sdnString);
+
+		final String notBefore = signCert.getValue("./NotBefore/text()");
+		final String notAfter = signCert.getValue("./NotAfter/text()");
+		signatureNode.addChild(NodeName.NOT_BEFORE, notBefore);
+		signatureNode.addChild(NodeName.NOT_AFTER, notAfter);
 	}
 
 	private void addSignatureProfile(XmlNode signatureNode, XmlDom signCert) {
