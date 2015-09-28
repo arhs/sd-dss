@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
+import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 
 /**
  * This class represents a signing certificate validity constraints. The validation is composed of:
@@ -135,16 +136,16 @@ public class CertificateExpirationConstraint extends Constraint {
 				node.addChild(STATUS, WARN);
 				node.addChild(WARNING, failureMessageTag, messageAttributes);
 				final Conclusion.Warning warning = conclusion.addWarning(failureMessageTag, messageAttributes);
-				warning.setAttribute(NOT_BEFORE, formatedNotBefore);
-				warning.setAttribute(NOT_AFTER, formatedNotAfter);
+				warning.setAttribute(AttributeValue.NOT_BEFORE, formatedNotBefore);
+				warning.setAttribute(AttributeValue.NOT_AFTER, formatedNotAfter);
 				return true;
 			}
 			node.addChild(STATUS, KO);
 			node.addChild(ERROR, failureMessageTag, messageAttributes);
 			conclusion.setIndication(indication, subIndication);
 			final Conclusion.Error error = conclusion.addError(failureMessageTag, messageAttributes);
-			error.setAttribute(NOT_BEFORE, formatedNotBefore);
-			error.setAttribute(NOT_AFTER, formatedNotAfter);
+			error.setAttribute(AttributeValue.NOT_BEFORE, formatedNotBefore);
+			error.setAttribute(AttributeValue.NOT_AFTER, formatedNotAfter);
 			return false;
 		}
 		node.addChild(STATUS, OK);
