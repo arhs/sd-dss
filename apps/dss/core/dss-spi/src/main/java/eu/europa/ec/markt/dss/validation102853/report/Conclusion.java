@@ -360,6 +360,10 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 		this.subIndication = subIndication;
 	}
 
+	public List<Info> getInfoList() {
+		return infoList;
+	}
+
 	/**
 	 * This method adds an {@code Info} to the information list.
 	 *
@@ -520,6 +524,10 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 		}
 	}
 
+	public List<Error> getErrorList() {
+		return errorList;
+	}
+
 	private BasicInfo addError() {
 
 		final Error error = new Error();
@@ -580,6 +588,10 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 			}
 		}
 		return null;
+	}
+
+	public List<Warning> getWarningList() {
+		return warningList;
 	}
 
 	private BasicInfo addWarning() {

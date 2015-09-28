@@ -142,6 +142,23 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	}
 
 	@Override
+	public Constraint getSignatureFormatConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/MainSignature/AcceptableSignatureFormats";
+		final String level = getValue(XP_ROOT + "/@Level");
+		if (DSSUtils.isNotBlank(level)) {
+
+			final Constraint constraint = new Constraint(level);
+			final List<XmlDom> signatureFormats = getElements(XP_ROOT + "/Format");
+			final List<String> signatureFormatList = XmlDom.convertToStringList(signatureFormats);
+			constraint.setExpectedValue(signatureFormatList.toString());
+			constraint.setIdentifiers(signatureFormatList);
+			return constraint;
+		}
+		return null;
+	}
+
+	@Override
 	public Constraint getStructuralValidationConstraint() {
 
 		final String XP_ROOT = "/ConstraintsParameters/MainSignature/StructuralValidation";
@@ -752,6 +769,13 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	public ElementNumberConstraint getSignatureTimestampNumberConstraint() {
 
 		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedUnsignedQProperties/SignatureTimestamp";
+		return getElementNumberConstraint(XP_ROOT);
+	}
+
+	@Override
+	public ElementNumberConstraint getManifestReferenceNumberConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/MainSignature/Manifest/Reference";
 		return getElementNumberConstraint(XP_ROOT);
 	}
 

@@ -21,7 +21,9 @@ package eu.europa.ec.markt.dss.validation102853.report;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -169,6 +171,19 @@ public class SimpleReportBuilder {
 			globalXmlNode.addChild(NodeName.INDICATION, generalStructureIndication);
 			final String generalStructureSubIndication = generalStructureConclusion.getSubIndication();
 			globalXmlNode.addChild(NodeName.SUB_INDICATION, generalStructureSubIndication);
+
+			final List<Conclusion.Error> errorList = generalStructureConclusion.getErrorList();
+			for (final Conclusion.Error error : errorList) {
+
+				final XmlNode xmlNode = globalXmlNode.addChild(NodeName.ERROR, error.getValue());
+				final HashMap<String, String> attributes = error.getAttributes();
+				for (Map.Entry<String, String> attribute : attributes.entrySet()) {
+
+					xmlNode.setAttribute(attribute.getKey(), attribute.getValue());
+				}
+			}
+
+			// errors & warnings
 		} else {
 
 			if (validSignatureCount != totalSignatureCount) {
@@ -267,6 +282,7 @@ public class SimpleReportBuilder {
 
 					String errorMessage = errorDom.getText();
 					errorMessage = StringEscapeUtils.escapeXml(errorMessage);
+					// TODO-Bob (28/09/2015):  is ib INFO ?
 					final XmlNode xmlNode = new XmlNode(NodeName.INFO, errorMessage);
 					final XmlDom xmlDom = xmlNode.toXmlDom();
 					infoList.add(xmlDom);

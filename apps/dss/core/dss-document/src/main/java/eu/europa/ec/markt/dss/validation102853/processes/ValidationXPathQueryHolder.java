@@ -32,4 +32,7 @@ public interface ValidationXPathQueryHolder {
 	String XP_MANIFEST_REFERENCE_REAL_URI = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "/dss:RealUri/text()";
 	String XP_MANIFEST_DIGEST_ALGORITHM = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "/dss:DigestMethod/text()";
 
+	String XP_MANIFEST_REFERENCE_COUNT = "count(" + XP_MANIFEST_ROOT + ")";
+
+	String XP_MANIFEST_CONSTRAINT = "boolean(/ConstraintsParameters/MainSignature/Manifest)";
 }

@@ -53,6 +53,8 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMI
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DSFCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DSFCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICERRM;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICERRM_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICRM;
@@ -207,6 +209,12 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	private Conclusion process(final ProcessParameters params) {
 
 		final Conclusion conclusion = new Conclusion();
+
+
+		// signature format: XAdES_BASELINE_B, XAdES_BASELINE_LTA, XAdES_*
+		if (!checkSignatureFormatConstraint(conclusion)) {
+			return conclusion;
+		}
 
 		// XSD structural validation (only for XAdES)
 		if (!checkStructuralValidationConstraint(conclusion)) {
@@ -388,6 +396,27 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	}
 
 	/**
+	 * Check of signature format: XAdES_BASELINE_LTA...
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check.
+	 * @return false if the check failed and the process should stop, true otherwise.
+	 */
+	private boolean checkSignatureFormatConstraint(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getSignatureFormatConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessNode, BBB_SAV_DSFCVP);
+		final String signatureFormat = signatureContext.getValue("./SignatureFormat/text()");
+		constraint.setValue(signatureFormat);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DSFCVP_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.checkInList();
+	}
+
+	/**
 	 * Check of structural validation (only for XAdES signature: XSD schema validation)
 	 *
 	 * @param conclusion the conclusion to use to add the result of the check.
@@ -406,7 +435,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (DSSUtils.isNotBlank(message)) {
 			constraint.setAttribute("Log", message);
 		}
-		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISSV_ANS);
+		constraint.setIndications(INVALID, FORMAT_FAILURE, BBB_SAV_ISSV_ANS);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

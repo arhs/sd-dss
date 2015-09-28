@@ -154,6 +154,14 @@ public class SimpleReport extends XmlDom {
 		final String indication = getValue("/SimpleReport/Signature[@Id='%s']/@SignatureFormat", signatureId);
 		return indication;
 	}
+	/**
+	 * @return {@code List} of {@code Conclusion.BasicInfo} containing all "Error" messages
+	 */
+	public List<Conclusion.BasicInfo> getGlobalErrorList() {
+
+		final List<Conclusion.BasicInfo> errorList = getBasicInfo("Error");
+		return errorList;
+	}
 
 	/**
 	 * @param signatureId DSS unique identifier of the signature
@@ -183,6 +191,29 @@ public class SimpleReport extends XmlDom {
 
 		final List<Conclusion.BasicInfo> errorList = getBasicInfo(signatureId, "Error");
 		return errorList;
+	}
+
+	/**
+	 * @param basicInfoType the Type of the messages to be returned: Info, Warning or Error
+	 * @return {@code List} of {@code Conclusion.BasicInfo} containing all messages of the specified type.
+	 */
+	private List<Conclusion.BasicInfo> getBasicInfo( final String basicInfoType) {
+
+		final List<XmlDom> elementList = getElements("/SimpleReport/Global/" + basicInfoType);
+		final List<Conclusion.BasicInfo> infoList = new ArrayList<Conclusion.BasicInfo>();
+		for (final XmlDom infoElement : elementList) {
+
+			final Conclusion.BasicInfo basicInfo = new Conclusion.BasicInfo(basicInfoType);
+			basicInfo.setValue(infoElement.getText());
+			final NamedNodeMap attributes = infoElement.getAttributes();
+			for (int index = 0; index < attributes.getLength(); index++) {
+
+				final Node attribute = attributes.item(index);
+				basicInfo.setAttribute(attribute.getNodeName(), attribute.getNodeValue());
+			}
+			infoList.add(basicInfo);
+		}
+		return infoList;
 	}
 
 	/**

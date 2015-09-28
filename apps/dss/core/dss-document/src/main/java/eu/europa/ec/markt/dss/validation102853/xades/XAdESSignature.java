@@ -43,6 +43,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.xml.security.Init;
 import org.apache.xml.security.algorithms.JCEMapper;
 import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
+import org.apache.xml.security.exceptions.XMLSecurityException;
 import org.apache.xml.security.keys.KeyInfo;
 import org.apache.xml.security.keys.keyresolver.KeyResolverException;
 import org.apache.xml.security.signature.Manifest;
@@ -699,9 +700,8 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	 * @param timestampElement contains the encapsulated timestamp
 	 * @param timestampType    {@code TimestampType}
 	 * @return {@code TimestampToken} of the given type
-	 * @throws DSSException
 	 */
-	private TimestampToken makeTimestampToken(final Element timestampElement, final TimestampType timestampType) throws DSSException {
+	private TimestampToken makeTimestampToken(final Element timestampElement, final TimestampType timestampType) {
 
 		final Element timestampTokenNode = DSSXMLUtils.getElement(timestampElement, xPathQueryHolder.XPATH__ENCAPSULATED_TIMESTAMP);
 		if (timestampTokenNode == null) {
@@ -709,20 +709,25 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			// TODO (09/11/2014): The error message must be propagated to the validation report
 			LOG.warn("The timestamp (" + timestampType.name() + ") cannot be extracted from the signature!");
 			return null;
-
 		}
-		final String base64EncodedTimestamp = timestampTokenNode.getTextContent();
-		final TimeStampToken timeStampToken = DSSASN1Utils.createTimeStampToken(base64EncodedTimestamp);
-		final TimestampToken timestampToken = new TimestampToken(timeStampToken, timestampType, certPool);
-		timestampToken.setHashCode(timestampElement.hashCode());
-		setTimestampCanonicalizationMethod(timestampElement, timestampToken);
+		try {
 
-		// TODO: timestampToken.setIncludes(element.getIncludes)...
-		//		final NodeList includes = timestampTokenNode.getElementsByTagName("Include");
-		//		for (int i = 0; i < includes.getLength(); ++i) {
-		//			timestampToken.getTimestampIncludes().add(new TimestampInclude(includes.item(i).getBaseURI(), includes.item(i).getAttributes()));
-		//		}
-		return timestampToken;
+			final String base64EncodedTimestamp = timestampTokenNode.getTextContent();
+			final TimeStampToken timeStampToken = DSSASN1Utils.createTimeStampToken(base64EncodedTimestamp);
+			final TimestampToken timestampToken = new TimestampToken(timeStampToken, timestampType, certPool);
+			timestampToken.setHashCode(timestampElement.hashCode());
+			setTimestampCanonicalizationMethod(timestampElement, timestampToken);
+
+			// TODO: timestampToken.setIncludes(element.getIncludes)...
+			//		final NodeList includes = timestampTokenNode.getElementsByTagName("Include");
+			//		for (int i = 0; i < includes.getLength(); ++i) {
+			//			timestampToken.getTimestampIncludes().add(new TimestampInclude(includes.item(i).getBaseURI(), includes.item(i).getAttributes()));
+			//		}
+			return timestampToken;
+		} catch (Exception e) {
+			LOG.warn("Error when converting timestamp token (" + timestampType.name() + ")!");
+			return null;
+		}
 	}
 
 	public Element getSignatureValue() {
@@ -1313,7 +1318,8 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				generalReferenceDataFound = generalReferenceDataFound && referenceDataFound;
 				generalReferenceDataHashValid = generalReferenceDataHashValid && referenceVerificationResult;
 				final SignatureCryptographicVerification.SignatureReference signatureReference = signatureCryptographicVerification.addReference();
-				signatureReference.setType(reference.getType());
+				final String referenceType = reference.getType();
+				signatureReference.setType(referenceType);
 				signatureReference.setUri(reference.getURI());
 				signatureReference.setReferenceDataFound(referenceDataFound);
 				signatureReference.setReferenceDataIntact(referenceVerificationResult);
@@ -1321,29 +1327,32 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 
 					final byte[] referencedBytes = reference.getReferencedBytes();
 					final Document manifestDocument = DSSXMLUtils.buildDOM(referencedBytes);
-					final Manifest manifest = new Manifest(manifestDocument.getDocumentElement(), null);
-					manifest.addResourceResolver(offlineResolver);
-					final int length1 = manifest.getLength();
-					for (int jj = 0; jj < length1; jj++) {
+					final Manifest manifest = getManifestQuietly(manifestDocument);
+					if (manifest != null) {
 
-						final Reference manifestItem = manifest.item(jj);
-						final String manifestItemType = manifestItem.getType();
-						final boolean manifestReferenceVerified = manifestItem.verify();
-						if (manifestReferenceVerified) {
+						manifest.addResourceResolver(offlineResolver);
+						final int length1 = manifest.getLength();
+						for (int jj = 0; jj < length1; jj++) {
 
-							final SignatureCryptographicVerification.SignatureReference manifestReference = signatureReference.addManifestReference();
-							if (manifestItemType != null && !manifestItemType.isEmpty()) {
-								manifestReference.setType(manifestItemType);
+							final Reference manifestItem = manifest.item(jj);
+							final String manifestItemType = manifestItem.getType();
+							final boolean manifestReferenceVerified = manifestItem.verify();
+							if (manifestReferenceVerified) {
+
+								final SignatureCryptographicVerification.SignatureReference manifestReference = signatureReference.addManifestReference();
+								if (manifestItemType != null && !manifestItemType.isEmpty()) {
+									manifestReference.setType(manifestItemType);
+								}
+								manifestReference.setUri(manifestItem.getURI());
+								manifestReference.setRealUri(offlineResolver.getLastUri());
+								manifestReference.setReferenceDataFound(manifestItem.getReferenceData() != null);
+								manifestReference.setReferenceDataIntact(manifestReferenceVerified);
+								final MessageDigestAlgorithm messageDigestAlgorithm = manifestItem.getMessageDigestAlgorithm();
+								final String algorithm = messageDigestAlgorithm.getAlgorithm().getAlgorithm();
+								manifestReference.setDigestMethod(DigestAlgorithm.forName(algorithm).getName());
 							}
-							manifestReference.setUri(manifestItem.getURI());
-							manifestReference.setRealUri(offlineResolver.getLastUri());
-							manifestReference.setReferenceDataFound(manifestItem.getReferenceData() != null);
-							manifestReference.setReferenceDataIntact(manifestReferenceVerified);
-							final MessageDigestAlgorithm messageDigestAlgorithm = manifestItem.getMessageDigestAlgorithm();
-							final String algorithm = messageDigestAlgorithm.getAlgorithm().getAlgorithm();
-							manifestReference.setDigestMethod(DigestAlgorithm.forName(algorithm).getName());
+							//						System.out.println("--> " + DSSUtils.base64Encode(manifestItem.getDigestValue()));
 						}
-						//						System.out.println("--> " + DSSUtils.base64Encode(manifestItem.getDigestValue()));
 					}
 					if (signatureReference.getManifestReferences() == null) {
 						if (detachedContents != null) {
@@ -1352,6 +1361,34 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 								final SignatureCryptographicVerification.SignatureReference manifestReference = signatureReference.addManifestReference();
 								manifestReference.setRealUri(detachedContent.getName());
 							}
+						}
+					}
+				} else if (xPathQueryHolder.XADES_SIGNED_PROPERTIES.equals(referenceType)) {
+
+					boolean fake = true;
+					final String referenceURI = reference.getURI();
+					if (referenceURI.startsWith("#")) {
+						final Element elementById = DSSXMLUtils.getElementById(signatureElement.getOwnerDocument(), referenceURI.substring(1));
+						if (elementById != null) {
+							final String tagName = elementById.getLocalName();
+							// TODO-Bob (28/09/2015):
+							if ("SignedProperties".equals(tagName) /* && XADES NAMESPACE == .getNamespaceURI()*/) {
+								Node parentNode = elementById.getParentNode();
+								if ("QualifyingProperties".equals(parentNode.getLocalName())) {
+									parentNode = parentNode.getParentNode();
+									if ("Object".equals(parentNode.getLocalName())) {
+										parentNode = parentNode.getParentNode();
+										if ("Signature".equals(parentNode.getLocalName())) {
+											fake = false;
+										}
+									}
+
+								}
+							}
+						}
+						if (fake) {
+							signatureReference.setReferenceDataFound(false);
+							generalReferenceDataFound = false;
 						}
 					}
 				}
@@ -1378,6 +1415,16 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			signatureCryptographicVerification.setErrorMessage(e.getMessage() + "/ XAdESSignature/Line number/" + lineNumber);
 		}
 		return signatureCryptographicVerification;
+	}
+
+	private Manifest getManifestQuietly(final Document manifestDocument) throws XMLSecurityException {
+
+		try {
+			return new Manifest(manifestDocument.getDocumentElement(), null);
+		} catch (XMLSecurityException e) {
+			LOG.error("Manifest instantiation failed: ", e);
+		}
+		return null;
 	}
 
 	/**
@@ -1492,6 +1539,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	 * @param xadesCounterSignature
 	 * @return
 	 */
+
 	private boolean isCounterSignature(final XAdESSignature xadesCounterSignature) {
 
 		final List<Element> signatureReferences = xadesCounterSignature.getSignatureReferences();

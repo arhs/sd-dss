@@ -24,6 +24,7 @@ import java.util.Date;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
+import eu.europa.ec.markt.dss.validation102853.policy.ElementNumberConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ManifestCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
@@ -41,6 +42,8 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.AMCCM;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_DNMRCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_DNMRCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRDF;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRDF_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_CV_IMRI;
@@ -179,6 +182,9 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		}
 		if (existsManifestReference()) {
 
+			if (!checkManifestReferenceNumberConstraint(conclusion)) {
+				return conclusion;
+			}
 			if (!checkManifestReferenceDataExistenceConstraint(conclusion)) {
 				return conclusion;
 			}
@@ -197,7 +203,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 
 	private boolean existsManifestReference() {
 
-		return contextElement.getBooleanValue(XP_MANIFEST_REFERENCE_FOUND);
+		return contextElement.getBooleanValue(XP_MANIFEST_REFERENCE_FOUND) || validationPolicy.getBooleanValue(XP_MANIFEST_CONSTRAINT);
 	}
 
 	/**
@@ -267,6 +273,27 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
+	}
+
+	/**
+	 * This method checks the number of the manifest references.
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check
+	 * @return false if the check failed and the process should stop, true otherwise
+	 */
+	private boolean checkManifestReferenceNumberConstraint(final Conclusion conclusion) {
+
+		ElementNumberConstraint constraint = validationPolicy.getManifestReferenceNumberConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessNode, BBB_CV_DNMRCVP);
+		final long manifestReferenceCount = contextElement.getCountValue(XP_MANIFEST_REFERENCE_COUNT);
+		constraint.setIntValue((int) manifestReferenceCount);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_CV_DNMRCVP_ANS);
+		constraint.setConclusionReceiver(conclusion);
+		boolean check = constraint.check();
+		return check;
 	}
 
 	/**

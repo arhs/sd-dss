@@ -88,6 +88,8 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 */
 	public abstract SignaturePolicyConstraint getSignaturePolicyConstraint();
 
+	public abstract Constraint getSignatureFormatConstraint();
+
 	/**
 	 * Indicates if the structural validation should be checked. If StructuralValidation element is absent within the constraint file then null is returned.
 	 *
@@ -443,6 +445,8 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract ElementNumberConstraint getValidSignatureNumberConstraint();
 
 	public abstract ElementNumberConstraint getSignatureTimestampNumberConstraint();
+
+	public abstract ElementNumberConstraint getManifestReferenceNumberConstraint();
 
 	public abstract Constraint getManifestReferenceDataExistenceConstraint();
 

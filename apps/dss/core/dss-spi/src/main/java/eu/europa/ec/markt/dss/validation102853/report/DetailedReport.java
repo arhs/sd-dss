@@ -56,6 +56,28 @@ public class DetailedReport extends XmlDom {
 	}
 
 	/**
+	 * Returns the validation INDICATION of the GeneralStructureData.
+	 *
+	 * @return related {@code String} indication
+	 */
+	public String getGeneralStructureDataIndication() {
+
+		final String indication = getValue("/ValidationData/GeneralStructureData/Conclusion/Indication/text()");
+		return indication;
+	}
+
+	/**
+	 * Returns the validation SUB_INDICATION of the GeneralStructureData.
+	 *
+	 * @return related {@code String} sub-indication
+	 */
+	public String getGeneralStructureDataSubIndication() {
+
+		final String indication = getValue("/ValidationData/GeneralStructureData/Conclusion/SubIndication/text()");
+		return indication;
+	}
+
+	/**
 	 * Returns the number of the signatures into the signed document. The XML element: '/ValidationData/BasicBuildingBlocks/Signature' is used to obtain this information.
 	 *
 	 * @return {@code int} number of the retrieved signatures

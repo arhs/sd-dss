@@ -37,6 +37,8 @@ public enum MessageTag {
 	BBB_CV_IMRDF_ANS("The manifest reference to the provided data cannot be found!"),
 	BBB_CV_IMRI("Is the manifest reference intact?"),
 	BBB_CV_IMRI_ANS("The manifest reference is not intact!"),
+	BBB_CV_DNMRCVP("Does the number of 'manifest references' comply with the validation policy?"),
+	BBB_CV_DNMRCVP_ANS("The number of 'manifest references' doesn't comply with the validation policy!"),
 
 	BBB_ICS_ISCI("Is there an identified candidate for the signing certificate?"),
 	BBB_ICS_ISCI_ANS("There is no candidate for the signing certificate!"),
@@ -59,6 +61,8 @@ public enum MessageTag {
 	ASCCM_ANS_5("The algorithm is expired!"),
 	AMCCM("Are manifest cryptographic constraints met?"),
 
+	BBB_SAV_DSFCVP("Does the signature format comply with the validation valid?"),
+	BBB_SAV_DSFCVP_ANS("The signature format doesn't comply with the validation policy!"),
 	BBB_SAV_ISSV("Is the structure of the signature valid?"),
 	BBB_SAV_ISSV_ANS("The structure of the signature is not valid!"),
 	BBB_SAV_ICERRM("Is the certified role mandated?"),
