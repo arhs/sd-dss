@@ -217,7 +217,7 @@ public class SimpleReportBuilder {
 			}
 			if (signatureSubIndicationSet.size() == 1) {
 				globalXmlNode.addChild(NodeName.SUB_INDICATION, (String) signatureSubIndicationSet.toArray()[0]);
-			} else {
+			} else if (signatureSubIndicationSet.size() > 1) {
 				globalXmlNode.addChild(NodeName.SUB_INDICATION, SOME_NOT_VALID_SIGNATURES);
 			}
 		}
