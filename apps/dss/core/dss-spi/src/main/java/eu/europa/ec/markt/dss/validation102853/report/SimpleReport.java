@@ -49,9 +49,9 @@ public class SimpleReport extends XmlDom {
 	/**
 	 * @return {@code String} This method returns the path of the validated document containing the signature(s).
 	 */
-	public Date getDocumentName() {
+	public String getDocumentName() {
 
-		final Date documentName = getTimeValue("/SimpleReport/DocumentName/text()");
+		final String documentName = getValue("/SimpleReport/DocumentName/text()");
 		return documentName;
 	}
 
@@ -154,6 +154,7 @@ public class SimpleReport extends XmlDom {
 		final String indication = getValue("/SimpleReport/Signature[@Id='%s']/@SignatureFormat", signatureId);
 		return indication;
 	}
+
 	/**
 	 * @return {@code List} of {@code Conclusion.BasicInfo} containing all "Error" messages
 	 */
@@ -197,7 +198,7 @@ public class SimpleReport extends XmlDom {
 	 * @param basicInfoType the Type of the messages to be returned: Info, Warning or Error
 	 * @return {@code List} of {@code Conclusion.BasicInfo} containing all messages of the specified type.
 	 */
-	private List<Conclusion.BasicInfo> getBasicInfo( final String basicInfoType) {
+	private List<Conclusion.BasicInfo> getBasicInfo(final String basicInfoType) {
 
 		final List<XmlDom> elementList = getElements("/SimpleReport/Global/" + basicInfoType);
 		final List<Conclusion.BasicInfo> infoList = new ArrayList<Conclusion.BasicInfo>();
