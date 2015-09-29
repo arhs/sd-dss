@@ -88,6 +88,7 @@ import org.xml.sax.SAXParseException;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
+import eu.europa.ec.markt.dss.utils.XsdResourceResolver;
 
 /**
  * Utility class that contains some XML related method.
@@ -101,6 +102,10 @@ public final class DSSXMLUtils {
 
 	public static final String ID_ATTRIBUTE_NAME = "id";
 	public static final String XAD_ESV141_XSD = "/XAdESv141.xsd";
+	public static final String XAD_ESV132_XSD = "/XAdES.xsd";
+	public static final String XMLDSIG_CORE_SCHEMA_XSD = "/xmldsig-core-schema.xsd";
+	public static final String XML_SCHEMA_DTD = "/XMLSchema.dtd";
+	public static final String DATA_TYPES_DTD = "/datatypes.dtd";
 
 	private static DocumentBuilderFactory dbFactory;
 
@@ -1098,6 +1103,7 @@ public final class DSSXMLUtils {
 		final ResourceLoader resourceLoader = new ResourceLoader();
 		final InputStream xadesXsd = resourceLoader.getResource(XAD_ESV141_XSD);
 		final SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+		factory.setResourceResolver(new XsdResourceResolver());
 		return factory.newSchema(new StreamSource(xadesXsd));
 	}
 
