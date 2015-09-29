@@ -86,6 +86,44 @@ public class XmlNode {
 		}
 	}
 
+	/**
+	 * @param xmlNode the {@code XmlNode} to which the element is added
+	 * @param element the {@code Node} to be copied
+	 */
+	private static void recursiveCopy(final XmlNode xmlNode, final Node element) {
+
+		final String name = element.getNodeName();
+		final XmlNode _xmlNode = new XmlNode(name);
+		final NamedNodeMap attributes = element.getAttributes();
+		for (int jj = 0; jj < attributes.getLength(); jj++) {
+
+			final Node attrNode = attributes.item(jj);
+			final String attrName = attrNode.getNodeName();
+			if (!"xmlns".equals(attrName)) {
+
+				_xmlNode.setAttribute(attrName, attrNode.getNodeValue());
+			}
+		}
+
+		final NodeList nodes = element.getChildNodes();
+		boolean hasElementNodes = false;
+		for (int ii = 0; ii < nodes.getLength(); ii++) {
+
+			final Node node = nodes.item(ii);
+			if (node.getNodeType() == Node.ELEMENT_NODE) {
+
+				hasElementNodes = true;
+				recursiveCopy(_xmlNode, node);
+			}
+		}
+		if (!hasElementNodes) {
+
+			final String value = element.getTextContent();
+			_xmlNode.setValue(value);
+		}
+		_xmlNode.setParent(xmlNode);
+	}
+
 	public void addChild(final XmlNode child) {
 
       /* if (!children.contains(child)) */
@@ -126,44 +164,6 @@ public class XmlNode {
 				recursiveCopy(this, node);
 			}
 		}
-	}
-
-	/**
-	 * @param xmlNode the {@code XmlNode} to which the element is added
-	 * @param element the {@code Node} to be copied
-	 */
-	private static void recursiveCopy(final XmlNode xmlNode, final Node element) {
-
-		final String name = element.getNodeName();
-		final XmlNode _xmlNode = new XmlNode(name);
-		final NamedNodeMap attributes = element.getAttributes();
-		for (int jj = 0; jj < attributes.getLength(); jj++) {
-
-			final Node attrNode = attributes.item(jj);
-			final String attrName = attrNode.getNodeName();
-			if (!"xmlns".equals(attrName)) {
-
-				_xmlNode.setAttribute(attrName, attrNode.getNodeValue());
-			}
-		}
-
-		final NodeList nodes = element.getChildNodes();
-		boolean hasElementNodes = false;
-		for (int ii = 0; ii < nodes.getLength(); ii++) {
-
-			final Node node = nodes.item(ii);
-			if (node.getNodeType() == Node.ELEMENT_NODE) {
-
-				hasElementNodes = true;
-				recursiveCopy(_xmlNode, node);
-			}
-		}
-		if (!hasElementNodes) {
-
-			final String value = element.getTextContent();
-			_xmlNode.setValue(value);
-		}
-		_xmlNode.setParent(xmlNode);
 	}
 
 	/**
@@ -416,6 +416,21 @@ public class XmlNode {
 		} catch (UnsupportedEncodingException e) {
 			throw new DSSException("Error during the conversion of the XmlNode to the InputStream :", e);
 		}
+	}
+
+	/**
+	 * @return {@code String} parent tree in this {@code XmlNode}
+	 */
+	public String getLocation() {
+
+		String tree = getName();
+		XmlNode parentXmlNode = parentNode;
+		while (parentXmlNode != null) {
+
+			tree = parentXmlNode.getName() + "/" + tree;
+			parentXmlNode = parentXmlNode.parentNode;
+		}
+		return tree;
 	}
 
 	@Override

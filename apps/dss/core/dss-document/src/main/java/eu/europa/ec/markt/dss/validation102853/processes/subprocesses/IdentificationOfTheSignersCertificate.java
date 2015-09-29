@@ -114,10 +114,11 @@ public class IdentificationOfTheSignersCertificate extends BasicValidationProces
 	/**
 	 * This method prepares the execution of the ISC process.
 	 *
-	 * @param params validation process parameters
+	 * @param params   validation process parameters
+	 * @param parentXmlNode
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
-	public Conclusion run(final ProcessParameters params, final String contextName) {
+	public Conclusion run(final ProcessParameters params, XmlNode parentXmlNode, final String contextName) {
 
 		this.params = params;
 		this.contextName = contextName;
@@ -126,12 +127,12 @@ public class IdentificationOfTheSignersCertificate extends BasicValidationProces
 		/**
 		 * 5.1 Identification of the signer's certificate (ISC)
 		 */
-		validationDataXmlNode = new XmlNode(ISC);
-		validationDataXmlNode.setNameSpace(XmlDom.NAMESPACE);
+		validationDataXmlNode = parentXmlNode.addChild(ISC);
 
 		final Conclusion conclusion = process(params);
 
-		conclusion.setValidationData(validationDataXmlNode);
+		final XmlNode conclusionXmlNode = conclusion.toXmlNode();
+		validationDataXmlNode.addChild(conclusionXmlNode);
 		return conclusion;
 	}
 
@@ -147,12 +148,13 @@ public class IdentificationOfTheSignersCertificate extends BasicValidationProces
 	 * Clauses 5.1.4.1 to 5.1.4.3 provide specific processing details for each AdES signature type (i.e. XAdES, CAdES or
 	 * PAdES), once the certificate has been retrieved.
 	 *
-	 * @param params validation process parameters
+	 * @param params   validation process parameters
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
 	private Conclusion process(final ProcessParameters params) {
 
 		final Conclusion conclusion = new Conclusion();
+		conclusion.setLocation(validationDataXmlNode.getLocation());
 
 		// The signing certificate Id and the signing certificate are reset.
 		params.setSigningCertificateId(null);

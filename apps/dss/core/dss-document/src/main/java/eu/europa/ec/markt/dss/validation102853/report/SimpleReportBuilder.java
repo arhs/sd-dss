@@ -22,8 +22,10 @@ package eu.europa.ec.markt.dss.validation102853.report;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
@@ -53,8 +55,12 @@ import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
+import static eu.europa.ec.markt.dss.validation102853.rules.Indication.INDETERMINATE;
+import static eu.europa.ec.markt.dss.validation102853.rules.Indication.INVALID;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.LABEL_TINTWS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.LABEL_TINVTWS;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.INDICATION;
+import static eu.europa.ec.markt.dss.validation102853.rules.SubIndication.SOME_NOT_VALID_SIGNATURES;
 
 /**
  * This class builds a SimpleReport XmlDom from the diagnostic data and detailed validation report.
@@ -74,6 +80,9 @@ public class SimpleReportBuilder {
 	private int totalSignatureCount = 0;
 	private int validSignatureCount = 0;
 
+	private Set<String> signatureIndicationSet = new HashSet<String>();
+	private Set<String> signatureSubIndicationSet = new HashSet<String>();
+
 	public SimpleReportBuilder(final ValidationPolicy constraintData, final DiagnosticData diagnosticData) {
 
 		this.constraintData = constraintData;
@@ -88,10 +97,10 @@ public class SimpleReportBuilder {
 
 		LOG.error(exception.getMessage(), exception);
 
-		signatureNode.removeChild(NodeName.INDICATION);
+		signatureNode.removeChild(INDICATION);
 		signatureNode.removeChild(NodeName.SUB_INDICATION);
 
-		signatureNode.addChild(NodeName.INDICATION, Indication.INDETERMINATE);
+		signatureNode.addChild(INDICATION, INDETERMINATE);
 		signatureNode.addChild(NodeName.SUB_INDICATION, SubIndication.UNEXPECTED_ERROR);
 
 		final String message = DSSUtils.getSummaryMessage(exception, SimpleReportBuilder.class);
@@ -162,25 +171,26 @@ public class SimpleReportBuilder {
 		}
 	}
 
-	private void addSignatures(final ProcessParameters params, final XmlNode simpleReport) throws DSSException {
+	private void addSignatures(final ProcessParameters params, final XmlNode reportXmlNode) throws DSSException {
 
-		final List<XmlDom> signatures = diagnosticData.getElements("/DiagnosticData/Signature");
 		validSignatureCount = 0;
 		totalSignatureCount = 0;
-		for (final XmlDom signatureXmlDom : signatures) {
 
-			addSignature(params, simpleReport, signatureXmlDom);
+		final List<XmlDom> signatureXmlDomList = diagnosticData.getElements("/DiagnosticData/Signature");
+		for (final XmlDom signatureXmlDom : signatureXmlDomList) {
+
+			addSignature(params, reportXmlNode, signatureXmlDom);
 		}
 	}
 
-	private void addGlobalResult(final ProcessParameters params, XmlNode report) {
+	private void addGlobalResult(final ProcessParameters params, XmlNode reportXmlNode) {
 
-		final XmlNode globalXmlNode = report.addChild(NodeName.GLOBAL);
+		final XmlNode globalXmlNode = reportXmlNode.addChild(NodeName.GLOBAL);
 		final Conclusion generalStructureConclusion = params.getGeneralStructureConclusion();
 		final String generalStructureIndication = generalStructureConclusion.getIndication();
 		if (!Indication.VALID.equals(generalStructureIndication)) {
 
-			globalXmlNode.addChild(NodeName.INDICATION, generalStructureIndication);
+			globalXmlNode.addChild(INDICATION, generalStructureIndication);
 			final String generalStructureSubIndication = generalStructureConclusion.getSubIndication();
 			globalXmlNode.addChild(NodeName.SUB_INDICATION, generalStructureSubIndication);
 
@@ -190,20 +200,25 @@ public class SimpleReportBuilder {
 				final XmlNode xmlNode = globalXmlNode.addChild(NodeName.ERROR, error.getValue());
 				final HashMap<String, String> attributes = error.getAttributes();
 				for (Map.Entry<String, String> attribute : attributes.entrySet()) {
-
 					xmlNode.setAttribute(attribute.getKey(), attribute.getValue());
 				}
 			}
-
-			// errors & warnings
+			// TODO-Bob (29/09/2015):  Warnings
 		} else {
 
-			if (validSignatureCount != totalSignatureCount) {
-
-				globalXmlNode.addChild(NodeName.INDICATION, Indication.INDETERMINATE);
-				globalXmlNode.addChild(NodeName.SUB_INDICATION, SubIndication.SOME_NOT_VALID_SIGNATURES);
+			if (signatureIndicationSet.size() == 1) {
+				globalXmlNode.addChild(INDICATION, (String) signatureIndicationSet.toArray()[0]);
 			} else {
-				globalXmlNode.addChild(NodeName.INDICATION, Indication.VALID);
+				if (signatureIndicationSet.contains(INVALID)) {
+					globalXmlNode.addChild(INDICATION, INVALID);
+				} else {
+					globalXmlNode.addChild(INDICATION, INDETERMINATE);
+				}
+			}
+			if (signatureSubIndicationSet.size() == 1) {
+				globalXmlNode.addChild(NodeName.SUB_INDICATION, (String) signatureSubIndicationSet.toArray()[0]);
+			} else {
+				globalXmlNode.addChild(NodeName.SUB_INDICATION, SOME_NOT_VALID_SIGNATURES);
 			}
 		}
 		globalXmlNode.addChild(NodeName.VALID_SIGNATURES_COUNT, Integer.toString(validSignatureCount));
@@ -211,31 +226,31 @@ public class SimpleReportBuilder {
 	}
 
 	/**
-	 * @param params              validation process parameters
-	 * @param simpleReport
-	 * @param diagnosticSignature the diagnosticSignature element in the diagnostic data
+	 * @param params          validation process parameters
+	 * @param reportXmlNode
+	 * @param signatureXmlDom the diagnosticSignature element in the diagnostic data
 	 * @throws DSSException
 	 */
-	private void addSignature(final ProcessParameters params, final XmlNode simpleReport, final XmlDom diagnosticSignature) throws DSSException {
+	private void addSignature(final ProcessParameters params, final XmlNode reportXmlNode, final XmlDom signatureXmlDom) throws DSSException {
 
 		totalSignatureCount++;
 
-		final XmlNode signatureNode = simpleReport.addChild(NodeName.SIGNATURE);
+		final XmlNode signatureXmlNode = reportXmlNode.addChild(NodeName.SIGNATURE);
 
-		final String signatureId = diagnosticSignature.getValue("./@Id");
-		signatureNode.setAttribute(AttributeName.ID, signatureId);
+		final String signatureId = signatureXmlDom.getValue("./@Id");
+		signatureXmlNode.setAttribute(AttributeName.ID, signatureId);
 
-		final String type = diagnosticSignature.getValue("./@Type");
-		addCounterSignature(diagnosticSignature, signatureNode, type);
+		final String type = signatureXmlDom.getValue("./@Type");
+		addCounterSignature(signatureXmlDom, signatureXmlNode, type);
 		try {
 
-			addSigningTime(diagnosticSignature, signatureNode);
-			addSignatureFormat(diagnosticSignature, signatureNode);
+			addSigningTime(signatureXmlDom, signatureXmlNode);
+			addSignatureFormat(signatureXmlDom, signatureXmlNode);
 
-			final String signCertId = diagnosticSignature.getValue("./SigningCertificate/@Id");
+			final String signCertId = signatureXmlDom.getValue("./SigningCertificate/@Id");
 			final XmlDom signCert = params.getCertificate(signCertId);
 
-			addSignedBy(signatureNode, signCert);
+			addSignedBy(signatureXmlNode, signCert);
 
 			XmlDom bvData = params.getBvData();
 			final XmlDom basicValidationConclusion = bvData.getElement("/BasicValidationData/Signature[@Id='%s']/Conclusion", signatureId);
@@ -254,8 +269,8 @@ public class SimpleReportBuilder {
 			final List<XmlDom> basicValidationWarningList = basicValidationConclusion.getElements("./Warning");
 			final List<XmlDom> basicValidationErrorList = basicValidationConclusion.getElements("./Error");
 
-			final boolean noTimestamp = Indication.INDETERMINATE.equals(ltvIndication) && SubIndication.NO_TIMESTAMP.equals(ltvSubIndication);
-			final boolean noValidTimestamp = Indication.INDETERMINATE.equals(ltvIndication) && SubIndication.NO_VALID_TIMESTAMP.equals(ltvSubIndication);
+			final boolean noTimestamp = INDETERMINATE.equals(ltvIndication) && SubIndication.NO_TIMESTAMP.equals(ltvSubIndication);
+			final boolean noValidTimestamp = INDETERMINATE.equals(ltvIndication) && SubIndication.NO_VALID_TIMESTAMP.equals(ltvSubIndication);
 			if (noTimestamp || noValidTimestamp) {
 
 				final String basicValidationConclusionIndication = basicValidationConclusion.getValue("./Indication/text()");
@@ -279,17 +294,19 @@ public class SimpleReportBuilder {
 					}
 				}
 			}
-			signatureNode.addChild(NodeName.INDICATION, indication);
+			signatureIndicationSet.add(indication);
+			signatureXmlNode.addChild(INDICATION, indication);
 			if (Indication.VALID.equals(indication)) {
 				validSignatureCount++;
 			}
 			if (!subIndication.isEmpty()) {
 
-				signatureNode.addChild(NodeName.SUB_INDICATION, subIndication);
+				signatureIndicationSet.add(subIndication);
+				signatureXmlNode.addChild(NodeName.SUB_INDICATION, subIndication);
 			}
 			if (basicValidationConclusion != null) {
 
-				final List<XmlDom> errorMessages = diagnosticSignature.getElements("./ErrorMessage");
+				final List<XmlDom> errorMessages = signatureXmlDom.getElements("./ErrorMessage");
 				for (XmlDom errorDom : errorMessages) {
 
 					String errorMessage = errorDom.getText();
@@ -302,21 +319,21 @@ public class SimpleReportBuilder {
 			}
 			if (!Indication.VALID.equals(ltvIndication)) {
 
-				addBasicInfo(signatureNode, basicValidationErrorList);
+				addBasicInfo(signatureXmlNode, basicValidationErrorList);
 			}
-			addBasicInfo(signatureNode, basicValidationWarningList);
-			addBasicInfo(signatureNode, infoList);
+			addBasicInfo(signatureXmlNode, basicValidationWarningList);
+			addBasicInfo(signatureXmlNode, infoList);
 
-			addSignatureProfile(signatureNode, signCert);
+			addSignatureProfile(signatureXmlNode, signCert);
 
-			final XmlDom signatureScopes = diagnosticSignature.getElement("./SignatureScopes");
-			addSignatureScope(signatureNode, signatureScopes);
+			final XmlDom signatureScopes = signatureXmlDom.getElement("./SignatureScopes");
+			addSignatureScope(signatureXmlNode, signatureScopes);
 
-			final List<XmlDom> timestamps = diagnosticSignature.getElements("./Timestamps/Timestamp");
-			addTimestamps(params, signatureNode, timestamps);
+			final List<XmlDom> timestamps = signatureXmlDom.getElements("./Timestamps/Timestamp");
+			addTimestamps(params, signatureXmlNode, timestamps);
 		} catch (Exception e) {
 
-			notifyException(signatureNode, e);
+			notifyException(signatureXmlNode, e);
 			throw new DSSException("WAS TREATED", e);
 		}
 	}

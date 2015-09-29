@@ -26,8 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSUtils;
-import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 
 /**
  * This class represents a signing certificate validity constraints. The validation is composed of:
@@ -123,29 +121,23 @@ public class CertificateExpirationConstraint extends Constraint {
 		if (inform()) {
 
 			node.addChild(STATUS, INFORMATION);
-			node.addChild(INFO, null, messageAttributes).setAttribute("ExpectedValue", expectedValue).setAttribute("ConstraintValue", value);
+			addConstraintParameters();
+			node.addChild(INFO, null, messageAttributes);
 			return true;
 		}
 		final boolean certValidity = currentTime.compareTo(notBefore) >= 0 && currentTime.compareTo(notAfter) <= 0;
 		if (expiredCertsRevocationInfo == null && !certValidity) {
 
-			final String formatedNotBefore = DSSUtils.formatDate(notBefore);
-			final String formatedNotAfter = DSSUtils.formatDate(notAfter);
+			addConstraintParameters();
 			if (warn()) {
 
 				node.addChild(STATUS, WARN);
-				node.addChild(WARNING, failureMessageTag, messageAttributes);
-				final Conclusion.Warning warning = conclusion.addWarning(failureMessageTag, messageAttributes);
-				warning.setAttribute(AttributeValue.NOT_BEFORE, formatedNotBefore);
-				warning.setAttribute(AttributeValue.NOT_AFTER, formatedNotAfter);
+				conclusion.addWarning(failureMessageTag, messageAttributes);
 				return true;
 			}
 			node.addChild(STATUS, KO);
-			node.addChild(ERROR, failureMessageTag, messageAttributes);
 			conclusion.setIndication(indication, subIndication);
-			final Conclusion.Error error = conclusion.addError(failureMessageTag, messageAttributes);
-			error.setAttribute(AttributeValue.NOT_BEFORE, formatedNotBefore);
-			error.setAttribute(AttributeValue.NOT_AFTER, formatedNotAfter);
+			conclusion.addError(failureMessageTag, messageAttributes);
 			return false;
 		}
 		node.addChild(STATUS, OK);
@@ -158,6 +150,17 @@ public class CertificateExpirationConstraint extends Constraint {
 			node.addChild(INFO).setAttribute(EXPIRED_CERTS_REVOCATION_INFO, formatedExpiredCertsRevocationInfo);
 		}
 		return true;
+	}
+
+	private void addConstraintParameters() {
+
+		final String formatedCurrentTime = DSSUtils.formatDate(currentTime);
+		final String formatedNotBefore = DSSUtils.formatDate(notBefore);
+		final String formatedNotAfter = DSSUtils.formatDate(notAfter);
+
+		messageAttributes.put(CURRENT_TIME, formatedNotBefore);
+		messageAttributes.put(NOT_BEFORE, formatedNotBefore);
+		messageAttributes.put(NOT_AFTER, formatedNotAfter);
 	}
 }
 

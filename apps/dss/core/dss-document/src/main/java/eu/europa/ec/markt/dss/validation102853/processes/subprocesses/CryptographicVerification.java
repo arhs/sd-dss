@@ -111,7 +111,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	/**
 	 * This node is used to add the constraint nodes.
 	 */
-	private XmlNode subProcessNode;
+	private XmlNode subProcessXmlNode;
 	private String contextName;
 
 	private void prepareParameters(final ProcessParameters params) {
@@ -141,23 +141,22 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	 * details:
 	 *
 	 * @param params      validation process parameters
-	 * @param processNode the parent process {@code XmlNode} to use to include the validation information
+	 * @param parentXmlNode the parent process {@code XmlNode} to use to include the validation information
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
-	public Conclusion run(final ProcessParameters params, final XmlNode processNode) {
+	public Conclusion run(final ProcessParameters params, final XmlNode parentXmlNode) {
 
-		if (processNode == null) {
-
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "processNode"));
+		if (parentXmlNode == null) {
+			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "parentXmlNode"));
 		}
 		prepareParameters(params);
 
-		subProcessNode = processNode.addChild(CV);
+		subProcessXmlNode = parentXmlNode.addChild(CV);
 
 		final Conclusion conclusion = process(params);
 
 		final XmlNode conclusionXmlNode = conclusion.toXmlNode();
-		subProcessNode.addChild(conclusionXmlNode);
+		subProcessXmlNode.addChild(conclusionXmlNode);
 		return conclusion;
 	}
 
@@ -170,6 +169,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	private Conclusion process(final ProcessParameters params) {
 
 		final Conclusion conclusion = new Conclusion();
+		conclusion.setLocation(subProcessXmlNode.getLocation());
 
 		if (!checkReferenceDataExistenceConstraint(conclusion)) {
 			return conclusion;
@@ -216,13 +216,13 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	 * @param conclusion the conclusion to use to add the result of the check.
 	 * @return false if the check failed and the process should stop, true otherwise.
 	 */
-	private boolean checkReferenceDataExistenceConstraint(Conclusion conclusion) {
+	private boolean checkReferenceDataExistenceConstraint(final Conclusion conclusion) {
 
 		final Constraint constraint = validationPolicy.getReferenceDataExistenceConstraint();
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_CV_IRDOF);
+		constraint.create(subProcessXmlNode, BBB_CV_IRDOF);
 		final boolean referenceDataFound = contextElement.getBoolValue(XP_REFERENCE_DATA_FOUND);
 		constraint.setValue(referenceDataFound);
 		constraint.setIndications(INDETERMINATE, SIGNED_DATA_NOT_FOUND, BBB_CV_IRDOF_ANS);
@@ -238,13 +238,13 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	 * @param conclusion the conclusion to use to add the result of the check.
 	 * @return false if the check failed and the process should stop, true otherwise.
 	 */
-	private boolean checkReferenceDataIntactConstraint(Conclusion conclusion) {
+	private boolean checkReferenceDataIntactConstraint(final Conclusion conclusion) {
 
 		final Constraint constraint = validationPolicy.getReferenceDataIntactConstraint();
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_CV_IRDOI);
+		constraint.create(subProcessXmlNode, BBB_CV_IRDOI);
 		final boolean referenceDataIntact = contextElement.getBoolValue(XP_REFERENCE_DATA_INTACT);
 		constraint.setValue(referenceDataIntact);
 		constraint.setIndications(INVALID, HASH_FAILURE, BBB_CV_IRDOI_ANS);
@@ -268,7 +268,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_CV_ISI);
+		constraint.create(subProcessXmlNode, BBB_CV_ISI);
 		final boolean signatureIntact = contextElement.getBoolValue(XP_SIGNATURE_INTACT);
 		constraint.setValue(signatureIntact);
 		constraint.setIndications(INVALID, SIG_CRYPTO_FAILURE, BBB_CV_ISI_ANS);
@@ -289,7 +289,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_CV_DNMRCVP);
+		constraint.create(subProcessXmlNode, BBB_CV_DNMRCVP);
 		final long manifestReferenceCount = contextElement.getCountValue(XP_MANIFEST_REFERENCE_COUNT);
 		constraint.setIntValue((int) manifestReferenceCount);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_CV_DNMRCVP_ANS);
@@ -310,7 +310,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_CV_IMRDF);
+		constraint.create(subProcessXmlNode, BBB_CV_IMRDF);
 		final String manifestReferenceRealUri = contextElement.getValue(XP_MANIFEST_REFERENCE_REAL_URI);
 		constraint.setAttribute(MANIFEST_REFERENCE_REAL_URI, manifestReferenceRealUri);
 		final boolean manifestReferenceDataFound = contextElement.getBoolValue(XP_MANIFEST_REFERENCE_DATA_FOUND);
@@ -331,7 +331,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_CV_IMRI);
+		constraint.create(subProcessXmlNode, BBB_CV_IMRI);
 		final String manifestReferenceUri = contextElement.getValue(XP_MANIFEST_REFERENCE_URI);
 		constraint.setAttribute(MANIFEST_REFERENCE_URI, manifestReferenceUri);
 		final boolean manifestReferenceIntact = contextElement.getBoolValue(XP_MANIFEST_REFERENCE_INTACT);
@@ -354,7 +354,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, AMCCM);
+		constraint.create(subProcessXmlNode, AMCCM);
 		constraint.setCurrentTime(currentTime);
 		constraint.setDigestAlgorithm(contextElement.getValue(XP_MANIFEST_DIGEST_ALGORITHM));
 		constraint.setIndications(INDETERMINATE, CRYPTO_CONSTRAINTS_FAILURE, EMPTY);

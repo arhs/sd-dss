@@ -36,7 +36,7 @@ public interface AttributeName {
 	String FIELD = "Field";
 	String GENERATION_TIME = "GenerationTime";
 	String ID = "Id";
-	String TYPE = "Type";
+	String LOCATION = "Location";
 	String MAXIMUM_REVOCATION_FRESHNESS = "MaximumRevocationFreshness";
 	String NAME_ID = "NameId";
 	String REQUESTED_ROLES = "RequestedRoles";
@@ -46,5 +46,6 @@ public interface AttributeName {
 	String REVOCATION_TIME = "RevocationTime";
 	String SIZE = "Size";
 	String TIMESTAMP_TYPE = "Type";
+	String TYPE = "Type";
 	String PARENT_ID = "ParentId";
 }

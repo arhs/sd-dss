@@ -714,7 +714,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		constraint.setValue(notBefore);
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		constraint.setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
-		constraint.setAttribute(AttributeValue.NOT_BEFORE, formatedNotBefore);
+		constraint.setAttribute(NOT_BEFORE, formatedNotBefore);
 		// TODO: (Bob: 2014 Mar 16)
 		//        final XmlDom errorXmlDom = bvpConclusion.getElement("./Error");
 		//        conclusionNode.addChild(errorXmlDom);

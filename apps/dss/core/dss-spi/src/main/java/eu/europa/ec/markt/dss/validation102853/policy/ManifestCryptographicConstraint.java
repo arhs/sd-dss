@@ -64,33 +64,14 @@ public class ManifestCryptographicConstraint extends Constraint {
 	 * This is the container to store expiration dates of all encryption and digest algorithms.
 	 */
 	protected Map<String, Date> algorithmExpirationDates;
-
-	/**
-	 * This is the {@code digestAlgorithm} to check
-	 */
-	private String digestAlgorithm;
-
 	/**
 	 * This is the See {@link ProcessParameters#getCurrentTime()}
 	 */
 	protected Date currentTime;
-
-	public static class Pair {
-
-		public final String first;
-		public final String second;
-
-		/**
-		 * Constructor for a Pair.
-		 *
-		 * @param first  the first object in the Pair
-		 * @param second the second object in the pair
-		 */
-		public Pair(String first, String second) {
-			this.first = first;
-			this.second = second;
-		}
-	}
+	/**
+	 * This is the {@code digestAlgorithm} to check
+	 */
+	private String digestAlgorithm;
 
 	/**
 	 * This is the default constructor. It takes a level of the constraint as parameter. The string representing the level is trimmed and capitalized. If there is no corresponding
@@ -220,12 +201,10 @@ public class ManifestCryptographicConstraint extends Constraint {
 		if (warn()) {
 
 			addWarning(messageTag, pairs);
-		} else {
-
-			addError(messageTag, pairs);
-			return true;
+			return false;
 		}
-		return false;
+		addError(messageTag, pairs);
+		return true;
 	}
 
 	private void addError(final MessageTag messageTag, final Pair[] pairs) {
@@ -246,6 +225,23 @@ public class ManifestCryptographicConstraint extends Constraint {
 		for (final Pair pair : pairs) {
 
 			warning.setAttribute(pair.first, pair.second);
+		}
+	}
+
+	public static class Pair {
+
+		public final String first;
+		public final String second;
+
+		/**
+		 * Constructor for a Pair.
+		 *
+		 * @param first  the first object in the Pair
+		 * @param second the second object in the pair
+		 */
+		public Pair(String first, String second) {
+			this.first = first;
+			this.second = second;
 		}
 	}
 }

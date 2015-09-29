@@ -92,49 +92,41 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	 */
 
 	/**
-	 * See {@link ProcessParameters#getDiagnosticData()}
-	 */
-	private XmlDom diagnosticData;
-
-	/**
 	 * See {@link ProcessParameters#getCurrentValidationPolicy()}
 	 */
 	protected ValidationPolicy currentValidationPolicy;
-
-	/**
-	 * See {@link ProcessParameters#getCurrentTime()}
-	 */
-	private Date currentTime;
-
-	/**
-	 * See {@link ProcessParameters#getSignatureContext()}
-	 */
-	private XmlDom signatureContext;
-
 	/**
 	 * See {@link ProcessParameters#getContextElement()}
 	 */
 	protected XmlDom contextElement;
-
-	/**
-	 * // TODO: (Bob: 2014 Mar 12)
-	 */
-	private String contextName;
-
-	/**
-	 * See {@link ProcessParameters#getSigningCertificateId()}
-	 */
-	private String signingCertificateId;
-
-	/**
-	 * See {@link ProcessParameters#getSigningCertificate()}
-	 */
-	private XmlDom signingCertificate;
-
 	/**
 	 * This node is used to add the constraint nodes.
 	 */
 	protected XmlNode validationDataXmlNode;
+	/**
+	 * See {@link ProcessParameters#getDiagnosticData()}
+	 */
+	private XmlDom diagnosticData;
+	/**
+	 * See {@link ProcessParameters#getCurrentTime()}
+	 */
+	private Date currentTime;
+	/**
+	 * See {@link ProcessParameters#getSignatureContext()}
+	 */
+	private XmlDom signatureContext;
+	/**
+	 * // TODO: (Bob: 2014 Mar 12)
+	 */
+	private String contextName;
+	/**
+	 * See {@link ProcessParameters#getSigningCertificateId()}
+	 */
+	private String signingCertificateId;
+	/**
+	 * See {@link ProcessParameters#getSigningCertificate()}
+	 */
+	private XmlDom signingCertificate;
 
 	private void prepareParameters(final ProcessParameters params) {
 
@@ -179,32 +171,34 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	 * 5.3 X.509 Certificate Validation (XCV)<br>
 	 * This method carry out the XCV process.
 	 *
-	 * @param params validation process parameters
+	 * @param params   validation process parameters
+	 * @param parentXmlNode
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
-	public Conclusion run(final ProcessParameters params, final String contextName) {
+	public Conclusion run(final ProcessParameters params, XmlNode parentXmlNode, final String contextName) {
 
 		this.contextName = contextName;
 		prepareParameters(params);
 
-		validationDataXmlNode = new XmlNode(XCV);
-		validationDataXmlNode.setNameSpace(XmlDom.NAMESPACE);
+		validationDataXmlNode = parentXmlNode.addChild(XCV);
 
 		final Conclusion conclusion = process(params);
 
-		conclusion.setValidationData(validationDataXmlNode);
+		final XmlNode conclusionXmlNode = conclusion.toXmlNode();
+		validationDataXmlNode.addChild(conclusionXmlNode);
 		return conclusion;
 	}
 
 	/**
 	 * 5.3.4 Processing This process consists in the following steps:
 	 *
-	 * @param params validation process parameters
+	 * @param params   validation process parameters
 	 * @return
 	 */
 	private Conclusion process(final ProcessParameters params) {
 
 		final Conclusion conclusion = new Conclusion();
+		conclusion.setLocation(validationDataXmlNode.getLocation());
 
 		/**
 		 * 1) Check that the current time is in the validity range of the signer's certificate. If this constraint is not

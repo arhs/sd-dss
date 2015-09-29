@@ -137,7 +137,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	/**
 	 * This node is used to add the constraint nodes.
 	 */
-	private XmlNode subProcessNode;
+	private XmlNode subProcessXmlNode;
 
 	private void prepareParameters(final ProcessParameters params) {
 
@@ -178,37 +178,38 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 * This method prepares the execution of the SAV process.
 	 *
 	 * @param params      validation process parameters
-	 * @param processNode the parent process {@code XmlNode} to use to include the validation information
+	 * @param parentXmlNode the parent process {@code XmlNode} to use to include the validation information
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
-	public Conclusion run(final ProcessParameters params, final XmlNode processNode) {
+	public Conclusion run(final ProcessParameters params, final XmlNode parentXmlNode) {
 
-		if (processNode == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "processNode"));
+		if (parentXmlNode == null) {
+			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "parentXmlNode"));
 		}
 		prepareParameters(params);
 
 		/**
 		 * 5.5 Signature Acceptance Validation (SAV)
 		 */
-		subProcessNode = processNode.addChild(SAV);
+		subProcessXmlNode = parentXmlNode.addChild(SAV);
 
 		final Conclusion conclusion = process(params);
 
 		final XmlNode conclusionXmlNode = conclusion.toXmlNode();
-		subProcessNode.addChild(conclusionXmlNode);
+		subProcessXmlNode.addChild(conclusionXmlNode);
 		return conclusion;
 	}
 
 	/**
 	 * This method implement SAV process.
 	 *
-	 * @param params validation process parameters
+	 * @param params   validation process parameters
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
 	private Conclusion process(final ProcessParameters params) {
 
 		final Conclusion conclusion = new Conclusion();
+		conclusion.setLocation(subProcessXmlNode.getLocation());
 
 
 		// signature format: XAdES_BASELINE_B, XAdES_BASELINE_LTA, XAdES_*
@@ -390,7 +391,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 */
 	private XmlNode addConstraint(final MessageTag messageTag) {
 
-		final XmlNode constraintNode = subProcessNode.addChild(CONSTRAINT);
+		final XmlNode constraintNode = subProcessXmlNode.addChild(CONSTRAINT);
 		constraintNode.addChild(NAME, messageTag.getMessage()).setAttribute(NAME_ID, messageTag.name());
 		return constraintNode;
 	}
@@ -407,7 +408,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_DSFCVP);
+		constraint.create(subProcessXmlNode, BBB_SAV_DSFCVP);
 		final String signatureFormat = signatureContext.getValue("./SignatureFormat/text()");
 		constraint.setValue(signatureFormat);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DSFCVP_ANS);
@@ -428,7 +429,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISSV);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISSV);
 		final boolean structureValid = signatureContext.getBoolValue("./StructuralValidation/Valid/text()");
 		constraint.setValue(structureValid);
 		final String message = signatureContext.getValue("./StructuralValidation/Message/text()");
@@ -459,7 +460,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISQPSTP);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPSTP);
 		final String signingTime = signatureContext.getValue("./DateTime/text()");
 		constraint.setValue(DSSUtils.isNotBlank(signingTime));
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPSTP_ANS);
@@ -480,7 +481,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISQPCTP);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPCTP);
 		final String contentType = signatureContext.getValue("./ContentType/text()");
 		constraint.setValue(contentType);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPCTP_ANS);
@@ -501,7 +502,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISQPCHP);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPCHP);
 		final String contentHints = signatureContext.getValue("./ContentHints/text()");
 		constraint.setValue(contentHints);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPCHP_ANS);
@@ -522,7 +523,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISQPCIP);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPCIP);
 		final String contentIdentifier = signatureContext.getValue("./ContentIdentifier/text()");
 		constraint.setValue(contentIdentifier);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPCIP_ANS);
@@ -544,7 +545,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISQPXTIP);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPXTIP);
 		// TODO: A set of commitments must be checked
 		final String commitmentTypeIndicationIdentifier = signatureContext.getValue("./CommitmentTypeIndication/Identifier[1]/text()");
 		constraint.setValue(commitmentTypeIndicationIdentifier);
@@ -572,7 +573,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISQPSLP);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPSLP);
 		String signatureProductionPlace = signatureContext.getValue("./SignatureProductionPlace/text()");
 		final XmlDom signProductionPlaceXmlDom = signatureContext.getElement("./SignatureProductionPlace");
 		if (signProductionPlaceXmlDom != null) {
@@ -606,7 +607,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint1 == null) {
 			return true;
 		}
-		constraint1.create(subProcessNode, BBB_SAV_ISQPCTSIP);
+		constraint1.create(subProcessXmlNode, BBB_SAV_ISQPCTSIP);
 
 		//get count of all possible content timestamps
 		long count = signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.CONTENT_TIMESTAMP);
@@ -622,7 +623,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint2 == null) {
 			return constraint1.check();
 		}
-		constraint2.create(subProcessNode, ADEST_IMIDF);
+		constraint2.create(subProcessXmlNode, ADEST_IMIDF);
 		constraint2.setValue(true);
 		constraint2.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, ADEST_IMIDF_ANS);
 		constraint2.setConclusionReceiver(conclusion);
@@ -631,7 +632,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint3 == null) {
 			return constraint1.check() && constraint2.check();
 		}
-		constraint3.create(subProcessNode, ADEST_IMIVC);
+		constraint3.create(subProcessXmlNode, ADEST_IMIVC);
 		constraint3.setValue(true);
 		constraint3.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, ADEST_IMIVC_ANS);
 		constraint3.setConclusionReceiver(conclusion);
@@ -649,7 +650,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISQPCTSIP);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPCTSIP);
 
 		//get all possible content timestamps
 		long count = signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.CONTENT_TIMESTAMP);
@@ -676,7 +677,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ICRM);
+		constraint.create(subProcessXmlNode, BBB_SAV_ICRM);
 		final List<XmlDom> claimedRolesXmlDom = signatureContext.getElements("./ClaimedRoles/ClaimedRole");
 		final List<String> claimedRoles = XmlDom.convertToStringList(claimedRolesXmlDom);
 		// TODO (Bob) to be implemented for each claimed role. Attendance must be taken into account.
@@ -710,7 +711,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_DNSTCVP);
+		constraint.create(subProcessXmlNode, BBB_SAV_DNSTCVP);
 		final List<XmlDom> signatureTimestampXmlDom = signatureContext.getElements("./Timestamps/Timestamp[@Type='SIGNATURE_TIMESTAMP']");
 		constraint.setIntValue(signatureTimestampXmlDom.size());
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNSTCVP_ANS);
@@ -731,7 +732,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, ASCCM);
+		constraint.create(subProcessXmlNode, ASCCM);
 		constraint.setCurrentTime(currentTime);
 		constraint.setEncryptionAlgorithm(signatureContext.getValue(XP_ENCRYPTION_ALGO_USED_TO_SIGN_THIS_TOKEN));
 		constraint.setDigestAlgorithm(signatureContext.getValue(XP_DIGEST_ALGO_USED_TO_SIGN_THIS_TOKEN));
@@ -765,7 +766,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessNode, BBB_SAV_ISQPCTSIP);
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPCTSIP);
 
 		//get all possible content timestamps
 		long count = signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.CONTENT_TIMESTAMP);

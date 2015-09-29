@@ -72,45 +72,40 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 
 		params.setContextName(SIGNING_CERTIFICATE);
 
-		final XmlNode basicBuildingBlocksNode = mainNode.addChild(BASIC_BUILDING_BLOCKS);
+		final XmlNode basicBuildingBlocksXmlNode = mainNode.addChild(BASIC_BUILDING_BLOCKS);
 
-		final List<XmlDom> signatures = params.getDiagnosticData().getElements("/DiagnosticData/Signature");
-		for (final XmlDom signature : signatures) {
+		final List<XmlDom> signatureXmlDomList = params.getDiagnosticData().getElements("/DiagnosticData/Signature");
+		for (final XmlDom signatureXmlDom : signatureXmlDomList) {
 
-			final String type = signature.getValue("./@Type");
-			if (COUNTERSIGNATURE.equals(type)) {
+			final String type = signatureXmlDom.getValue("./@Type");
 
-				params.setCurrentValidationPolicy(params.getCountersignatureValidationPolicy());
-			} else {
-
-				params.setCurrentValidationPolicy(params.getValidationPolicy());
-			}
+			params.setCurrentValidationPolicy(COUNTERSIGNATURE.equals(type) ? params.getCountersignatureValidationPolicy() : params.getValidationPolicy());
 
 			final Conclusion conclusion = new Conclusion();
+			conclusion.setLocation(basicBuildingBlocksXmlNode.getLocation());
 
-			params.setSignatureContext(signature);
+			params.setSignatureContext(signatureXmlDom);
 			/**
 			 * In this case signatureContext and contextElement are equal, but this is not the case for
 			 * TimestampsBasicBuildingBlocks
 			 */
-			params.setContextElement(signature);
+			params.setContextElement(signatureXmlDom);
 
 			/**
 			 * 5. Basic Building Blocks
 			 */
 
-			final String signatureId = signature.getValue("./@Id");
-			final XmlNode signatureNode = basicBuildingBlocksNode.addChild(SIGNATURE);
-			signatureNode.setAttribute(ID, signatureId);
+			final String signatureId = signatureXmlDom.getValue("./@Id");
+			final XmlNode signatureXmlNode = basicBuildingBlocksXmlNode.addChild(SIGNATURE);
+			signatureXmlNode.setAttribute(ID, signatureId);
 			/**
 			 * 5.1. Identification of the signer's certificate (ISC)
 			 */
 			final IdentificationOfTheSignersCertificate isc = new IdentificationOfTheSignersCertificate();
-			final Conclusion iscConclusion = isc.run(params, MAIN_SIGNATURE);
-			signatureNode.addChild(iscConclusion.getValidationData());
+			final Conclusion iscConclusion = isc.run(params, signatureXmlNode, MAIN_SIGNATURE);
 			if (!iscConclusion.isValid()) {
 
-				signatureNode.addChild(iscConclusion.toXmlNode());
+				signatureXmlNode.addChild(iscConclusion.toXmlNode());
 				continue;
 			}
 			conclusion.addInfo(iscConclusion);
@@ -120,10 +115,10 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 			 * 5.2. Validation Context Initialisation (VCI)
 			 */
 			final ValidationContextInitialisation vci = new ValidationContextInitialisation();
-			final Conclusion vciConclusion = vci.run(params, signatureNode);
+			final Conclusion vciConclusion = vci.run(params, signatureXmlNode);
 			if (!vciConclusion.isValid()) {
 
-				signatureNode.addChild(vciConclusion.toXmlNode());
+				signatureXmlNode.addChild(vciConclusion.toXmlNode());
 				continue;
 			}
 			conclusion.addInfo(vciConclusion);
@@ -134,10 +129,10 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 			 * --> We check the CV before XCV to not repeat the same check with LTV if XCV is not conclusive.
 			 */
 			final CryptographicVerification cv = new CryptographicVerification();
-			final Conclusion cvConclusion = cv.run(params, signatureNode);
+			final Conclusion cvConclusion = cv.run(params, signatureXmlNode);
 			if (!cvConclusion.isValid()) {
 
-				signatureNode.addChild(cvConclusion.toXmlNode());
+				signatureXmlNode.addChild(cvConclusion.toXmlNode());
 				continue;
 			}
 			conclusion.addInfo(cvConclusion);
@@ -148,10 +143,10 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 			 * --> We check the SAV before XCV to not repeat the same check with LTV if XCV is not conclusive.
 			 */
 			final SignatureAcceptanceValidation sav = new SignatureAcceptanceValidation();
-			final Conclusion savConclusion = sav.run(params, signatureNode);
+			final Conclusion savConclusion = sav.run(params, signatureXmlNode);
 			if (!savConclusion.isValid()) {
 
-				signatureNode.addChild(savConclusion.toXmlNode());
+				signatureXmlNode.addChild(savConclusion.toXmlNode());
 				continue;
 			}
 			conclusion.addInfo(savConclusion);
@@ -161,11 +156,10 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 			 * 5.3 X.509 Certificate Validation (XCV)
 			 */
 			final X509CertificateValidation xcv = new X509CertificateValidation();
-			final Conclusion xcvConclusion = xcv.run(params, MAIN_SIGNATURE);
-			signatureNode.addChild(xcvConclusion.getValidationData());
+			final Conclusion xcvConclusion = xcv.run(params, signatureXmlNode, MAIN_SIGNATURE);
 			if (!xcvConclusion.isValid()) {
 
-				signatureNode.addChild(xcvConclusion.toXmlNode());
+				signatureXmlNode.addChild(xcvConclusion.toXmlNode());
 				continue;
 			}
 			conclusion.addInfo(xcvConclusion);
@@ -173,9 +167,9 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 
 			conclusion.setIndication(VALID);
 			final XmlNode conclusionXmlNode = conclusion.toXmlNode();
-			signatureNode.addChild(conclusionXmlNode);
+			signatureXmlNode.addChild(conclusionXmlNode);
 		}
-		final XmlDom BasicBuildingBlocksReportDom = basicBuildingBlocksNode.toXmlDom();
+		final XmlDom BasicBuildingBlocksReportDom = basicBuildingBlocksXmlNode.toXmlDom();
 		params.setBasicBuildingBlocksReport(BasicBuildingBlocksReportDom);
 		return BasicBuildingBlocksReportDom;
 	}

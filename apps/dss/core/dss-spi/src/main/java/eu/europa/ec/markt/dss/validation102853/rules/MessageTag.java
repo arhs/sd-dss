@@ -169,7 +169,7 @@ public enum MessageTag {
 
 	// Custom
 	BBB_ICS_1("Is the signing certificate in the authorized signers list?"),
-	BBB_ICS_1_ANS("The signing certificate isn't in the authorized signers list?!"),
+	BBB_ICS_1_ANS("The signing certificate isn't in the authorized signers list!"),
 
 	EMPTY("");
 

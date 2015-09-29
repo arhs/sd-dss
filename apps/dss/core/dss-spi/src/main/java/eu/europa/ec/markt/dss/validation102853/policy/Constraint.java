@@ -192,7 +192,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 
 	/**
 	 * @param validationDataXmlNode this {@code XmlNode} is used to add the constraint nodes
-	 * @param conclusion the {@code Conclusion} which indicates the result of the process
+	 * @param conclusion            the {@code Conclusion} which indicates the result of the process
 	 */
 	public boolean checkCustomized(final XmlNode validationDataXmlNode, final Conclusion conclusion) {
 		return true;
@@ -231,17 +231,18 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 				node.addChild(STATUS, WARN);
 				final XmlNode xmlNode = node.addChild(WARNING, failureMessageTag, messageAttributes);
 				if (DSSUtils.isNotBlank(expectedValue) && !expectedValue.equals("true") && !expectedValue.equals("false")) {
-					xmlNode.setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
+					messageAttributes.put(EXPECTED_VALUE, expectedValue);
+					messageAttributes.put(CONSTRAINT_VALUE, value);
 				}
 				conclusion.addWarning(failureMessageTag, messageAttributes);
 				return true;
 			}
 			node.addChild(STATUS, KO);
 			if (DSSUtils.isNotBlank(expectedValue) && !expectedValue.equals("true") && !expectedValue.equals("false")) {
-				node.addChild(ERROR).setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
+				messageAttributes.put(EXPECTED_VALUE, expectedValue);
+				messageAttributes.put(CONSTRAINT_VALUE, value);
 			}
 			if (DSSUtils.isNotBlank(indication)) {
-
 				conclusion.setIndication(indication, subIndication);
 			}
 			conclusion.addError(failureMessageTag, messageAttributes);
@@ -286,13 +287,15 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 			if (warn()) {
 
 				node.addChild(STATUS, WARN);
-				node.addChild(WARNING, failureMessageTag, messageAttributes).setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
+				messageAttributes.put(EXPECTED_VALUE, expectedValue);
+				messageAttributes.put(CONSTRAINT_VALUE, value);
 				conclusion.addWarning(failureMessageTag, messageAttributes);
 				return true;
 			}
 			node.addChild(STATUS, KO);
-			node.addChild(ERROR).setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
 			conclusion.setIndication(indication, subIndication);
+			messageAttributes.put(EXPECTED_VALUE, expectedValue);
+			messageAttributes.put(CONSTRAINT_VALUE, value);
 			conclusion.addError(failureMessageTag, messageAttributes);
 			return false;
 		}

@@ -81,4 +81,6 @@ public interface NodeName {
 	String NOT_AFTER = "NotAfter";
 	String TIMESTAMPS = "Timestamps";
 	String PRODUCTION_TIME = "ProductionTime";
+
+	String CURRENT_TIME = "CurrentTime";
 }

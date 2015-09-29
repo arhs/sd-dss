@@ -87,6 +87,8 @@ public class GeneralStructure extends BasicValidationProcess implements NodeName
 	private Conclusion process(final ProcessParameters params) {
 
 		final Conclusion conclusion = new Conclusion();
+		final String location = generalStructureXmlNode.getLocation();
+		conclusion.setLocation(location);
 
 		if (!checkSignatureNumberConstraint(conclusion, params.getDiagnosticData())) {
 			return conclusion;

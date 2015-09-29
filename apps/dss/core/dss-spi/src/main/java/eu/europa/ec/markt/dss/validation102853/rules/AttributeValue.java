@@ -28,8 +28,6 @@ public interface AttributeValue {
 	String CERTIFICATE = "Certificate";
 	String CERTIFICATE_ID = "CertificateId";
 	String CERTIFICATE_SOURCE = "CertificateSource";
-	String NOT_BEFORE = "NotBefore";
-	String NOT_AFTER = "NotAfter";
 
 	String BEST_SIGNATURE_TIME = "BestSignatureTime";
 	String CONTROL_TIME = "ControlTime";

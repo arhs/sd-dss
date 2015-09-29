@@ -22,7 +22,6 @@ package eu.europa.ec.markt.dss.validation102853.policy;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
 /**
  * TODO
@@ -69,24 +68,21 @@ public class ElementNumberConstraint extends Constraint {
 		if (inform()) {
 
 			node.addChild(STATUS, INFORMATION);
-			final XmlNode xmlNode = node.addChild(INFO, null, messageAttributes);
-			addDetails(xmlNode);
+			addConstraintParameters();
+			node.addChild(INFO, null, messageAttributes);
 			return true;
 		}
 		boolean error = intValue < expectedMinValue || intValue > expectedMaxValue;
 		if (error) {
 
+			addConstraintParameters();
 			if (warn()) {
 
 				node.addChild(STATUS, WARN);
-				final XmlNode xmlNode = node.addChild(WARNING, failureMessageTag, messageAttributes);
-				addDetails(xmlNode);
 				conclusion.addWarning(failureMessageTag, messageAttributes);
 				return true;
 			}
 			node.addChild(STATUS, KO);
-			final XmlNode xmlNode = node.addChild(ERROR);
-			addDetails(xmlNode);
 			if (DSSUtils.isNotBlank(indication)) {
 				conclusion.setIndication(indication, subIndication);
 			}
@@ -100,9 +96,11 @@ public class ElementNumberConstraint extends Constraint {
 		return true;
 	}
 
-	private void addDetails(XmlNode xmlNode) {
-		xmlNode.setAttribute(EXPECTED_MIN_VALUE, String.valueOf(expectedMinValue))
-			  .setAttribute(EXPECTED_MAX_VALUE, String.valueOf(expectedMaxValue)).setAttribute(CONSTRAINT_VALUE, String.valueOf(intValue));
+	private void addConstraintParameters() {
+
+		messageAttributes.put(EXPECTED_MIN_VALUE, String.valueOf(expectedMinValue));
+		messageAttributes.put(EXPECTED_MAX_VALUE, String.valueOf(expectedMaxValue));
+		messageAttributes.put(CONSTRAINT_VALUE, String.valueOf(intValue));
 	}
 
 	public int getExpectedMinValue() {

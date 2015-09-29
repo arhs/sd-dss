@@ -73,8 +73,8 @@ public class OkKoElementNumberConstraint extends Constraint {
 		if (inform()) {
 
 			node.addChild(STATUS, INFORMATION);
-			final XmlNode xmlNode = node.addChild(INFO, null, messageAttributes);
-			addDetails(xmlNode);
+			addConstraintParameters();
+			node.addChild(INFO, null, messageAttributes);
 			return true;
 		}
 		boolean error = true;
@@ -90,17 +90,14 @@ public class OkKoElementNumberConstraint extends Constraint {
 		}
 		if (error) {
 
+			addConstraintParameters();
 			if (warn()) {
 
 				node.addChild(STATUS, WARN);
-				final XmlNode xmlNode = node.addChild(WARNING, failureMessageTag, messageAttributes);
-				addDetails(xmlNode);
 				conclusion.addWarning(failureMessageTag, messageAttributes);
 				return true;
 			}
 			node.addChild(STATUS, KO);
-			final XmlNode xmlNode = node.addChild(ERROR);
-			addDetails(xmlNode);
 			if (DSSUtils.isNotBlank(indication)) {
 				conclusion.setIndication(indication, subIndication);
 			}
@@ -114,9 +111,15 @@ public class OkKoElementNumberConstraint extends Constraint {
 		return true;
 	}
 
+	private void addConstraintParameters() {
+
+		messageAttributes.put(EXPECTED_MIN_VALUE, String.valueOf(expectedMinValue));
+		messageAttributes.put(EXPECTED_MAX_VALUE, String.valueOf(expectedMaxValue));
+		messageAttributes.put(CONSTRAINT_OK_VALUE, String.valueOf(okNumber));
+		messageAttributes.put(CONSTRAINT_KO_VALUE, String.valueOf(koNumber));
+	}
+
 	private void addDetails(XmlNode xmlNode) {
-		xmlNode.setAttribute(EXPECTED_MIN_VALUE, String.valueOf(expectedMinValue)).setAttribute(EXPECTED_MAX_VALUE, String.valueOf(expectedMaxValue))
-			  .setAttribute(CONSTRAINT_OK_VALUE, String.valueOf(okNumber)).setAttribute(CONSTRAINT_KO_VALUE, String.valueOf(koNumber));
 	}
 
 	public Integer getExpectedMinValue() {
