@@ -8,7 +8,7 @@
     <parent>
         <groupId>eu.europa.ec.joinup.sd-dss</groupId>
         <artifactId>sd-dss</artifactId>
-	    <version>4.3.3</version>
+	    <version>4.3.4</version>
         <relativePath>../..</relativePath>
     </parent>
 
@@ -19,8 +19,5 @@
 
     <modules>
         <module>core</module>
-        <!--<module>integration/dss-webservices</module>-->
-        <!--<module>integration/dss-webservices-client</module>-->
-        <!--<module>demo</module>-->
     </modules>
 </project>

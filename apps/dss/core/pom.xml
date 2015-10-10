@@ -8,7 +8,7 @@
     <parent>
         <groupId>eu.europa.ec.joinup.sd-dss</groupId>
         <artifactId>sd-dss-app</artifactId>
-	    <version>4.3.3</version>
+	    <version>4.3.4</version>
         <relativePath>../</relativePath>
     </parent>
 
@@ -24,15 +24,4 @@
         <module>dss-spi</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>delivery</id>
-        </profile>
-        <profile>
-            <id>default</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-        </profile>
-    </profiles>
 </project>
