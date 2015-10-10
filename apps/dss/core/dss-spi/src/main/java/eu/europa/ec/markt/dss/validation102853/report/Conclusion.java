@@ -30,6 +30,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.MessageTag;
@@ -44,7 +45,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
  *
  * @author bielecro
  */
-public class Conclusion implements Indication, SubIndication, NodeName, AttributeName {
+public class Conclusion implements Indication, SubIndication, NodeName, AttributeName, ValidationXPathQueryHolder {
 
 	private String indication;
 	private String subIndication;
@@ -65,6 +66,7 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 	 * The {@code List} of errors
 	 */
 	private List<Error> errorList;
+
 	private String location;
 
 	/**
@@ -104,6 +106,7 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 	 * @param subIndication the sub-indication to set
 	 */
 	public void setIndication(final String indication, final String subIndication) {
+
 		this.indication = indication;
 		this.subIndication = subIndication;
 	}
@@ -261,27 +264,21 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 	public void copyBasicInfo(final XmlNode xmlNode) {
 
 		if (xmlNode == null) {
-
 			return;
 		}
 		final String name = xmlNode.getName();
 		final String value = xmlNode.getValue();
 		BasicInfo basicInfo = null;
 		if (ERROR.equals(name)) {
-
 			basicInfo = addError();
 		} else if (WARNING.equals(name)) {
-
 			basicInfo = addWarning();
 		} else if (INFO.equals(name)) {
-
 			basicInfo = addInfo();
-
 		}
 		basicInfo.setValue(value);
 		final Map<String, String> attributes = xmlNode.getAttributes();
 		for (final Entry<String, String> entry : attributes.entrySet()) {
-
 			basicInfo.setAttribute(entry.getKey(), entry.getValue());
 		}
 	}
@@ -299,6 +296,50 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 	}
 
 	/**
+	 * This method adds an {@code Warning} to the warning list.
+	 *
+	 * @param messageTag {@code MessageTag} contains the unique message identifier and the content of the warning
+	 * @return created {@code Warning}
+	 */
+	public Error addError(final MessageTag messageTag) {
+
+		Map<String, String> attributes = new HashMap<String, String>();
+		if (location != null) {
+			attributes.put(LOCATION, location);
+		}
+		final Error error = new Error(messageTag, attributes);
+		ensureErrorList();
+		errorList.add(error);
+		return error;
+	}
+
+	/**
+	 * This method adds an {@code Error} to the error list.
+	 *
+	 * @param messageTag {@code MessageTag} contains the unique message identifier and the content of the error
+	 * @param attributes {@code Map} contains all attributes associated to the error.
+	 * @return created {@code Error}
+	 */
+	public Error addError(final MessageTag messageTag, final Map<String, String> attributes) {
+
+		Map<String, String> allAttributes = new HashMap<String, String>(attributes);
+		if (location != null) {
+			allAttributes.put(LOCATION, location);
+		}
+		final Error error = new Error(messageTag, allAttributes);
+		ensureErrorList();
+		errorList.add(error);
+		return error;
+	}
+
+	private void ensureErrorList() {
+
+		if (errorList == null) {
+			errorList = new ArrayList<Error>();
+		}
+	}
+
+	/**
 	 * This method adds the content of nodes contained in the given {@code List} of {@code XmlDom}(s) as error.
 	 *
 	 * @param errors the {@code List} of {@code XmlDom}(s) to be integrated.
@@ -306,7 +347,6 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 	private void addErrors(final List<XmlDom> errors) {
 
 		if (errors == null || errors.isEmpty()) {
-
 			return;
 		}
 		ensureErrorList();
@@ -316,6 +356,20 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 			final Error error = new Error(value);
 			copyAttributes(errorXmlDom, error);
 			errorList.add(error);
+		}
+	}
+
+	/**
+	 * Adds to this conclusion the warning list contained in the {@code conclusion} parameter.
+	 *
+	 * @param conclusion from which the warning list must be integrated to the current one.
+	 */
+	public void addErrors(final Conclusion conclusion) {
+
+		if (conclusion.errorList != null && !conclusion.errorList.isEmpty()) {
+
+			ensureErrorList();
+			errorList.addAll(conclusion.errorList);
 		}
 	}
 
@@ -398,7 +452,7 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 	 *
 	 * @param warnings the {@code List} of {@code XmlDom}(s) to be integrated.
 	 */
-	private void addWarnings(List<XmlDom> warnings) {
+	private void addWarnings(final List<XmlDom> warnings) {
 
 		if (warnings == null || warnings.isEmpty()) {
 
@@ -432,50 +486,6 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 
 		if (warningList == null) {
 			warningList = new ArrayList<Warning>();
-		}
-	}
-
-	/**
-	 * This method adds an {@code Warning} to the warning list.
-	 *
-	 * @param messageTag {@code MessageTag} contains the unique message identifier and the content of the warning
-	 * @return created {@code Warning}
-	 */
-	public Error addError(final MessageTag messageTag) {
-
-		Map<String, String> attributes = new HashMap<String, String>();
-		if (location != null) {
-			attributes.put(LOCATION, location);
-		}
-		final Error error = new Error(messageTag, attributes);
-		ensureErrorList();
-		errorList.add(error);
-		return error;
-	}
-
-	/**
-	 * This method adds an {@code Error} to the error list.
-	 *
-	 * @param messageTag {@code MessageTag} contains the unique message identifier and the content of the error
-	 * @param attributes {@code Map} contains all attributes associated to the error.
-	 * @return created {@code Error}
-	 */
-	public Error addError(final MessageTag messageTag, final Map<String, String> attributes) {
-
-		Map<String, String> allAttributes = new HashMap<String, String>(attributes);
-		if (location != null) {
-			allAttributes.put(LOCATION, location);
-		}
-		final Error error = new Error(messageTag, allAttributes);
-		ensureErrorList();
-		errorList.add(error);
-		return error;
-	}
-
-	private void ensureErrorList() {
-
-		if (errorList == null) {
-			errorList = new ArrayList<Error>();
 		}
 	}
 
@@ -549,31 +559,54 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 
 	public void copyConclusion(final XmlDom conclusionXmlDom) {
 
-		final String indication = conclusionXmlDom.getValue("./Indication/text()");
+		final String indication = conclusionXmlDom.getValue(XP_INDICATION);
 		if (!indication.isEmpty()) {
 			this.indication = indication;
 		}
 
-		final String subIndication = conclusionXmlDom.getValue("./SubIndication/text()");
+		final String subIndication = conclusionXmlDom.getValue(XP_SUB_INDICATION);
 		if (!subIndication.isEmpty()) {
 			this.subIndication = subIndication;
 		}
+		copyConclusionBasicInfo(conclusionXmlDom);
+	}
 
-		final List<XmlDom> errors = conclusionXmlDom.getElements("./Error");
+	public void copyConclusionBasicInfo(final XmlDom conclusionXmlDom) {
+
+		final List<XmlDom> errors = conclusionXmlDom.getElements(XP_ERROR);
 		addErrors(errors);
 
-		final List<XmlDom> warnings = conclusionXmlDom.getElements("./Warning");
+		final List<XmlDom> warnings = conclusionXmlDom.getElements(XP_WARNING);
 		addWarnings(warnings);
 
-		final List<XmlDom> info = conclusionXmlDom.getElements("./Info");
+		final List<XmlDom> info = conclusionXmlDom.getElements(XP_INFO);
 		addInfo(info);
+	}
+
+	public void copyConclusion(final Conclusion conclusion) {
+
+		this.indication = conclusion.indication;
+		this.subIndication = conclusion.subIndication;
+
+		this.validationData = conclusion.validationData;
+
+		this.infoList = new ArrayList<Info>(conclusion.infoList);
+
+		this.warningList = new ArrayList<Warning>(conclusion.warningList);
+
+		this.errorList = new ArrayList<Error>(conclusion.errorList);
 	}
 
 	public void copyWarnings(final XmlDom conclusionXmlDom) {
 
-
-		final List<XmlDom> warnings = conclusionXmlDom.getElements("./Warning");
+		final List<XmlDom> warnings = conclusionXmlDom.getElements(XP_WARNING);
 		addWarnings(warnings);
+	}
+
+	public void copyErrors(final XmlDom conclusionXmlDom) {
+
+		final List<XmlDom> errors = conclusionXmlDom.getElements(XP_ERROR);
+		addErrors(errors);
 	}
 
 	public String toString() {
@@ -817,7 +850,7 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 			String attributeString = "";
 			for (Entry<String, String> entry : attributes.entrySet()) {
 
-				if ("NameId".equals(entry.getKey())) {
+				if (NAME_ID.equals(entry.getKey())) {
 					continue;
 				}
 				attributeString += (attributeString.isEmpty() ? "" : ", ") + entry.getKey() + "=" + entry.getValue();

@@ -33,7 +33,7 @@ import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
-import eu.europa.ec.markt.dss.validation102853.processes.ValidationXPathQueryHolder;
+import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
@@ -67,6 +67,8 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_I
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPCTP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPCTSIP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPCTSIP_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPDOFP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPDOFP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPSLP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPSLP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPSTP;
@@ -138,12 +140,14 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 * This node is used to add the constraint nodes.
 	 */
 	private XmlNode subProcessXmlNode;
+	private XmlDom basicBuildingBlocksReport;
 
 	private void prepareParameters(final ProcessParameters params) {
 
 		this.validationPolicy = params.getCurrentValidationPolicy();
 		this.signatureContext = params.getSignatureContext();
 		this.currentTime = params.getCurrentTime();
+		this.basicBuildingBlocksReport = params.getBasicBuildingBlocksReport();
 
 		isInitialised();
 	}
@@ -177,7 +181,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 * <p/>
 	 * This method prepares the execution of the SAV process.
 	 *
-	 * @param params      validation process parameters
+	 * @param params        validation process parameters
 	 * @param parentXmlNode the parent process {@code XmlNode} to use to include the validation information
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
@@ -203,7 +207,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	/**
 	 * This method implement SAV process.
 	 *
-	 * @param params   validation process parameters
+	 * @param params validation process parameters
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
 	private Conclusion process(final ProcessParameters params) {
@@ -217,7 +221,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 			return conclusion;
 		}
 
-		// XSD structural validation (only for XAdES)
+		// XSD structural validation (only for XAdES) to be moved at the beginning of the validation process: Draft ETSI EN 319 102-1 V1.0.0 (2015-07): 5.2.2 Format Checking
 		if (!checkStructuralValidationConstraint(conclusion)) {
 			return conclusion;
 		}
@@ -227,6 +231,11 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		 * This clause describes the application of Signature Constraints on the content of the signature including the processing
 		 *on signed and unsigned properties/attributes.
 		 */
+		// data-object-format
+		if (!checkDataObjectFormatConstraint(conclusion)) {
+			return conclusion;
+		}
+
 		// signing-time
 		if (!checkSigningTimeConstraint(conclusion)) {
 			return conclusion;
@@ -437,6 +446,37 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 			constraint.setAttribute("Log", message);
 		}
 		constraint.setIndications(INVALID, FORMAT_FAILURE, BBB_SAV_ISSV_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
+	}
+
+	/**
+	 * Check of data-object-format
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check.
+	 * @return false if the check failed and the process should stop, true otherwise.
+	 */
+	private boolean checkDataObjectFormatConstraint(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getDataObjectFormatConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		final List<XmlDom> dataObjectFormatList = signatureContext.getElements("./BasicSignature/References/Reference/DataObjectFormat");
+		if (dataObjectFormatList.isEmpty()) { // Test only if XAdES
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_ISQPDOFP);
+		boolean dataObjectFormatOk = true;
+		for (final XmlDom xmlDom : dataObjectFormatList) {
+			if (!"true".equals(xmlDom.getText())) {
+				dataObjectFormatOk = false;
+				break;
+			}
+		}
+		constraint.setValue(dataObjectFormatOk);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPDOFP_ANS);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

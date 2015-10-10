@@ -59,14 +59,10 @@ public class TimestampValidationProcessValidConstraint extends Constraint {
     public boolean check() {
 
         if (validTimestampCount < 1) {
-
             node.addChild(STATUS, KO);
-
             if (validTimestampCount == 0) {
-
                 conclusion.setIndication(indication, subIndication1);
             } else {
-
                 conclusion.setIndication(indication, subIndication2);
             }
             conclusion.addError(failureMessageTag, messageAttributes);

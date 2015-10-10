@@ -36,91 +36,6 @@ public class SignatureCryptographicVerification implements Serializable {
 	private boolean signatureIntact;
 
 	private List<SignatureReference> signatureReferences = new ArrayList<SignatureReference>();
-
-	public static class SignatureReference {
-
-		String type;
-		String uri;
-		boolean referenceDataFound;
-		boolean referenceDataIntact;
-
-		// the real document URI, can be different from manifest reference URI
-		String realUri;
-
-		List<SignatureReference> manifestReferences = null;
-		private String digestMethod;
-
-		public String getType() {
-			return type;
-		}
-
-		public void setType(String type) {
-			this.type = type;
-		}
-
-		public String getUri() {
-			return uri;
-		}
-
-		public void setUri(String uri) {
-			this.uri = uri;
-		}
-
-		public boolean isReferenceDataFound() {
-			return referenceDataFound;
-		}
-
-		public void setReferenceDataFound(boolean referenceDataFound) {
-			this.referenceDataFound = referenceDataFound;
-		}
-
-		public boolean isReferenceDataIntact() {
-			return referenceDataIntact;
-		}
-
-		public void setReferenceDataIntact(boolean referenceDataIntact) {
-			this.referenceDataIntact = referenceDataIntact;
-		}
-
-		/**
-		 * This method allows to add a new reference.
-		 *
-		 * @return {@code SignatureReference}
-		 */
-		public SignatureReference addManifestReference() {
-
-			if (manifestReferences == null) {
-				manifestReferences = new ArrayList<SignatureReference>();
-			}
-			final SignatureReference manifestReference = new SignatureReference();
-			manifestReferences.add(manifestReference);
-			return manifestReference;
-		}
-
-		public List<SignatureReference> getManifestReferences() {
-			if (manifestReferences == null) {
-				return null;
-			}
-			return Collections.unmodifiableList(manifestReferences);
-		}
-
-		public void setRealUri(String realUri) {
-			this.realUri = realUri;
-		}
-
-		public String getRealUri() {
-			return realUri;
-		}
-
-		public String getDigestMethod() {
-			return digestMethod;
-		}
-
-		public void setDigestMethod(String digestMethod) {
-			this.digestMethod = digestMethod;
-		}
-	}
-
 	private String errorMessage = "";
 
 	public boolean isReferenceDataFound() {
@@ -203,5 +118,99 @@ public class SignatureCryptographicVerification implements Serializable {
 	public String toString() {
 
 		return "referenceDataFound:" + referenceDataFound + ", referenceDataIntact:" + referenceDataIntact + ", signatureValid;" + signatureIntact + " / " + errorMessage;
+	}
+
+	public static class SignatureReference {
+
+		String type;
+		String uri;
+		boolean referenceDataFound;
+		boolean referenceDataIntact;
+
+		// the real document URI, can be different from manifest reference URI
+		String realUri;
+
+		List<SignatureReference> manifestReferences = null;
+		private String digestMethod;
+		// For CAdES and PAdES signature this property stays null
+		private Boolean dataObjectFormat;
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public String getUri() {
+			return uri;
+		}
+
+		public void setUri(String uri) {
+			this.uri = uri;
+		}
+
+		public boolean isReferenceDataFound() {
+			return referenceDataFound;
+		}
+
+		public void setReferenceDataFound(boolean referenceDataFound) {
+			this.referenceDataFound = referenceDataFound;
+		}
+
+		public boolean isReferenceDataIntact() {
+			return referenceDataIntact;
+		}
+
+		public void setReferenceDataIntact(boolean referenceDataIntact) {
+			this.referenceDataIntact = referenceDataIntact;
+		}
+
+		/**
+		 * This method allows to add a new reference.
+		 *
+		 * @return {@code SignatureReference}
+		 */
+		public SignatureReference addManifestReference() {
+
+			if (manifestReferences == null) {
+				manifestReferences = new ArrayList<SignatureReference>();
+			}
+			final SignatureReference manifestReference = new SignatureReference();
+			manifestReferences.add(manifestReference);
+			return manifestReference;
+		}
+
+		public List<SignatureReference> getManifestReferences() {
+			if (manifestReferences == null) {
+				return null;
+			}
+			return Collections.unmodifiableList(manifestReferences);
+		}
+
+		public String getRealUri() {
+			return realUri;
+		}
+
+		public void setRealUri(String realUri) {
+			this.realUri = realUri;
+		}
+
+		public String getDigestMethod() {
+			return digestMethod;
+		}
+
+		public void setDigestMethod(String digestMethod) {
+			this.digestMethod = digestMethod;
+		}
+
+		public void setDataObjectFormat(Boolean signedDataObject) {
+			this.dataObjectFormat = signedDataObject;
+		}
+
+		public Boolean isDataObjectFormat() {
+			return dataObjectFormat;
+		}
 	}
 }

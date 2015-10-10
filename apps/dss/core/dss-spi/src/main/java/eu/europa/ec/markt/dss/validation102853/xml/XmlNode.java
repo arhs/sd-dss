@@ -130,14 +130,6 @@ public class XmlNode {
 		children.add(child);
 	}
 
-	public void addChildrenOf(final XmlNode parent) {
-
-		for (final XmlNode child : parent.children) {
-
-			children.add(child);
-		}
-	}
-
 	public void addChildren(final List<XmlDom> xmlDomList) {
 
 		for (final XmlDom xmlDom : xmlDomList) {
@@ -150,20 +142,6 @@ public class XmlNode {
 
 		final Element element = child.rootElement;
 		recursiveCopy(this, element);
-	}
-
-	public void addChildrenOf(final XmlDom parent) {
-
-		final Element element = parent.rootElement;
-		final NodeList nodes = element.getChildNodes();
-		for (int ii = 0; ii < nodes.getLength(); ii++) {
-
-			final Node node = nodes.item(ii);
-			if (node.getNodeType() == Node.ELEMENT_NODE) {
-
-				recursiveCopy(this, node);
-			}
-		}
 	}
 
 	/**
@@ -222,13 +200,6 @@ public class XmlNode {
 
 		final XmlNode child = new XmlNode(childName, messageTag, attributes);
 		children.add(child);
-		return child;
-	}
-
-	public XmlNode addFirstChild(final String childName, final String value) {
-
-		final XmlNode child = new XmlNode(childName, value);
-		children.add(0, child);
 		return child;
 	}
 

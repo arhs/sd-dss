@@ -29,6 +29,8 @@ public interface AttributeValue {
 	String CERTIFICATE_ID = "CertificateId";
 	String CERTIFICATE_SOURCE = "CertificateSource";
 
+	String TIMESTAMP_ID = "TimestampId";
+
 	String BEST_SIGNATURE_TIME = "BestSignatureTime";
 	String CONTROL_TIME = "ControlTime";
 	String ALGORITHM_NOT_FOUND = "Algorithm not found";

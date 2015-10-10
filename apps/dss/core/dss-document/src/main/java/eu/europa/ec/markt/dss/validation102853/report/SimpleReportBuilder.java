@@ -49,16 +49,16 @@ import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
-import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
 import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
+import static eu.europa.ec.markt.dss.validation102853.rules.AttributeName.ID;
+import static eu.europa.ec.markt.dss.validation102853.rules.AttributeName.TYPE;
 import static eu.europa.ec.markt.dss.validation102853.rules.Indication.INDETERMINATE;
 import static eu.europa.ec.markt.dss.validation102853.rules.Indication.INVALID;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.LABEL_TINTWS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.LABEL_TINVTWS;
+import static eu.europa.ec.markt.dss.validation102853.rules.Indication.VALID;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.INDICATION;
 import static eu.europa.ec.markt.dss.validation102853.rules.SubIndication.SOME_NOT_VALID_SIGNATURES;
 
@@ -146,7 +146,9 @@ public class SimpleReportBuilder {
 		final String policyName = constraintData.getPolicyName();
 		final String policyDescription = constraintData.getPolicyDescription();
 		policyNode.addChild(NodeName.POLICY_NAME, policyName);
-		policyNode.addChild(NodeName.POLICY_DESCRIPTION, policyDescription);
+		if (!policyDescription.isEmpty()) {
+			policyNode.addChild(NodeName.POLICY_DESCRIPTION, policyDescription);
+		}
 	}
 
 	private void addValidationTime(final ProcessParameters params, final XmlNode report) {
@@ -188,7 +190,7 @@ public class SimpleReportBuilder {
 		final XmlNode globalXmlNode = reportXmlNode.addChild(NodeName.GLOBAL);
 		final Conclusion generalStructureConclusion = params.getGeneralStructureConclusion();
 		final String generalStructureIndication = generalStructureConclusion.getIndication();
-		if (!Indication.VALID.equals(generalStructureIndication)) {
+		if (!VALID.equals(generalStructureIndication)) {
 
 			globalXmlNode.addChild(INDICATION, generalStructureIndication);
 			final String generalStructureSubIndication = generalStructureConclusion.getSubIndication();
@@ -237,20 +239,20 @@ public class SimpleReportBuilder {
 
 		final XmlNode signatureXmlNode = reportXmlNode.addChild(NodeName.SIGNATURE);
 
-		final String signatureId = signatureXmlDom.getValue("./@Id");
-		signatureXmlNode.setAttribute(AttributeName.ID, signatureId);
+		final String signatureId = signatureXmlDom.getAttribute(ID);
+		signatureXmlNode.setAttribute(ID, signatureId);
 
-		final String type = signatureXmlDom.getValue("./@Type");
-		addCounterSignature(signatureXmlDom, signatureXmlNode, type);
+		final String signatureType = signatureXmlDom.getAttribute(TYPE);
+		addCounterSignature(signatureXmlDom, signatureXmlNode, signatureType);
 		try {
 
 			addSigningTime(signatureXmlDom, signatureXmlNode);
 			addSignatureFormat(signatureXmlDom, signatureXmlNode);
 
-			final String signCertId = signatureXmlDom.getValue("./SigningCertificate/@Id");
-			final XmlDom signCert = params.getCertificate(signCertId);
+			final String signCertificateId = signatureXmlDom.getValue("./SigningCertificate/@Id");
+			final XmlDom signCertificateXmlDom = params.getCertificate(signCertificateId);
 
-			addSignedBy(signatureXmlNode, signCert);
+			addSignedBy(signatureXmlNode, signCertificateXmlDom);
 
 			XmlDom bvData = params.getBvData();
 			final XmlDom basicValidationConclusion = bvData.getElement("/BasicValidationData/Signature[@Id='%s']/Conclusion", signatureId);
@@ -269,34 +271,25 @@ public class SimpleReportBuilder {
 			final List<XmlDom> basicValidationWarningList = basicValidationConclusion.getElements("./Warning");
 			final List<XmlDom> basicValidationErrorList = basicValidationConclusion.getElements("./Error");
 
-			final boolean noTimestamp = INDETERMINATE.equals(ltvIndication) && SubIndication.NO_TIMESTAMP.equals(ltvSubIndication);
-			final boolean noValidTimestamp = INDETERMINATE.equals(ltvIndication) && SubIndication.NO_VALID_TIMESTAMP.equals(ltvSubIndication);
-			if (noTimestamp || noValidTimestamp) {
+			final boolean requestedValidSignatureTimestamp = true; // <== from constraint
+
+			if (!VALID.equals(ltvIndication) && !requestedValidSignatureTimestamp) {
 
 				final String basicValidationConclusionIndication = basicValidationConclusion.getValue("./Indication/text()");
 				final String basicValidationConclusionSubIndication = basicValidationConclusion.getValue("./SubIndication/text()");
 				indication = basicValidationConclusionIndication;
 				subIndication = basicValidationConclusionSubIndication;
-				infoList = basicValidationInfoList;
-				if (!Indication.VALID.equals(basicValidationConclusionIndication)) {
-
-					if (noTimestamp) {
-
-						final XmlNode xmlNode = new XmlNode(NodeName.WARNING, LABEL_TINTWS, null);
-						final XmlDom xmlDom = xmlNode.toXmlDom();
-						infoList.add(xmlDom);
-					} else {
-
-						final XmlNode xmlNode = new XmlNode(NodeName.WARNING, LABEL_TINVTWS, null);
-						final XmlDom xmlDom = xmlNode.toXmlDom();
-						infoList.add(xmlDom);
-						infoList.addAll(ltvInfoList);
-					}
-				}
+				//				infoList = basicValidationInfoList;
+				//				if (!VALID.equals(basicValidationConclusionIndication)) {
+				//
+				//					final XmlNode xmlNode = new XmlNode(NodeName.WARNING, LABEL_TINVTWS, null);
+				//					final XmlDom xmlDom = xmlNode.toXmlDom();
+				//					infoList.add(xmlDom);
+				//				}
 			}
 			signatureIndicationSet.add(indication);
 			signatureXmlNode.addChild(INDICATION, indication);
-			if (Indication.VALID.equals(indication)) {
+			if (VALID.equals(indication)) {
 				validSignatureCount++;
 			}
 			if (!subIndication.isEmpty()) {
@@ -304,27 +297,23 @@ public class SimpleReportBuilder {
 				signatureIndicationSet.add(subIndication);
 				signatureXmlNode.addChild(NodeName.SUB_INDICATION, subIndication);
 			}
-			if (basicValidationConclusion != null) {
+			final List<XmlDom> errorMessages = signatureXmlDom.getElements("./ErrorMessage");
+			for (XmlDom errorDom : errorMessages) {
 
-				final List<XmlDom> errorMessages = signatureXmlDom.getElements("./ErrorMessage");
-				for (XmlDom errorDom : errorMessages) {
-
-					String errorMessage = errorDom.getText();
-					errorMessage = StringEscapeUtils.escapeXml(errorMessage);
-					// TODO-Bob (28/09/2015):  is ib INFO ?
-					final XmlNode xmlNode = new XmlNode(NodeName.INFO, errorMessage);
-					final XmlDom xmlDom = xmlNode.toXmlDom();
-					infoList.add(xmlDom);
-				}
+				String errorMessage = errorDom.getText();
+				errorMessage = StringEscapeUtils.escapeXml(errorMessage);
+				final XmlNode xmlNode = new XmlNode(NodeName.INFO, errorMessage); // Internall exceptions are handled as Info
+				final XmlDom xmlDom = xmlNode.toXmlDom();
+				infoList.add(xmlDom);
 			}
-			if (!Indication.VALID.equals(ltvIndication)) {
+			if (!VALID.equals(ltvIndication)) {
 
 				addBasicInfo(signatureXmlNode, basicValidationErrorList);
 			}
 			addBasicInfo(signatureXmlNode, basicValidationWarningList);
 			addBasicInfo(signatureXmlNode, infoList);
 
-			addSignatureProfile(signatureXmlNode, signCert);
+			addSignatureProfile(signatureXmlNode, signCertificateXmlDom);
 
 			final XmlDom signatureScopes = signatureXmlDom.getElement("./SignatureScopes");
 			addSignatureScope(signatureXmlNode, signatureScopes);
@@ -353,15 +342,19 @@ public class SimpleReportBuilder {
 			final String timestampSigningCertificateId = timestamp.getValue("./SigningCertificate/@Id");
 			final XmlDom signCertificate = params.getCertificate(timestampSigningCertificateId);
 
-			final String dn = signCertificate.getValue("./SubjectDistinguishedName[@Format='RFC2253']/text()");
-			final X500Principal x500Principal = new X500Principal(dn);
-			final String sdnString = x500Principal.toString();
-			timestampXmlNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, sdnString);
+			if (signCertificate != null) {
 
-			final String notBefore = signCertificate.getValue("./NotBefore/text()");
-			final String notAfter = signCertificate.getValue("./NotAfter/text()");
-			timestampXmlNode.addChild(NodeName.NOT_BEFORE, notBefore);
-			timestampXmlNode.addChild(NodeName.NOT_AFTER, notAfter);
+				final String dn = signCertificate.getValue("./SubjectDistinguishedName[@Format='RFC2253']/text()");
+				final X500Principal x500Principal = new X500Principal(dn);
+				final String sdnString = x500Principal.toString();
+				final String escapedSdnString = StringEscapeUtils.escapeXml(sdnString);
+				timestampXmlNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, escapedSdnString);
+
+				final String notBefore = signCertificate.getValue("./NotBefore/text()");
+				final String notAfter = signCertificate.getValue("./NotAfter/text()");
+				timestampXmlNode.addChild(NodeName.NOT_BEFORE, notBefore);
+				timestampXmlNode.addChild(NodeName.NOT_AFTER, notAfter);
+			}
 		}
 	}
 
@@ -418,7 +411,8 @@ public class SimpleReportBuilder {
 			}
 		}
 		signatureNode.addChild(NodeName.SIGNED_BY, signedBy);
-		signatureNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, sdnString);
+		final String escapedSdnString = StringEscapeUtils.escapeXml(sdnString);
+		signatureNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, escapedSdnString);
 
 		final String notBefore = signCert.getValue("./NotBefore/text()");
 		final String notAfter = signCert.getValue("./NotAfter/text()");

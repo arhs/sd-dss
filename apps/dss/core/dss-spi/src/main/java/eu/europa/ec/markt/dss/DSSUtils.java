@@ -891,21 +891,24 @@ public final class DSSUtils {
 	 * CERTIFICATE-----, and must be bounded at the end by -----END CERTIFICATE-----.  It throws an
 	 * {@code DSSException} or return {@code null} when the certificate cannot be loaded.
 	 *
-	 * @param cert   certificate for which the issuer should be loaded
-	 * @param loader the loader to use
+	 * @param certificate certificate for which the issuer should be loaded
+	 * @param loader      the loader to use
 	 * @return
 	 */
-	public static X509Certificate loadIssuerCertificate(final X509Certificate cert, final DataLoader loader) {
+	public static X509Certificate loadIssuerCertificate(final X509Certificate certificate, final DataLoader loader) {
 
-		final String url = getAccessLocation(cert, X509ObjectIdentifiers.id_ad_caIssuers);
+		if (certificate == null) {
+			throw new DSSNullException(X509Certificate.class);
+		}
+		if (loader == null) {
+			throw new DSSNullException(DataLoader.class);
+		}
+		final String url = getAccessLocation(certificate);
 		if (url == null) {
 			LOG.info("There is no AIA extension for certificate download.");
 			return null;
 		}
 		LOG.debug("Loading certificate from {}", url);
-		if (loader == null) {
-			throw new DSSNullException(DataLoader.class);
-		}
 		byte[] bytes = loader.get(url);
 		if (bytes == null || bytes.length <= 0) {
 			LOG.error("Unable to read data from {}.", url);
@@ -916,9 +919,9 @@ public final class DSSUtils {
 			LOG.error("Unable to read data from {}.", url);
 			return null;
 		}
-		if (!cert.getIssuerX500Principal().equals(issuerCert.getSubjectX500Principal())) {
+		if (!certificate.getIssuerX500Principal().equals(issuerCert.getSubjectX500Principal())) {
 			LOG.info("There is AIA extension, but the issuer subject name and subject name does not match.");
-			LOG.info("CERT ISSUER    : " + cert.getIssuerX500Principal().toString());
+			LOG.info("CERT ISSUER    : " + certificate.getIssuerX500Principal().toString());
 			LOG.info("ISSUER SUBJECT : " + issuerCert.getSubjectX500Principal().toString());
 			// return null;
 		}
@@ -945,7 +948,7 @@ public final class DSSUtils {
 		}
 	}
 
-	private static String getAccessLocation(final X509Certificate certificate, final ASN1ObjectIdentifier accessMethod) {
+	private static String getAccessLocation(final X509Certificate certificate) {
 
 		final byte[] authInfoAccessExtensionValue = certificate.getExtensionValue(Extension.authorityInfoAccess.getId());
 		if (null == authInfoAccessExtensionValue) {
@@ -956,6 +959,7 @@ public final class DSSUtils {
 		try {
 			asn1Sequence = DSSASN1Utils.getAsn1SequenceFromDerOctetString(authInfoAccessExtensionValue);
 		} catch (DSSException e) {
+			LOG.warn("Error when decoding extension: " + Extension.authorityInfoAccess.getId(), e);
 			return null;
 		}
 		final AuthorityInformationAccess authorityInformationAccess = AuthorityInformationAccess.getInstance(asn1Sequence);
@@ -965,7 +969,7 @@ public final class DSSUtils {
 		for (final AccessDescription accessDescription : accessDescriptions) {
 
 			// LOG.debug("access method: " + accessDescription.getAccessMethod());
-			final boolean correctAccessMethod = accessDescription.getAccessMethod().equals(accessMethod);
+			final boolean correctAccessMethod = accessDescription.getAccessMethod().equals(X509ObjectIdentifiers.id_ad_caIssuers);
 			if (!correctAccessMethod) {
 				continue;
 			}
@@ -1780,7 +1784,7 @@ public final class DSSUtils {
 	 * This method saves the given {@code InputStream} to a file representing by the provided path. The {@code InputStream} is not closed.
 	 *
 	 * @param inputStream {@code InputStream} to save
-	 * @param fileOutput        the path to the file to be created
+	 * @param fileOutput  the path to the file to be created
 	 */
 	public static void saveToFile(final InputStream inputStream, final File fileOutput) {
 

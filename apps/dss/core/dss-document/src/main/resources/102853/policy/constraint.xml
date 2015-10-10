@@ -119,6 +119,7 @@
 			</AcceptableDigestAlgo>
 		</Cryptographic>
 		<MandatedSignedQProperties>
+			<DataObjectFormat Level="FAIL"/>
 			<SigningTime Level="FAIL"/>
 			<ContentTimeStamp>
 				<MessageImprintDataFound Level="FAIL"/>

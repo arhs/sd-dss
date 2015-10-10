@@ -113,13 +113,13 @@ import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XML
 
 public class XAdESSignature extends DefaultAdvancedSignature {
 
-	public static final String DEFAULT_TIMESTAMP_VALIDATION_CANONICALIZATION_METHOD = CanonicalizationMethod.INCLUSIVE;
-	private static final Logger LOG = LoggerFactory.getLogger(XAdESSignature.class);
 	/**
 	 * This array contains all the XAdES signatures levels
 	 * TODO: do not return redundant levels.
 	 */
 	private static SignatureLevel[] signatureLevels = new SignatureLevel[]{SignatureLevel.XAdES_A, SignatureLevel.XAdES_XL, SignatureLevel.XAdES_X, SignatureLevel.XAdES_C, SignatureLevel.XAdES_BASELINE_LTA, SignatureLevel.XAdES_BASELINE_LT, SignatureLevel.XAdES_BASELINE_T, SignatureLevel.XAdES_BASELINE_B, SignatureLevel.XML_NOT_ETSI};
+	private static final Logger LOG = LoggerFactory.getLogger(XAdESSignature.class);
+	public static final String DEFAULT_TIMESTAMP_VALIDATION_CANONICALIZATION_METHOD = CanonicalizationMethod.INCLUSIVE;
 
 	static {
 
@@ -1323,6 +1323,26 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				signatureReference.setUri(reference.getURI());
 				signatureReference.setReferenceDataFound(referenceDataFound);
 				signatureReference.setReferenceDataIntact(referenceVerificationResult);
+				final boolean signedProperty = xPathQueryHolder.XADES_SIGNED_PROPERTIES.equals(referenceType);
+				if (!signedProperty) {
+
+					signatureReference.setDataObjectFormat(false); // default value
+					final String referenceId = reference.getId();
+					final NodeList dataObjectFormatNodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_DATA_OBJECT_FORMAT);
+					for (int jj = 0; jj < dataObjectFormatNodeList.getLength(); jj++) {
+
+						final Element dataObjectFormatElement = (Element) dataObjectFormatNodeList.item(jj);
+						String objectReference = dataObjectFormatElement.getAttribute("ObjectReference");
+						if (objectReference.startsWith("#")) {
+							objectReference = objectReference.substring(1);
+						}
+						final boolean dataObjectFormatFound = objectReference.equals(referenceId);
+						if (dataObjectFormatFound) {
+							signatureReference.setDataObjectFormat(true);
+							break;
+						}
+					}
+				}
 				if (reference.typeIsReferenceToManifest()) {
 
 					final byte[] referencedBytes = reference.getReferencedBytes();
@@ -1363,7 +1383,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 							}
 						}
 					}
-				} else if (xPathQueryHolder.XADES_SIGNED_PROPERTIES.equals(referenceType)) {
+				} else if (signedProperty) {
 
 					boolean fake = true;
 					final String referenceURI = reference.getURI();
@@ -1391,6 +1411,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 							generalReferenceDataFound = false;
 						}
 					}
+
 				}
 				references.add(reference);
 			}

@@ -32,6 +32,7 @@ import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
+import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.CryptographicVerification;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.IdentificationOfTheSignersCertificate;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.X509CertificateValidation;
@@ -243,8 +244,7 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 	 */
 	private void extractTimestamp(final XmlDom signature, final TimestampType timestampType, final List<XmlDom> timestamps) {
 
-		final String xPath = "./Timestamps/Timestamp[@Type='%s']";
-		final List<XmlDom> extractedTimestamps = signature.getElements(xPath, timestampType);
+		final List<XmlDom> extractedTimestamps = signature.getElements(XP_TIMESTAMPS, timestampType);
 		timestamps.addAll(extractedTimestamps);
 	}
 
@@ -334,3 +334,25 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 		return conclusion;
 	}
 }
+//	/**
+//	 * Check of unsigned qualifying property: SignatureTimestamp
+//	 * The number of detected VALID SignatureTimestamps is check against the validation policy.
+//	 *
+//	 * @param conclusion the conclusion to use to add the result of the check.
+//	 * @return false if the check failed and the process should stop, true otherwise.
+//	 */
+//	private boolean checkValidSignatureTimestampNumberConstraint(final Conclusion conclusion) {
+//
+//		ElementNumberConstraint constraint = validationPolicy.getSignatureTimestampNumberConstraint();
+//		if (constraint == null) {
+//			return true;
+//		}
+//		constraint.create(subProcessXmlNode, BBB_SAV_DNSTCVP);
+//		final List<XmlDom> signatureTimestampXmlDom = basicBuildingBlocksReport.getElements("./Timestamps/Timestamp[@Type='SIGNATURE_TIMESTAMP']");
+//		constraint.setIntValue(signatureTimestampXmlDom.size());
+//		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNSTCVP_ANS);
+//		constraint.setConclusionReceiver(conclusion);
+//		boolean check = constraint.check();
+//		return check;
+//	}
+

@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
+import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
@@ -40,7 +41,7 @@ import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
-import static eu.europa.ec.markt.dss.validation102853.engine.rules.wrapper.XPathSignature.getSigningCertificateId;
+import static eu.europa.ec.markt.dss.validation102853.processes.XPathSignature.getSigningCertificateId;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_IPCVC;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_IPCVC_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_ITPOSVAOBCT;
@@ -55,7 +56,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_ITPOS
  *
  * @author bielecro
  */
-public class PastSignatureValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage {
+public class PastSignatureValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PastSignatureValidation.class);
 
@@ -121,12 +122,12 @@ public class PastSignatureValidation implements Indication, SubIndication, NodeN
 
 		final PastSignatureValidationConclusion conclusion = new PastSignatureValidationConclusion();
 
-		final String signatureId = signature.getValue("./@Id");
+		final String signatureId = signature.getAttribute(ID);
 
 		pastSignatureValidationData.setAttribute(ID, signatureId);
 
-		final String currentTimeIndication = currentTimeSignatureConclusion.getValue("./Indication/text()");
-		final String currentTimeSubIndication = currentTimeSignatureConclusion.getValue("./SubIndication/text()");
+		final String currentTimeIndication = currentTimeSignatureConclusion.getValue(XP_INDICATION);
+		final String currentTimeSubIndication = currentTimeSignatureConclusion.getValue(XP_SUB_INDICATION);
 
 		/**
 		 * 9.2.4.4 Processing<br>
@@ -225,7 +226,7 @@ public class PastSignatureValidation implements Indication, SubIndication, NodeN
 
 				final int signingCertId = getSigningCertificateId(signature);
 				final XmlDom signingCert = params.getCertificate(signingCertId);
-				final Date notBefore = signingCert.getTimeValue("./NotBefore/text()");
+				final Date notBefore = signingCert.getTimeValue(XP_NOT_BEFORE);
 
 				if (bestSignatureTime.before(notBefore)) {
 
@@ -251,10 +252,10 @@ public class PastSignatureValidation implements Indication, SubIndication, NodeN
 			if (INDETERMINATE.equals(currentTimeIndication) && CRYPTO_CONSTRAINTS_FAILURE_NO_POE.equals(currentTimeSubIndication)) {
 
 				boolean poeExists = true;
-				final List<XmlDom> infoList = currentTimeSignatureConclusion.getElements("./Info");
+				final List<XmlDom> infoList = currentTimeSignatureConclusion.getElements(XP_INFO);
 				for (final XmlDom info : infoList) {
 
-					final String field = info.getValue("./@Field");
+					final String field = info.getAttribute(FIELD);
 					if (!field.contains("/AlgoExpirationDate")) {
 
 						poeExists = false;

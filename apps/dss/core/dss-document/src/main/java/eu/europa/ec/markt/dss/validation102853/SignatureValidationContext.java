@@ -24,6 +24,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -53,6 +54,7 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
  * During the validation of a signature, the software retrieves different X509 artifacts like Certificate, CRL and OCSP Response. The SignatureValidationContext is a "cache" for
  * one validation request that contains every object retrieved so far.
  * <p/>
+ *
  * The validate method is multi-threaded, using an CachedThreadPool from ExecutorService, to parallelize fetching of the certificates from AIA and of the revocation information
  * from online sources.
  * <p/>
@@ -65,68 +67,54 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
 public class SignatureValidationContext implements ValidationContext {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SignatureValidationContext.class);
-
-	// just for convenience
-	private final boolean logEnabled = LOG.isTraceEnabled();
-
 	/**
 	 * The delay used to wait for the thread execution in the loop
 	 */
 	private static final int WAIT_DELAY = 5;
-
 	/**
 	 * Each unit is approximately 5 seconds
 	 */
 	public static int MAX_TIMEOUT = 5;
-
+	// just for convenience
+	private final boolean logEnabled = LOG.isTraceEnabled();
 	private final Map<CertificateToken, Boolean> processedCertificates = new ConcurrentHashMap<CertificateToken, Boolean>();
 	private final Map<RevocationToken, Boolean> processedRevocations = new ConcurrentHashMap<RevocationToken, Boolean>();
 	private final Map<TimestampToken, Boolean> processedTimestamps = new ConcurrentHashMap<TimestampToken, Boolean>();
 
 	private final TokensToProcess tokensToProcess = new TokensToProcess();
-
-	/**
-	 * This variable indicates the number of threads being used
-	 */
-	int threadCount = 0;
-
-	/**
-	 * This variable indicates if the instance has been already used
-	 */
-	private Boolean validated = false;
-
-	/**
-	 * The data loader used to access AIA certificate source.
-	 */
-	private DataLoader dataLoader;
-
 	/**
 	 * The certificate pool which encapsulates all certificates used during the validation process and extracted from all used sources
 	 */
 	protected CertificatePool validationCertificatePool;
-
-	// External OCSP source.
-	private OCSPSource ocspSource;
-
-	// External CRL source.
-	private CRLSource crlSource;
-
-	// OCSP from the signature.
-	private OCSPSource signatureOCSPSource;
-
-	// CRLs from the signature.
-	private CRLSource signatureCRLSource;
-
 	/**
 	 * This is the time at what the validation is carried out. It is used only for test purpose.
 	 */
 	protected Date currentTime = new Date();
-
 	/**
 	 * This variable :
 	 */
 	protected ExecutorService executorService;
-
+	/**
+	 * This variable indicates the number of threads being used
+	 */
+	int threadCount = 0;
+	Set<Integer> activeThreads = Collections.synchronizedSet(new HashSet<Integer>());
+	/**
+	 * This variable indicates if the instance has been already used
+	 */
+	private Boolean validated = false;
+	/**
+	 * The data loader used to access AIA certificate source.
+	 */
+	private DataLoader dataLoader;
+	// External OCSP source.
+	private OCSPSource ocspSource;
+	// External CRL source.
+	private CRLSource crlSource;
+	// OCSP from the signature.
+	private OCSPSource signatureOCSPSource;
+	// CRLs from the signature.
+	private CRLSource signatureCRLSource;
 	private int threshold = 0;
 	private int max_timeout = 0;
 
@@ -373,6 +361,10 @@ public class SignatureValidationContext implements ValidationContext {
 			LOG.warn("{} active threads", threadCount);
 			max_timeout++;
 			if (max_timeout == MAX_TIMEOUT) {
+				for (final Integer activeThread : activeThreads) {
+
+					LOG.warn("Not terminated thread validating Token: " + activeThread);
+				}
 				throw new DSSException("Operation aborted, the retrieval of the validation data takes too long!");
 			}
 			threshold = 0;
@@ -396,6 +388,7 @@ public class SignatureValidationContext implements ValidationContext {
 			final Task task = new Task(token);
 			provideExecutorService().submit(task);
 			threadCount++;
+			activeThreads.add(token.getDSSId());
 		} catch (RejectedExecutionException e) {
 			LOG.error(e.getMessage(), e);
 			throw new DSSException(e);
@@ -417,52 +410,6 @@ public class SignatureValidationContext implements ValidationContext {
 			}
 		} catch (InterruptedException e) {
 			throw new DSSException(e);
-		}
-	}
-
-	class Task implements Runnable {
-
-		private final Token token;
-
-		public Task(final Token token) {
-			this.token = token;
-		}
-
-		@Override
-		public void run() {
-
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(">>> Start multithreaded processing: token-id: {}", token.getAbbreviation());
-			}
-			final CertificateToken issuerCertToken = getIssuerCertificate(token); // Gets the issuer certificate of the Token and checks its signature
-			if (issuerCertToken != null) {
-				addCertificateTokenForVerification(issuerCertToken);
-			}
-			if (token instanceof CertificateToken) {
-
-				final CertificateToken certificateToken = (CertificateToken) token;
-				final RevocationToken currentRevocationToken = certificateToken.getRevocationToken();
-				if (currentRevocationToken != null) {
-
-					if (currentRevocationToken instanceof OCSPToken && ocspSource != null) {
-						if (ocspSource.isFresh(currentRevocationToken)) {
-							LOG.debug("OCSP revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
-							return;
-						}
-					} else if (currentRevocationToken instanceof CRLToken && crlSource != null) {
-						if (crlSource.isFresh(currentRevocationToken)) {
-							LOG.debug("CRL revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
-							return;
-						}
-					}
-				}
-				final RevocationToken revocationToken = getRevocationData(certificateToken);
-				addRevocationTokenForVerification(revocationToken);
-			}
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(">>> Multithreaded processing finished: token-id: {}", token.getAbbreviation());
-			}
-			threadCount--;
 		}
 	}
 
@@ -624,6 +571,53 @@ public class SignatureValidationContext implements ValidationContext {
 	public String toString() {
 
 		return toString("");
+	}
+
+	class Task implements Runnable {
+
+		private final Token token;
+
+		public Task(final Token token) {
+			this.token = token;
+		}
+
+		@Override
+		public void run() {
+
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(">>> Start multithreaded processing: token-id: {}", token.getAbbreviation());
+			}
+			final CertificateToken issuerCertToken = getIssuerCertificate(token); // Gets the issuer certificate of the Token and checks its signature
+			if (issuerCertToken != null) {
+				addCertificateTokenForVerification(issuerCertToken);
+			}
+			if (token instanceof CertificateToken) {
+
+				final CertificateToken certificateToken = (CertificateToken) token;
+				final RevocationToken currentRevocationToken = certificateToken.getRevocationToken();
+				if (currentRevocationToken != null) {
+
+					if (currentRevocationToken instanceof OCSPToken && ocspSource != null) {
+						if (ocspSource.isFresh(currentRevocationToken)) {
+							LOG.debug("OCSP revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
+							return;
+						}
+					} else if (currentRevocationToken instanceof CRLToken && crlSource != null) {
+						if (crlSource.isFresh(currentRevocationToken)) {
+							LOG.debug("CRL revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
+							return;
+						}
+					}
+				}
+				final RevocationToken revocationToken = getRevocationData(certificateToken);
+				addRevocationTokenForVerification(revocationToken);
+			}
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(">>> Multithreaded processing finished: token-id: {}", token.getAbbreviation());
+			}
+			threadCount--;
+			activeThreads.remove(token.getDSSId());
+		}
 	}
 
 	class TokensToProcess {

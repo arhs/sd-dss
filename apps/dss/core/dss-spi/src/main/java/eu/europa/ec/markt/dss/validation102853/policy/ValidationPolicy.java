@@ -46,7 +46,6 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	}
 
 	/**
-	 *
 	 * @param customConstraintMap
 	 */
 	public void setCustomConstraintMap(final Map<String, Constraint> customConstraintMap) {
@@ -59,7 +58,6 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract boolean isRevocationFreshnessToBeChecked();
 
 	/**
-	 *
 	 * @return
 	 */
 	public abstract String getFormatedMaxRevocationFreshness();
@@ -81,13 +79,22 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract Date getAlgorithmExpirationDate(String algorithm);
 
 	/**
-	 * Indicates if the signature policy should be checked. If AcceptablePolicies element is absent within the constraint file then null is returned,
-	 * otherwise the list of identifiers is initialised.
+	 * Indicates if the signature policy should be checked.
 	 *
-	 * @return {@code Constraint} if SigningTime element is present in the constraint file, null otherwise.
+	 * @return {@code SignaturePolicyConstraint} If AcceptablePolicies element is absent within the constraint file then null is returned, otherwise the list of identifiers is
+	 * initialised.
 	 */
 	public abstract SignaturePolicyConstraint getSignaturePolicyConstraint();
 
+	/**
+	 * Indicates if the signature format (XAdES_BASELINE_B, XAdES_BASELINE_LT...) should be checked.
+	 * // TODO-Bob (08/10/2015):  This constraint can be converted in two distinct:
+	 * // TODO-Bob (08/10/2015):  - format: CMS/XMLDsig, PDF, CAdES, XAdES, PAdES & ASiC
+	 * // TODO-Bob (08/10/2015):  - level: -B, -T, -LT...
+	 *
+	 * @return {@code Constraint} If AcceptableSignatureFormats element is absent within the constraint file then null is returned, otherwise the list of acceptable signature
+	 * format is initialised.
+	 */
 	public abstract Constraint getSignatureFormatConstraint();
 
 	/**
@@ -96,6 +103,13 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 * @return {@code Constraint} if StructuralValidation element is present in the constraint file, null otherwise.
 	 */
 	public abstract Constraint getStructuralValidationConstraint();
+
+	/**
+	 * Indicates if the signed property: data-object-format should be checked.
+	 *
+	 * @return {@code Constraint} if DataObjectFormat element is present in the constraint file, null otherwise.
+	 */
+	public abstract Constraint getDataObjectFormatConstraint();
 
 	/**
 	 * Indicates if the signed property: signing-time should be checked. If SigningTime element is absent within the constraint file then null is returned.
@@ -229,7 +243,6 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	protected abstract SignatureCryptographicConstraint getSignatureCryptographicConstraint_(String rootXPathQuery, String context, String subContext);
 
 	/**
-	 *
 	 * @return
 	 */
 	public abstract ManifestCryptographicConstraint getManifestCryptographicConstraint();
@@ -370,12 +383,12 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract Constraint getReferenceDataExistenceConstraint();
 
 	/**
-	 * @return {@code ReferenceDataIntact} if ReferenceDataIntact for a given context element is present in the constraint file, null otherwise.
+	 * @return {@code Constraint} if ReferenceDataIntact for a given context element is present in the constraint file, null otherwise.
 	 */
 	public abstract Constraint getReferenceDataIntactConstraint();
 
 	/**
-	 * @return {@code ReferenceDataIntact} if SignatureIntact for a given context element is present in the constraint file, null otherwise.
+	 * @return {@code Constraint} if SignatureIntact for a given context element is present in the constraint file, null otherwise.
 	 */
 	public abstract Constraint getSignatureIntactConstraint();
 
@@ -445,6 +458,8 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract ElementNumberConstraint getValidSignatureNumberConstraint();
 
 	public abstract ElementNumberConstraint getSignatureTimestampNumberConstraint();
+
+	abstract ElementNumberConstraint getValidSignatureTimestampNumberConstraint();
 
 	public abstract ElementNumberConstraint getManifestReferenceNumberConstraint();
 

@@ -27,7 +27,7 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.processes.ValidationXPathQueryHolder;
+import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
@@ -42,7 +42,7 @@ import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
-import static eu.europa.ec.markt.dss.validation102853.engine.rules.wrapper.XPathSignature.getCertificateId;
+import static eu.europa.ec.markt.dss.validation102853.processes.XPathSignature.getCertificateId;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_XCV_IRIF_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_DRIE;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_DSOPCPOEOC;

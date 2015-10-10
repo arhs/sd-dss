@@ -158,48 +158,30 @@ public class EtsiPOEExtraction extends POEExtraction {
 	private Map<Integer, List<Date>> certificatePOEList = new HashMap<Integer, List<Date>>();
 
 	/**
-	 * This method adds the POE for a given signature and for the given list of certificates.
-	 *
-	 * @param signature
-	 * @param certificates
-	 * @param date
-	 */
-	public void initialisePOE(final XmlDom signature, final List<XmlDom> certificates, Date date) {
-
-		String signatureId = signature.getValue("./@Id");
-		addSignaturePoe(signatureId, date);
-		for (final XmlDom certificate : certificates) {
-
-			Integer certificateId = certificate.getIntValue("./@Id");
-			addCertificatePoe(certificateId, date);
-		}
-	}
-
-	/**
 	 * Extraction and addition of POE from the given timestamp
 	 *
-	 * @param timestamp
+	 * @param timestampXmlDom
 	 * @param certPool
 	 */
-	public void addPOE(final XmlDom timestamp, final XmlDom certPool) {
+	public void addPOE(final XmlDom timestampXmlDom, final XmlDom certPool) {
 
-		final Date date = timestamp.getTimeValue("./ProductionTime/text()");
+		final Date date = timestampXmlDom.getTimeValue("./ProductionTime/text()");
 		if (date == null) {
 			throw new DSSException(EXCEPTION_TPTCBN);
 		}
 		LOG.debug("Extraction of POE from the timestamp at: " + date);
-		final List<XmlDom> nodes = timestamp.getElements("./SignedObjects/*");
-		for (final XmlDom xmlDom : nodes) {
+		final List<XmlDom> signedObjectXmlDomList = timestampXmlDom.getElements("./SignedObjects/*");
+		for (final XmlDom signedObjectXmlDom : signedObjectXmlDomList) {
 
-			final String nodeName = xmlDom.getName();
+			final String nodeName = signedObjectXmlDom.getName();
 			if (SIGNED_SIGNATURE.equals(nodeName)) {
 
-				final String signatureId = xmlDom.getAttribute(ID);
+				final String signatureId = signedObjectXmlDom.getAttribute(ID);
 				addSignaturePoe(signatureId, date);
 				continue;
 			}
-			final String category = xmlDom.getAttribute(CATEGORY);
-			final String digestValue = xmlDom.getValue("./DigestValue/text()");
+			final String category = signedObjectXmlDom.getAttribute(CATEGORY);
+			final String digestValue = signedObjectXmlDom.getValue("./DigestValue/text()");
 			if (CERTIFICATE.toUpperCase().equals(category)) {
 
 				try {
@@ -215,7 +197,6 @@ public class EtsiPOEExtraction extends POEExtraction {
 
 				// Revocations
 			}
-
 		}
 	}
 
@@ -324,5 +305,12 @@ public class EtsiPOEExtraction extends POEExtraction {
 			}
 		}
 		return lowestDate;
+	}
+
+	/**
+	 * @return {@code boolean} true if there is at least one POE for certificate or signature
+	 */
+	public boolean isThereAnyPOE() {
+		return (certificatePOEList.size() + signaturePOEList.size()) > 0;
 	}
 }

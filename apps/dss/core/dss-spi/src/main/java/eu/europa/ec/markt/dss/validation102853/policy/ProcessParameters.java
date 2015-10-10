@@ -61,12 +61,14 @@ public class ProcessParameters implements ExceptionMessage {
 	 * in validation process like the list of used certificates.
 	 */
 	protected XmlDom signatureContext;
+
 	/**
 	 * Represents the current signature DOM element being validated:<br>
 	 * in the case of main signature validation {@code contextElement} is the signature element being validated;<br>
 	 * in case of Timestamp signature validation {@code contextElement} is the timestamp element being validated.
 	 */
 	protected XmlDom contextElement;
+
 	/**
 	 * Indicates the current validation element like: MainSignature, SigningCertificate...
 	 */

@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
+import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
@@ -48,7 +49,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
  *
  * @author bielecro
  */
-public class BasicValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage {
+public class BasicValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BasicValidation.class);
 
@@ -124,8 +125,8 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 	}
 
 	/**
-	 * @param signatureXmlDom   depicts the basic building blocks detailed validation report for a signature.
-	 * @param signatureId signature identifier
+	 * @param signatureXmlDom depicts the basic building blocks detailed validation report for a signature.
+	 * @param signatureId     signature identifier
 	 * @return
 	 */
 	private Conclusion process(final XmlDom signatureXmlDom, final String signatureId) {
@@ -246,7 +247,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 				return conclusion;
 			}
 			boolean ok = true;
-			final List<XmlDom> infoList = savConclusion.getElements("./Info");
+			final List<XmlDom> infoList = savConclusion.getElements(XP_INFO);
 			for (XmlDom info : infoList) {
 
 				final String field = info.getValue("./@Field");
@@ -362,9 +363,9 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 
 					if (bestSignatureTime.after(notAfter)) {
 
-//						conclusionNode.addChild(INDICATION, INVALID);
+						//						conclusionNode.addChild(INDICATION, INVALID);
 						conclusion.setSubIndication(INVALID);
-//						conclusionNode.addChild(SUB_INDICATION, EXPIRED);
+						//						conclusionNode.addChild(SUB_INDICATION, EXPIRED);
 						conclusion.setSubIndication(EXPIRED);
 						return conclusion;
 					}
@@ -379,7 +380,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		if (!VALID.equals(xcvIndication)) {
 
 			conclusion.copyConclusion(xcvConclusion);
-//			conclusionNode.addChildrenOf(xcvConclusion);
+			//			conclusionNode.addChildrenOf(xcvConclusion);
 			return conclusion;
 		}
 

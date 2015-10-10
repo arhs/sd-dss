@@ -27,6 +27,9 @@ public enum MessageTag {
 	ADEST_ROTVPIIC("Is the result of the timestamps validation process conclusive?"),
 	ADEST_ROTVPIIC_ANS("The result of the timestamps validation process is not conclusive!"),
 
+	LTV_ITAPOE("Is there any POE?"),
+	LTV_ITAPOE_ANS("There is no PEO!"),
+
 	BBB_CV_IRDOF("Is the reference data object(s) found?"),
 	BBB_CV_IRDOF_ANS("The reference data object(s) not found!"),
 	BBB_CV_IRDOI("Is the reference data object(s) intact?"),
@@ -81,6 +84,8 @@ public enum MessageTag {
 	BBB_SAV_ISQPSLP_ANS("The signed qualifying property: 'signer-location' is not present!"),
 	BBB_SAV_ISQPSTP("Is signed qualifying property: 'signing-time' present?"),
 	BBB_SAV_ISQPSTP_ANS("The signed qualifying property: 'signing-time' is not present!"),
+	BBB_SAV_ISQPDOFP("Is signed qualifying property: 'data-object-format' present?"),
+	BBB_SAV_ISQPDOFP_ANS("The signed qualifying property: 'data-object-format' is not present!"),
 	BBB_SAV_ISQPXTIP("Is signed qualifying property: 'commitment-type-indication' present?"),
 	BBB_SAV_ISQPXTIP_ANS("The signed qualifying property: 'commitment-type-indication' is not present!"),
 	BBB_SAV_DNSTCVP("Does the number of 'signature timestamps' comply with the validation policy?"),

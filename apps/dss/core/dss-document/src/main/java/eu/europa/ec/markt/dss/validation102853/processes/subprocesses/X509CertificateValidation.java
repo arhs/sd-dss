@@ -33,7 +33,7 @@ import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
-import eu.europa.ec.markt.dss.validation102853.processes.ValidationXPathQueryHolder;
+import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.ForLegalPerson;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.QualifiedCertificate;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.SSCD;
@@ -104,21 +104,19 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	 */
 	protected XmlNode validationDataXmlNode;
 	/**
+	 * The name of the context. Can be MainSignature or Timestamp
+	 */
+	private String contextName;
+	/**
 	 * See {@link ProcessParameters#getDiagnosticData()}
 	 */
 	private XmlDom diagnosticData;
+
 	/**
 	 * See {@link ProcessParameters#getCurrentTime()}
 	 */
 	private Date currentTime;
-	/**
-	 * See {@link ProcessParameters#getSignatureContext()}
-	 */
-	private XmlDom signatureContext;
-	/**
-	 * // TODO: (Bob: 2014 Mar 12)
-	 */
-	private String contextName;
+
 	/**
 	 * See {@link ProcessParameters#getSigningCertificateId()}
 	 */
@@ -133,7 +131,6 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 		this.diagnosticData = params.getDiagnosticData();
 		this.currentValidationPolicy = params.getCurrentValidationPolicy();
 
-		this.signatureContext = params.getSignatureContext();
 		this.contextElement = params.getContextElement();
 		this.currentTime = params.getCurrentTime();
 
@@ -147,15 +144,8 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 
 		assertDiagnosticData(diagnosticData, getClass());
 		assertValidationPolicy(currentValidationPolicy, getClass());
-		if (currentTime == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "currentTime"));
-		}
-		if (signatureContext == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "signatureContext"));
-		}
-		if (contextElement == null) {
-			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "contextElement"));
-		}
+		assertCurrentTime(currentTime, getClass());
+		assertContextElement(contextElement, getClass());
 		/*
 		    --> With the Warning system everything is possible
             if (signingCertificateId == null) {
@@ -171,7 +161,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	 * 5.3 X.509 Certificate Validation (XCV)<br>
 	 * This method carry out the XCV process.
 	 *
-	 * @param params   validation process parameters
+	 * @param params        validation process parameters
 	 * @param parentXmlNode
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
@@ -192,7 +182,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	/**
 	 * 5.3.4 Processing This process consists in the following steps:
 	 *
-	 * @param params   validation process parameters
+	 * @param params validation process parameters
 	 * @return
 	 */
 	private Conclusion process(final ProcessParameters params) {
@@ -250,7 +240,6 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 
 				subContext = CA_CERTIFICATE;
 				// The check is already done for the signing certificate.
-				// TODO: (Bob: 2014 Mar 09) Notify ETSI: This step is not indicated in the standard!!!
 				if (!checkCertificateExpirationConstraint(conclusion, contextName, subContext)) {
 					return conclusion;
 				}
@@ -686,7 +675,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	 * @param revocationStatus
 	 * @param revocationReason
 	 * @param revocationDatetime @return false if the check failed and the process should stop, true otherwise.
-	 * @param subContext
+	 * @param subContext         {@code String} representing: SigningCertificate or
 	 */
 	private boolean checkSigningCertificateRevokedConstraint(final Conclusion conclusion, final String certificateId, boolean revocationStatus, final String revocationReason,
 	                                                         final String revocationDatetime, String subContext) {
@@ -699,6 +688,11 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 		final boolean revoked = !revocationStatus && !revocationReason.equals(CRL_REASON_CERTIFICATE_HOLD);
 		constraint.setValue(String.valueOf(revoked));
 		constraint.setIndications(INDETERMINATE, REVOKED_NO_POE, BBB_XCV_ISCR_ANS);
+		if (TIMESTAMP.equals(contextName)) {
+
+			final String timestampId = contextElement.getAttribute(ID);
+			constraint.setAttribute(TIMESTAMP_ID, timestampId);
+		}
 		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		if (DSSUtils.isNotBlank(revocationDatetime)) {
 			constraint.setAttribute(REVOCATION_TIME, revocationDatetime);

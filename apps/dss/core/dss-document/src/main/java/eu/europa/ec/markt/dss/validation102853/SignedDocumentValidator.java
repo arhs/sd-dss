@@ -131,14 +131,14 @@ import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
  */
 public abstract class SignedDocumentValidator implements DocumentValidator {
 
-	/*
-	 * The factory used to create DiagnosticData
-	 */
-	protected static final ObjectFactory DIAGNOSTIC_DATA_OBJECT_FACTORY = new ObjectFactory();
 	private static final Logger LOG = LoggerFactory.getLogger(SignedDocumentValidator.class);
 	private static final byte[] xmlPreamble = new byte[]{'<', '?', 'x', 'm', 'l'};
 	private static final byte[] xmlUtf8 = new byte[]{-17, -69, -65, '<', '?'};
 	private static final byte[] pdfPreamble = new byte[]{'%', 'P', 'D', 'F', '-'};
+	/*
+	 * The factory used to create DiagnosticData
+	 */
+	protected static final ObjectFactory DIAGNOSTIC_DATA_OBJECT_FACTORY = new ObjectFactory();
 	/**
 	 * This variable can hold a specific {@code ProcessExecutor}
 	 */
@@ -1482,6 +1482,10 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			xmlReference.setUri(signatureReference.getUri());
 			xmlReference.setReferenceDataFound(signatureReference.isReferenceDataFound());
 			xmlReference.setReferenceDataIntact(signatureReference.isReferenceDataIntact());
+			final Boolean dataObjectFormat = signatureReference.isDataObjectFormat();
+			if (dataObjectFormat != null) { // only for XAdES
+				xmlReference.setDataObjectFormat(dataObjectFormat);
+			}
 			final List<SignatureCryptographicVerification.SignatureReference> manifestReferences = signatureReference.getManifestReferences();
 			if (manifestReferences != null) {
 

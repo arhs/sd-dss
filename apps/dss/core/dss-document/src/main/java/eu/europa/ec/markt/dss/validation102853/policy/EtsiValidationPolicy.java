@@ -166,6 +166,13 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	}
 
 	@Override
+	public Constraint getDataObjectFormatConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/DataObjectFormat";
+		return getBasicConstraint(XP_ROOT, true);
+	}
+
+	@Override
 	public Constraint getSigningTimeConstraint() {
 
 		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/SigningTime";
@@ -769,6 +776,13 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	public ElementNumberConstraint getSignatureTimestampNumberConstraint() {
 
 		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedUnsignedQProperties/SignatureTimestamp";
+		return getElementNumberConstraint(XP_ROOT);
+	}
+
+	@Override
+	public ElementNumberConstraint getValidSignatureTimestampNumberConstraint() {
+
+		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedUnsignedQProperties/ValidSignatureTimestamp";
 		return getElementNumberConstraint(XP_ROOT);
 	}
 
