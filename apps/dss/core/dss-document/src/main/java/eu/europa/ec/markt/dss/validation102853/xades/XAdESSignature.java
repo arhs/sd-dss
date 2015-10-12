@@ -26,7 +26,6 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -54,6 +53,13 @@ import org.apache.xml.security.signature.XMLSignature;
 import org.apache.xml.security.signature.XMLSignatureException;
 import org.apache.xml.security.utils.SignerOutputStream;
 import org.apache.xml.security.utils.UnsyncBufferedOutputStream;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.x509.Attribute;
+import org.bouncycastle.cert.AttributeCertificateHolder;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -644,38 +650,35 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public List<CertifiedRole> getCertifiedSignerRoles() {
+	public CertifiedRole getCertifiedSignerRoles() throws IOException {
 
-		/**
-		 * <!-- Start EncapsulatedPKIDataType-->
-		 * <xsd:element name="EncapsulatedPKIData" type="EncapsulatedPKIDataType"/>
-		 * <xsd:complexType name="EncapsulatedPKIDataType">
-		 * <xsd:simpleContent>
-		 * <xsd:extension base="xsd:base-64Binary">
-		 * <xsd:attribute name="Id" type="xsd:ID" use="optional"/>
-		 * <xsd:attribute name="Encoding" type="xsd:anyURI" use="optional"/>
-		 * </xsd:extension>
-		 * </xsd:simpleContent>
-		 * </xsd:complexType>
-		 * <!-- End EncapsulatedPKIDataType -->
-		 */
-		final NodeList nodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_CERTIFIED_ROLE);
-		if (nodeList.getLength() == 0) {
-
+		final Element element = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_CERTIFIED_ROLE);
+		if (element == null) {
 			return null;
 		}
-		final List<CertifiedRole> roles = new ArrayList<CertifiedRole>();
-		for (int ii = 0; ii < nodeList.getLength(); ii++) {
+		final String textContent = element.getTextContent();
+		final byte[] bytes = DSSUtils.base64Decode(textContent);
 
-			final Element certEl = (Element) nodeList.item(ii);
-			final String textContent = certEl.getTextContent();
-			final X509Certificate x509Certificate = DSSUtils.loadCertificateFromBase64EncodedString(textContent);
-			if (!roles.contains(x509Certificate)) {
+		final X509AttributeCertificateHolder x509AttributeCertificateHolder = new X509AttributeCertificateHolder(bytes);
+		final CertifiedRole certifiedRole = new CertifiedRole();
+		certifiedRole.setNotBefore(x509AttributeCertificateHolder.getNotBefore());
+		certifiedRole.setNotAfter(x509AttributeCertificateHolder.getNotAfter());
+		final Attribute[] attributes = x509AttributeCertificateHolder.getAttributes();
+		for (final Attribute attribute : attributes) {
 
-				roles.add(new CertifiedRole());
+			final ASN1Encodable[] attributeValues = attribute.getAttributeValues();
+			for (final ASN1Encodable attributeValue : attributeValues) {
+
+				final DLSequence dlSequence = (DLSequence) attributeValue;
+				DERTaggedObject derTaggedObject = (DERTaggedObject) dlSequence.getObjectAt(0);
+				derTaggedObject = (DERTaggedObject) derTaggedObject.getObject();
+				final String certifiedRoleString = DSSASN1Utils.toString((DEROctetString) derTaggedObject.getObject());
+				certifiedRole.add(certifiedRoleString);
 			}
 		}
-		return roles;
+		final AttributeCertificateHolder holder = x509AttributeCertificateHolder.getHolder();
+		final BigInteger serialNumber = holder.getSerialNumber();
+		return certifiedRole;
 	}
 
 	@Override

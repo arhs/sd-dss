@@ -68,6 +68,8 @@ public enum MessageTag {
 	BBB_SAV_DSFCVP_ANS("The signature format doesn't comply with the validation policy!"),
 	BBB_SAV_ISSV("Is the structure of the signature valid?"),
 	BBB_SAV_ISSV_ANS("The structure of the signature is not valid!"),
+	BBB_SAV_IACV("Is the attribute certificate valid?"),
+	BBB_SAV_IACV_ANS("The attribute certificate is not valid!"),
 	BBB_SAV_ICERRM("Is the certified role mandated?"),
 	BBB_SAV_ICERRM_ANS("The requested certified role is not present!"),
 	BBB_SAV_ICRM("Is the claimed role mandated?"),
@@ -88,8 +90,8 @@ public enum MessageTag {
 	BBB_SAV_ISQPDOFP_ANS("The signed qualifying property: 'data-object-format' is not present!"),
 	BBB_SAV_ISQPXTIP("Is signed qualifying property: 'commitment-type-indication' present?"),
 	BBB_SAV_ISQPXTIP_ANS("The signed qualifying property: 'commitment-type-indication' is not present!"),
-	BBB_SAV_DNSTCVP("Does the number of 'signature timestamps' comply with the validation policy?"),
-	BBB_SAV_DNSTCVP_ANS("The number of 'signature timestamps' doesn't comply with the validation policy!"),
+	BBB_SAV_INSTCVP("Is the number of 'signature timestamps' comply with the validation policy?"),
+	BBB_SAV_INSTCVP_ANS("The number of 'signature timestamps' doesn't comply with the validation policy!"),
 
 	BBB_VCI_ISPK("Is the signature policy known?"),
 	BBB_VCI_ISPK_ANS_1("The signature policy is mandatory!"),
@@ -156,7 +158,7 @@ public enum MessageTag {
 	TSV_IBSTAIDOSC("Is the best-signature-time after the issuance date of the signing certificate?"),
 	TSV_IBSTAIDOSC_ANS("The best-signature-time is before the issuance date of the signing certificate!"),
 	TSV_ISCNVABST("Is the signing certificate not valid at the best-signature-time?"),
-	TSV_ISCNVABST_ANS("The past signing certificate validation must be performed!"),
+	TSV_ISCNVABST_ANS("The signing certificate is not valid at the best-signature-time, the past certificate validation must be performed!"),
 	TSV_ATITRO("Are timestamps in the right order?"),
 	TSV_ATITRO_ANS("The timestamps were not generated in the right order!"),
 

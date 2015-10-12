@@ -33,7 +33,6 @@ import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.Validation
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.X509CertificateValidation;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -50,7 +49,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
  *
  * @author bielecro
  */
-public class BasicBuildingBlocks extends BasicValidationProcess implements NodeName, NodeValue, AttributeName, AttributeValue, Indication, ExceptionMessage {
+public class BasicBuildingBlocks extends BasicValidationProcess implements NodeName, NodeValue, AttributeName, Indication, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BasicBuildingBlocks.class);
 
@@ -77,9 +76,8 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 		final List<XmlDom> signatureXmlDomList = params.getDiagnosticData().getElements("/DiagnosticData/Signature");
 		for (final XmlDom signatureXmlDom : signatureXmlDomList) {
 
-			final String type = signatureXmlDom.getValue("./@Type");
-
-			params.setCurrentValidationPolicy(COUNTERSIGNATURE.equals(type) ? params.getCountersignatureValidationPolicy() : params.getValidationPolicy());
+			final String signatureType = signatureXmlDom.getAttribute(TYPE);
+			setSuitableValidationPolicy(params, signatureType);
 
 			final Conclusion conclusion = new Conclusion();
 			conclusion.setLocation(basicBuildingBlocksXmlNode.getLocation());

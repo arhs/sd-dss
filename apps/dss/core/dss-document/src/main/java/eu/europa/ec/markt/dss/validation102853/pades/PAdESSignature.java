@@ -226,7 +226,7 @@ public class PAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public List<CertifiedRole> getCertifiedSignerRoles() {
+	public CertifiedRole getCertifiedSignerRoles() {
 		return null;
 	}
 

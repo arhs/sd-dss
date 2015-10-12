@@ -151,7 +151,7 @@ public class CustomProcessExecutor implements ProcessExecutor {
 		final LongTermValidation ltv = new LongTermValidation();
 		ltv.run(mainNode, processParams);
 
-		final Document validationReportDocument = mainNode.toDocument();
+		final Document validationReportDocument = mainNode.toDocument(null);
 		detailedReport = new DetailedReport(validationReportDocument);
 
 		final SimpleReportBuilder simpleReportBuilder = new SimpleReportBuilder(validationPolicy, diagnosticData);

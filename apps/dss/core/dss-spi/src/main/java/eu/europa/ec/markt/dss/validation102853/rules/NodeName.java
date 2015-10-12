@@ -40,6 +40,7 @@ public interface NodeName {
     String LONG_TERM_VALIDATION_DATA = "LongTermValidationData";
     String CONTROL_TIME_SLIDING_DATA = "ControlTimeSlidingData";
     String TIMESTAMP_VALIDATION_DATA = "TimestampValidationData";
+	String POE_EXTRACTION = "POEExtraction";
 
     String SIGNATURE = "Signature";
     String CONCLUSION = "Conclusion";
@@ -62,6 +63,10 @@ public interface NodeName {
     String CONSTRAINT = "Constraint";
     String SIGNING_TIME = "SigningTime";
     String TIMESTAMP = "Timestamp"; // node, constraint
+	String ARCHIVE_TIMESTAMPS = "ArchiveTimestamps";
+	String REFS_ONLY_TIMESTAMPS= "RefsOnlyTimestamps";
+	String SIG_AND_REFS_TIMESTAMPS = "SigAndRefsTimestamps";
+	String SIGNATURE_TIMESTAMPS = "SignatureTimestamps";
     String SIGNED_SIGNATURE = "SignedSignature";
     String CONTENT_HINTS = "ContentHints";
 

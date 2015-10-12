@@ -282,6 +282,12 @@ public class XmlDom {
 		}
 	}
 
+	/**
+	 *
+	 * @param xPath
+	 * @param params
+	 * @return {@code XmlDom} retrieved base on the XPath query. If more than one elements are found then the first one is returned
+	 */
 	public XmlDom getElement(final String xPath, final Object... params) {
 
 		try {

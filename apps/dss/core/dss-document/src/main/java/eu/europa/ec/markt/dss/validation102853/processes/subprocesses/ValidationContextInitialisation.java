@@ -29,7 +29,6 @@ import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -71,7 +70,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_VCI_I
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
-public class ValidationContextInitialisation extends BasicValidationProcess implements RuleConstant, Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage {
+public class ValidationContextInitialisation extends BasicValidationProcess implements RuleConstant, Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage {
 
 	/**
 	 * See {@link ProcessParameters#getDiagnosticData()}

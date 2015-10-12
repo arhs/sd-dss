@@ -64,13 +64,16 @@ public class OfflineResolver extends ResourceResolverSpi {
 
 			return true;
 		}
-		final int length = documentUri.length();
-		final int length_ = documentUri_.length();
-		// For the file name as "/toto.txt"
-		final boolean case1 = documentUri.startsWith("/") && length - 1 == length_;
-		// For the file name as "./toto.txt"
-		final boolean case2 = documentUri.startsWith("./") && length - 2 == length_;
-		if (documentUri.endsWith(documentUri_) && (case1 || case2)) {
+		//		final int length = documentUri.length();
+		//		final int length_ = documentUri_.length();
+		//		// For the file name as "/toto.txt"
+		//		final boolean case1 = documentUri.startsWith("/") && length - 1 == length_;
+		//		// For the file name as "./toto.txt"
+		//		final boolean case2 = documentUri.startsWith("./") && length - 2 == length_;
+		//		// For the file name as "../toto.txt"
+		//		final boolean case3 = documentUri.startsWith("../") && length - 3 == length_;
+		//		if (documentUri.endsWith(documentUri_) && (case1 || case2 || case3)) {
+		if (documentUri.endsWith(documentUri_)) {
 
 			return true;
 		}

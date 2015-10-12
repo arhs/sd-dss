@@ -20,7 +20,6 @@
 
 package eu.europa.ec.markt.dss.validation102853.processes;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -32,13 +31,12 @@ import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.policy.BasicValidationProcessValidConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
+import eu.europa.ec.markt.dss.validation102853.policy.ElementNumberConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
-import eu.europa.ec.markt.dss.validation102853.policy.TimestampValidationProcessValidConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.MessageTag;
@@ -61,13 +59,12 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IRT
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ISTPTDABST;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ISTPTDABST_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ITVPC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ITVPC_ANS_1;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ITVPC_ANS_2;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ITVPC_INFO_1;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ROBVPIIC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ROTVPIIC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ROTVPIIC_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_VFDTAOCST_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_INSTCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_INSTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPSTP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.TSV_ASTPTCT;
@@ -97,7 +94,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.TSV_WACRA
  *
  * @author bielecro
  */
-public class AdESTValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class AdESTValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage, ValidationXPathQueryHolder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AdESTValidation.class);
 
@@ -108,7 +105,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 *
 	 * @return
 	 */
-	private ValidationPolicy constraintData;
+	private ValidationPolicy validationPolicy;
 
 	// Secondary inputs
 
@@ -117,14 +114,11 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 *
 	 * @return
 	 */
-	private XmlDom basicValidationData;
+	private XmlDom basicValidationXmlDom;
 
-	private XmlDom timestampValidationData; // Basic Building Blocks for timestamps
+	private XmlDom timestampValidationXmlDom; // Basic Building Blocks for timestamps
 
-	// local helper variable
-	private XmlNode conclusionNode;
-
-	private XmlDom bvpConclusion;
+	private XmlDom bvpConclusionXmlDom;
 	private String bvpIndication;
 	private String bvpSubIndication;
 
@@ -144,22 +138,9 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	private String signatureId;
 
 	/**
-	 * Represents the {@code XmlDom} of the timestamp currently being validated
-	 */
-	private XmlNode timestampXmlNode;
-
-	/**
-	 * Represents the identifier of the timestamp currently being validated
-	 */
-	private String timestampId;
-
-	/**
 	 * Denotes the earliest time when it can be proven that a signature has existed.
 	 */
 	private Date bestSignatureTime;
-
-	// The list of the signature timestamp Ids (all)
-	private List<String> signatureTimestampsIdList = new ArrayList<String>();
 
 	private static Date getLatestDate(Date firstDate, final Date secondDate) {
 
@@ -204,22 +185,22 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 			}
 			params.setCurrentTime(currentTime);
 		}
-		if (basicValidationData == null) {
+		if (basicValidationXmlDom == null) {
 
 			/**
 			 * The execution of the Basic Validation process which creates the basic validation data.<br>
 			 */
 			final BasicValidation basicValidation = new BasicValidation();
-			basicValidationData = basicValidation.run(mainNode, params);
+			basicValidationXmlDom = basicValidation.run(mainNode, params);
 		}
-		if (timestampValidationData == null) {
+		if (timestampValidationXmlDom == null) {
 
 			/**
 			 * This executes the Basic Building Blocks process for timestamps present in the signature.<br>
 			 * This process needs the diagnostic and policy data. It creates the timestamps validation data.
 			 */
 			final TimestampValidation timeStampValidation = new TimestampValidation();
-			timestampValidationData = timeStampValidation.run(mainNode, params);
+			timestampValidationXmlDom = timeStampValidation.run(mainNode, params);
 		}
 	}
 
@@ -250,7 +231,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		isInitialised(mainNode, params);
 		LOG.debug(this.getClass().getSimpleName() + ": start.");
 
-		XmlNode adestValidationData = mainNode.addChild(ADEST_VALIDATION_DATA);
+		final XmlNode adestValidationDataXmlNode = mainNode.addChild(ADEST_VALIDATION_DATA);
 
 		/**
 		 * 1) Initialise the set of signature time-stamp tokens from the signature time-stamp properties/attributes
@@ -259,24 +240,20 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		 * NOTE 1: Best-signature-time is an internal variable for the algorithm denoting the earliest time when it can be
 		 * proven that a signature has existed.
 		 */
-		final List<XmlDom> signatures = params.getDiagnosticData().getElements("/DiagnosticData/Signature");
-		for (final XmlDom signature : signatures) {
+		final List<XmlDom> signatureXmlDomList = params.getDiagnosticData().getElements(XP_DIAGNOSTIC_DATA_SIGNATURE);
+		for (final XmlDom signatureXmlDom_ : signatureXmlDomList) {
 
-			signatureXmlDom = signature;
-			signatureId = signature.getValue("./@Id");
-			final String type = signature.getValue("./@Type");
-			if (COUNTERSIGNATURE.equals(type)) {
+			// Initialisation of local cache variables.
+			signatureXmlDom = signatureXmlDom_;
+			signatureId = signatureXmlDom.getAttribute(ID);
+			final String signatureType = signatureXmlDom.getAttribute(TYPE);
+			setSuitableValidationPolicy(params, signatureType);
+			validationPolicy = params.getCurrentValidationPolicy();
 
-				params.setCurrentValidationPolicy(params.getCountersignatureValidationPolicy());
-			} else {
-
-				params.setCurrentValidationPolicy(params.getValidationPolicy());
-			}
-			constraintData = params.getCurrentValidationPolicy();
-			signatureXmlNode = adestValidationData.addChild(SIGNATURE);
+			signatureXmlNode = adestValidationDataXmlNode.addChild(SIGNATURE);
 			signatureXmlNode.setAttribute(ID, signatureId);
 
-			// current time
+			// Teh best-signature-time is set to current-time.
 			bestSignatureTime = params.getCurrentTime();
 
 			final Conclusion conclusion = process();
@@ -284,15 +261,20 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 			final XmlNode conclusionXmlNode = conclusion.toXmlNode();
 			signatureXmlNode.addChild(conclusionXmlNode);
 		}
-		final XmlDom atvDom = adestValidationData.toXmlDom();
+		final XmlDom atvDom = adestValidationDataXmlNode.toXmlDom();
 		params.setAdestData(atvDom);
 		return atvDom;
 	}
 
 	/**
-	 * 2)	Signature validation: Perform the validation process for BES signatures (see clause 6) with all the inputs, including the processing of any signed attributes/properties
-	 * as specified. If this validation outputs VALID, INDETERMINATE/CRYPTO_CONSTRAINTS_FAILURE_NO_POE, INDETERMINATE/REVOKED_NO_POE or INDETERMINATE/OUT_OF_BOUNDS_NO_POE, go to
-	 * the next step. Otherwise, terminate with the returned status and information.	 *
+	 * 2)	Signature validation: Perform the validation process for BES signatures (see clause 6)
+	 * with all the inputs, including the processing of any signed attributes/properties as specified.
+	 * If this validation outputs:
+	 * - VALID,
+	 * - INDETERMINATE/CRYPTO_CONSTRAINTS_FAILURE_NO_POE,
+	 * - INDETERMINATE/REVOKED_NO_POE or
+	 * - INDETERMINATE/OUT_OF_BOUNDS_NO_POE
+	 * go to the next step. Otherwise, terminate with the returned status and information.
 	 *
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
@@ -300,74 +282,44 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 
 		final Conclusion signatureConclusion = new Conclusion();
 
-		bvpConclusion = basicValidationData.getElement("/" + BASIC_VALIDATION_DATA + "/Signature[@Id='%s']/Conclusion", signatureId);
-		bvpIndication = bvpConclusion.getValue("./Indication/text()");
-		bvpSubIndication = bvpConclusion.getValue("./SubIndication/text()");
+		bvpConclusionXmlDom = basicValidationXmlDom.getElement(XP_BV_SIGNATURE_CONCLUSION, signatureId);
+		bvpIndication = bvpConclusionXmlDom.getValue(XP_INDICATION);
+		bvpSubIndication = bvpConclusionXmlDom.getValue(XP_SUB_INDICATION);
 
 		if (!checkBasicValidationProcessConclusionConstraint(signatureConclusion)) {
 			return signatureConclusion;
 		}
 
-		/**
-		 * 3) Verification of time-marks: the verification of time-marks is out of the scope of the present document. If
-		 * the SVA accepts a time-mark as trustworthy (based on out-of-band mechanisms) and if the indicated time is
-		 * before the best-signature-time, set best-signature-time to the indicated time.
-		 *
-		 * --> The DSS framework does not handle the time-marks.
-		 */
-
-		// This is the list of acceptable signature timestamps
-		final List<String> rightTimestamps = new ArrayList<String>();
-
+		// The search of all timestamps to be analysed.
 		final List<XmlDom> timestampXmlDomList = signatureXmlDom.getElements(XP_TIMESTAMPS, SIGNATURE_TIMESTAMP);
-		for (final XmlDom timestampXmlDom : timestampXmlDomList) {
-			signatureTimestampsIdList.add(timestampXmlDom.getAttribute(ID));
-		}
 		timestampXmlDomList.addAll(signatureXmlDom.getElements(XP_TIMESTAMPS, CONTENT_TIMESTAMP));
 		timestampXmlDomList.addAll(signatureXmlDom.getElements(XP_TIMESTAMPS, ALL_DATA_OBJECTS_TIMESTAMP));
 		timestampXmlDomList.addAll(signatureXmlDom.getElements(XP_TIMESTAMPS, INDIVIDUAL_DATA_OBJECTS_TIMESTAMP));
 
-		boolean validSignatureTimestampFound = false;
-		int signatureTimestampCount = 0;
-
 		for (final XmlDom timestampXmlDom : timestampXmlDomList) {
 
-			// timestampX
-			timestampId = timestampXmlDom.getValue("./@Id");
-			final String timestampTypeString = timestampXmlDom.getValue("./@Type");
+			final String timestampId = timestampXmlDom.getAttribute(ID);
+			final String timestampTypeString = timestampXmlDom.getAttribute(TYPE);
 			final TimestampType timestampType = TimestampType.valueOf(timestampTypeString);
-			final boolean signatureTimestamp = isSignatureTimestamp(timestampType);
-			final Date productionTime = timestampXmlDom.getTimeValue("./ProductionTime/text()");
+			final Date timestampProductionTime = timestampXmlDom.getTimeValue(XP_PRODUCTION_TIME);
 
-			if (signatureTimestamp) {
-				signatureTimestampCount++;
-			}
-
-			timestampXmlNode = signatureXmlNode.addChild(TIMESTAMP);
+			final XmlNode timestampXmlNode = signatureXmlNode.addChild(TIMESTAMP);
 			timestampXmlNode.setAttribute(ID, timestampId);
 			timestampXmlNode.setAttribute(TYPE, timestampTypeString);
-			timestampXmlNode.setAttribute(GENERATION_TIME, DSSUtils.formatDate(productionTime));
+			timestampXmlNode.setAttribute(GENERATION_TIME, DSSUtils.formatDate(timestampProductionTime));
 
 			final Conclusion timestampConclusion = new Conclusion();
 
-			if (!checkMessageImprintDataFoundConstraint(timestampConclusion, timestampXmlDom)) {
-				continue;
+			if (checkMessageImprintDataFoundConstraint(timestampXmlNode, timestampConclusion, timestampId, timestampXmlDom)) {
+				if (checkMessageImprintDataIntactConstraint(timestampXmlNode, timestampConclusion, timestampId, timestampXmlDom)) {
+					checkSignatureTimestampValidationProcessConstraint(timestampXmlNode, timestampConclusion, timestampId, timestampType, timestampProductionTime);
+				}
 			}
-			if (!checkMessageImprintDataIntactConstraint(timestampConclusion, timestampXmlDom)) {
-				continue;
-			}
-			if (signatureTimestamp) {
-				validSignatureTimestampFound = checkSignatureTimestampValidationProcessConstraint(rightTimestamps, validSignatureTimestampFound, productionTime);
-			} else {
-				checkTimestampValidationProcessConstraint();
-			}
+			final XmlNode conclusionXmlNode = timestampConclusion.toXmlNode();
+			timestampXmlNode.addChild(conclusionXmlNode);
 		}
 
-		// -1 means that there is no timestamps within the signature
-		//  0 means that there is no valid timestamps
-		//  1 means that there is at least one valid timestamp
-		final int validSignatureTimestampIndicator = signatureTimestampCount == 0 ? -1 : (validSignatureTimestampFound ? 1 : 0);
-		if (!checkTimestampsValidationProcessConstraint(signatureConclusion, validSignatureTimestampIndicator)) {
+		if (!checkTimestampsValidationProcessConstraint(signatureConclusion)) {
 			return signatureConclusion;
 		}
 
@@ -376,38 +328,51 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		 */
 
 		/**
-		 * NOTE 2:
+		 * a) If step 2 returned INDETERMINATE/REVOKED_NO_POE: If the returned revocation time is posterior
+		 * to best-signature-time, perform step 5d. Otherwise, terminate with INDETERMINATE/REVOKED_NO_POE.
 		 */
 		if (INDETERMINATE.equals(bvpIndication) && REVOKED_NO_POE.equals(bvpSubIndication)) {
 
 			if (!checkRevocationTimeConstraint(signatureConclusion)) {
+				signatureConclusion.copyConclusionBasicInfo(bvpConclusionXmlDom);
 				return signatureConclusion;
 			}
 		}
 
 		/**
-		 * NOTE 3:
+		 * b) If step 2 returned INDETERMINATE/OUT_OF_BOUNDS_NO_POE: If best-signature-time is before the
+		 * issuance date of the signer's certificate, terminate with INVALID/NOT_YET_VALID. Otherwise,
+		 * terminate with INDETERMINATE/OUT_OF_BOUNDS_NO_POE.
 		 */
 		if (INDETERMINATE.equals(bvpIndication) && OUT_OF_BOUNDS_NO_POE.equals(bvpSubIndication)) {
 
 			if (!checkBestSignatureTimeBeforeIssuanceDateOfSigningCertificateConstraint(signatureConclusion)) {
+				signatureConclusion.copyConclusionBasicInfo(bvpConclusionXmlDom);
 				return signatureConclusion;
 			}
 			if (!checkSigningCertificateValidityAtBestSignatureTimeConstraint(signatureConclusion)) {
+				signatureConclusion.copyConclusionBasicInfo(bvpConclusionXmlDom);
 				return signatureConclusion;
 			}
 		}
 
 		/**
-		 * NOTE 4:
+		 * c) If step 2 returned INDETERMINATE/CRYPTO_CONSTRAINTS_FAILURE_NO_POE and the material
+		 * concerned by this failure is the signature value or a signed attribute, check, if the algorithm(s) concerned
+		 * were still considered reliable at best-signature-time, continue with step d. Otherwise, terminate with
+		 * INDETERMINATE/CRYPTO_CONSTRAINTS_FAILURE_NO_POE.
 		 */
 		if (INDETERMINATE.equals(bvpIndication) && CRYPTO_CONSTRAINTS_FAILURE_NO_POE.equals(bvpSubIndication)) {
 
 			if (!checkAlgorithmReliableAtBestSignatureTimeConstraint(signatureConclusion)) {
+				signatureConclusion.copyConclusionBasicInfo(bvpConclusionXmlDom);
 				return signatureConclusion;
 			}
 		}
-
+		/**
+		 * d) For each time-stamp token remaining in the set of signature time-stamp tokens, check the coherence in
+		 * the values of the times indicated in the time-stamp tokens.
+		 */
 		if (!checkTimestampCoherenceConstraint(signatureConclusion)) {
 			return signatureConclusion;
 		}
@@ -420,16 +385,11 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 			return signatureConclusion;
 		}
 
-		// This validation process returns VALID
 		signatureConclusion.setIndication(VALID);
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		signatureConclusion.addInfo(EMPTY).setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
 
 		return signatureConclusion;
-	}
-
-	private boolean isSignatureTimestamp(final TimestampType timestampType) {
-		return SIGNATURE_TIMESTAMP == timestampType;
 	}
 
 	private Date getLatestTimestampProductionDate(final List<XmlDom> timestamps, final TimestampType selectedTimestampType) {
@@ -438,11 +398,11 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		Date latestProductionTime = null;
 		for (final XmlDom timestamp : timestamps) {
 
-			final String timestampType = timestamp.getValue("./@Type");
+			final String timestampType = timestamp.getAttribute(TYPE);
 			if (!selectedTimestampType.name().equals(timestampType)) {
 				continue;
 			}
-			final Date productionTime = timestamp.getTimeValue("./ProductionTime/text()");
+			final Date productionTime = timestamp.getTimeValue(XP_PRODUCTION_TIME);
 			if (latestProductionTime == null || latestProductionTime.before(productionTime)) {
 
 				latestProductionTime = productionTime;
@@ -462,69 +422,48 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 * the next token.<br/>
 	 * --> -> This method is called in the context of a signature (signatureId) and a timestamp (timestampId)
 	 *
-	 * @param rightTimestamps the {@code List} containing the id of valid valid timestamps
-	 * @param validFound      indicates if there is at least one valid timestamp
-	 * @param productionTime  the production {@code Date} of the current timestamp
-	 * @return
+	 * @param timestampXmlNode
+	 * @param conclusion              the conclusion to use to add the result of the check
+	 * @param timestampId
+	 * @param timestampType
+	 * @param timestampProductionTime the production {@code Date} of the current timestamp  @return
 	 */
-	private boolean checkSignatureTimestampValidationProcessConstraint(final List<String> rightTimestamps, final boolean validFound, final Date productionTime) {
+	private void checkSignatureTimestampValidationProcessConstraint(final XmlNode timestampXmlNode, final Conclusion conclusion, final String timestampId,
+	                                                                final TimestampType timestampType, final Date timestampProductionTime) {
 
-		final XmlDom tspvData = timestampValidationData.getElement("/TimestampValidationData/Signature[@Id='%s']/Timestamp[@Id='%s']", signatureId, timestampId);
-		final XmlDom tsvpConclusion = tspvData.getElement("./BasicBuildingBlocks/Conclusion");
-		final String tsvpIndication = tsvpConclusion.getValue("./Indication/text()");
+		final XmlDom tspvData = timestampValidationXmlDom.getElement(XP_TVD_SIGNATURE_TIMESTAMP, signatureId, timestampId);
+		final XmlDom tsvpConclusion = tspvData.getElement(XP_BBB_CONCLUSION);
+		final String tsvpIndication = tsvpConclusion.getValue(XP_INDICATION);
 
 		final XmlNode constraintNode = addConstraint(timestampXmlNode, ADEST_ITVPC);
 
 		boolean valid = VALID.equals(tsvpIndication);
 		if (valid) {
 
-			if (productionTime.before(bestSignatureTime)) {
+			constraintNode.addChild(STATUS, OK);
+			conclusion.setIndication(VALID);
+			if (SIGNATURE_TIMESTAMP == timestampType) {
 
-				constraintNode.addChild(STATUS, OK);
+				if (timestampProductionTime.before(bestSignatureTime)) {
 
-				bestSignatureTime = productionTime;
-				constraintNode.addChild(INFO, ADEST_ITVPC_INFO_1);
-				rightTimestamps.add(timestampId);
-				return true;
-			} else {
-
-				constraintNode.addChild(STATUS, KO);
-				constraintNode.addChild(WARNING, ADEST_ITVPC_ANS_1);
+					bestSignatureTime = timestampProductionTime;
+					constraintNode.addChild(INFO, ADEST_ITVPC_INFO_1).setAttribute(BEST_SIGNATURE_TIME, DSSUtils.formatDate(bestSignatureTime))
+						  .setAttribute(TIMESTAMP_ID, timestampId);
+				}
 			}
-			return validFound;
+			return;
 		}
 		constraintNode.addChild(STATUS, KO);
-		final List<XmlDom> errorList = tsvpConclusion.getElements("./Error");
+		final List<XmlDom> errorList = tsvpConclusion.getElements(XP_ERROR);
 		if (!errorList.isEmpty()) {
 			for (final XmlDom errorXmlDom : errorList) {
 				constraintNode.addChild(errorXmlDom);
 			}
 		}
-		return validFound;
-	}
-
-	/**
-	 * Same as previous method ({@code #checkTimestampValidationProcessConstraint}), but does not add the timestamp to the list of right timestamps, and does not return any result
-	 * -> Only performs the functional validation of the timestamp
-	 * -> This method is called in the context of a signature (signatureId) and a timestamp (timestampId)
-	 *
-	 * @return
-	 */
-	private void checkTimestampValidationProcessConstraint() {
-
-		final XmlDom tspvData = timestampValidationData.getElement("/TimestampValidationData/Signature[@Id='%s']/Timestamp[@Id='%s']", signatureId, timestampId);
-		final XmlDom tsvpConclusion = tspvData.getElement("./BasicBuildingBlocks/Conclusion");
-		final String tsvpIndication = tsvpConclusion.getValue("./Indication/text()");
-
-		final XmlNode constraintNode = addConstraint(timestampXmlNode, ADEST_ITVPC);
-
-		if (VALID.equals(tsvpIndication)) {
-			constraintNode.addChild(STATUS, OK);
-			constraintNode.addChild(INFO, ADEST_ITVPC_INFO_1);
-		} else {
-			constraintNode.addChild(STATUS, KO);
-			constraintNode.addChild(ERROR, ADEST_ITVPC_ANS_2);
-		}
+		conclusion.setIndication(tsvpIndication);
+		final String tsvpSubIndication = tsvpConclusion.getValue(XP_SUB_INDICATION);
+		conclusion.setSubIndication(tsvpSubIndication);
+		conclusion.addError(ADEST_ITVPC_ANS_2);
 	}
 
 	private Date getEarliestTimestampProductionTime(final List<XmlDom> timestamps, final TimestampType selectedTimestampType) {
@@ -532,11 +471,11 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		Date earliestProductionTime = null;
 		for (final XmlDom timestamp : timestamps) {
 
-			final String timestampType = timestamp.getValue("./@Type");
+			final String timestampType = timestamp.getAttribute(TYPE);
 			if (!selectedTimestampType.name().equals(timestampType)) {
 				continue;
 			}
-			final Date productionTime = timestamp.getTimeValue("./ProductionTime/text()");
+			final Date productionTime = timestamp.getTimeValue(XP_PRODUCTION_TIME);
 			if (earliestProductionTime == null || earliestProductionTime.after(productionTime)) {
 
 				earliestProductionTime = productionTime;
@@ -580,7 +519,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 */
 	private boolean checkBasicValidationProcessConclusionConstraint(final Conclusion conclusion) {
 
-		final BasicValidationProcessValidConstraint constraint = constraintData.getBasicValidationProcessConclusionConstraint();
+		final BasicValidationProcessValidConstraint constraint = validationPolicy.getBasicValidationProcessConclusionConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -588,11 +527,41 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		boolean validBasicValidationProcess = VALID.equals(bvpIndication) || INDETERMINATE.equals(bvpIndication) && (RuleUtils
 			  .in(bvpSubIndication, CRYPTO_CONSTRAINTS_FAILURE_NO_POE, OUT_OF_BOUNDS_NO_POE, REVOKED_NO_POE));
 		constraint.setValue(validBasicValidationProcess);
-		constraint.setBasicValidationProcessConclusionNode(bvpConclusion);
+		constraint.setBasicValidationProcessConclusionNode(bvpConclusionXmlDom);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
 	}
+
+	/**
+	 * Check of: Is the result of the timestamps validation process conclusive?
+	 * -> This method is called in the context of a signature (signatureId) in the case of failure the individual timestamps must be retrieved (timestampId)
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check
+	 * @return false if the check failed and the process should stop, true otherwise
+	 */
+	//	private boolean checkTimestampValidationProcessConclusionConstraint(final Conclusion conclusion) {
+	//
+	//		final Constraint constraint = new Constraint("FAIL");
+	//
+	//		final XmlDom timestampValidationXmlDom = timestampValidationXmlDom.getElement(XP_TVD_SIGNATURE_TIMESTAMP, signatureId, timestampId);
+	//		final XmlDom conclusionXmlDom = timestampValidationXmlDom.getElement(XP_BBB_CONCLUSION);
+	//		final String timestampIndication = conclusionXmlDom.getValue(XP_INDICATION);
+	//		final boolean valid = VALID.equals(timestampIndication);
+	//		final String timestampSubIndication = valid ? SubIndication.NONE : conclusionXmlDom.getValue(XP_SUB_INDICATION);
+	//		constraint.create(timestampXmlNode, ADEST_ROTVPIIC);
+	//		constraint.setExpectedValue("true");
+	//		constraint.setValue(valid);
+	//		constraint.setIndications(timestampIndication, timestampSubIndication, ADEST_ROTVPIIC_ANS);
+	//		constraint.setAttribute(TIMESTAMP_ID,timestampId);
+	//		constraint.setConclusionReceiver(conclusion);
+	//
+	//		final boolean check = constraint.check();
+	//		if (!check) {
+	//			conclusion.copyErrors(conclusionXmlDom); // Grab all errors
+	//		}
+	//		return check;
+	//	}
 
 	/**
 	 * Check of: is the timestamp message imprint data found
@@ -603,20 +572,22 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 * message imprint verification as specified in clauses 8.4.1 or 8.4.2 depending on the type of the signature.
 	 * If the verification fails, remove the token from the set.
 	 *
-	 * @param conclusion the conclusion to use to add the result of the check.
-	 * @param timestamp
-	 * @return false if the check failed and the process should stop, true otherwise.
+	 * @param timestampXmlNode
+	 * @param conclusion       the conclusion to use to add the result of the check
+	 * @param timestampId
+	 * @param timestampXmlDom  @return false if the check failed and the process should stop, true otherwise
 	 */
-	private boolean checkMessageImprintDataFoundConstraint(final Conclusion conclusion, final XmlDom timestamp) {
+	private boolean checkMessageImprintDataFoundConstraint(final XmlNode timestampXmlNode, final Conclusion conclusion, final String timestampId, final XmlDom timestampXmlDom) {
 
-		final Constraint constraint = constraintData.getMessageImprintDataFoundConstraint();
+		final Constraint constraint = validationPolicy.getMessageImprintDataFoundConstraint();
 		if (constraint == null) {
 			return true;
 		}
 		constraint.create(timestampXmlNode, ADEST_IMIDF);
-		final boolean messageImprintDataIntact = timestamp.getBoolValue(XP_MESSAGE_IMPRINT_DATA_FOUND);
+		final boolean messageImprintDataIntact = timestampXmlDom.getBoolValue(XP_MESSAGE_IMPRINT_DATA_FOUND);
 		constraint.setValue(messageImprintDataIntact);
-		constraint.setIndications(ADEST_IMIDF_ANS);
+		constraint.setIndications(INDETERMINATE, SIGNED_DATA_NOT_FOUND, ADEST_IMIDF_ANS);
+		constraint.setAttribute(TIMESTAMP_ID, timestampId);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -625,20 +596,22 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	/**
 	 * Check of: is the timestamp message imprint data intact
 	 *
-	 * @param conclusion the conclusion to use to add the result of the check.
-	 * @param timestamp
-	 * @return false if the check failed and the process should stop, true otherwise.
+	 * @param timestampXmlNode
+	 * @param conclusion       the conclusion to use to add the result of the check
+	 * @param timestampId
+	 * @param timestampXmlDom  @return false if the check failed and the process should stop, true otherwise
 	 */
-	private boolean checkMessageImprintDataIntactConstraint(final Conclusion conclusion, final XmlDom timestamp) {
+	private boolean checkMessageImprintDataIntactConstraint(final XmlNode timestampXmlNode, final Conclusion conclusion, final String timestampId, final XmlDom timestampXmlDom) {
 
-		final Constraint constraint = constraintData.getMessageImprintDataIntactConstraint();
+		final Constraint constraint = validationPolicy.getMessageImprintDataIntactConstraint();
 		if (constraint == null) {
 			return true;
 		}
 		constraint.create(timestampXmlNode, ADEST_IMIVC);
-		final boolean messageImprintDataIntact = timestamp.getBoolValue(XP_MESSAGE_IMPRINT_DATA_INTACT);
+		final boolean messageImprintDataIntact = timestampXmlDom.getBoolValue(XP_MESSAGE_IMPRINT_DATA_INTACT);
 		constraint.setValue(messageImprintDataIntact);
-		constraint.setIndications(ADEST_IMIVC_ANS);
+		constraint.setIndications(INVALID, HASH_FAILURE, ADEST_IMIVC_ANS);
+		constraint.setAttribute(TIMESTAMP_ID, timestampId);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -648,46 +621,34 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 * Check of: Is the result of the timestamps validation process conclusive?
 	 * -> This method is called in the context of a signature (signatureId) in the case of failure the individual timestamps must be retrieved (timestampId)
 	 *
-	 * @param conclusion                       the conclusion to use to add the result of the check
-	 * @param validSignatureTimestampIndicator this parameter indicates the number of timestamps: -1= no timestamps; 0= no valid timestamps ; +1= valid timestamps
+	 * @param conclusion the conclusion to use to add the result of the check
 	 * @return false if the check failed and the process should stop, true otherwise
 	 */
-	private boolean checkTimestampsValidationProcessConstraint(final Conclusion conclusion, final int validSignatureTimestampIndicator) {
+	private boolean checkTimestampsValidationProcessConstraint(final Conclusion conclusion) {
 
-		final TimestampValidationProcessValidConstraint constraint = constraintData.getTimestampValidationProcessConstraint();
+		final ElementNumberConstraint constraint = validationPolicy.getSignatureTimestampNumberConstraint();
 		if (constraint == null) {
 			return true;
 		}
-		String indication = VALID;
-		String subIndication = SubIndication.NONE;
-		final Conclusion temporaryConclusion = new Conclusion();
-		for (final String signatureTimestampId : signatureTimestampsIdList) {
+		int validSignatureTimestampNumber = 0;
 
-			final XmlDom dataXmlDom = timestampValidationData.getElement("/TimestampValidationData/Signature[@Id='%s']/Timestamp[@Id='%s']", signatureId, signatureTimestampId);
-			final XmlDom conclusionXmlDom = dataXmlDom.getElement("./BasicBuildingBlocks/Conclusion");
-			final String signatureTimestampIndication = conclusionXmlDom.getValue("./Indication/text()");
+		final XmlDom signatureXmlDom = signatureXmlNode.toXmlDom(XmlDom.NAMESPACE);
+		final List<XmlDom> signatureTimestampConclusionXmlDomList = signatureXmlDom.getElements(XP_SIGNATURE_TIMESTAMP_CONCLUSION, SIGNATURE_TIMESTAMP);
+		for (final XmlDom signatureTimestampConclusionXmlDom : signatureTimestampConclusionXmlDomList) {
+
+			final String signatureTimestampIndication = signatureTimestampConclusionXmlDom.getValue(XP_INDICATION);
 			if (VALID.equals(signatureTimestampIndication)) {
-				break; // there is at least one valid signature timestamp
-			}
-			indication = signatureTimestampIndication;
-			subIndication = conclusionXmlDom.getValue("./SubIndication/text()"); // arbitrary sub-indication (it isn't important from which signature-timestamp)
-			temporaryConclusion.copyErrors(conclusionXmlDom); // Grab all errors
-		}
 
-		constraint.create(signatureXmlNode, ADEST_ROTVPIIC);
-		constraint.setValidTimestampCount(validSignatureTimestampIndicator);
-		constraint.setIndications(indication, null, ADEST_ROTVPIIC_ANS);
-		constraint.setSubIndication1(subIndication);
-		constraint.setSubIndication2(NO_TIMESTAMP);
-		final String formattedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
-		constraint.setAttribute(BEST_SIGNATURE_TIME, formattedBestSignatureTime);
+				validSignatureTimestampNumber++;
+			}
+		}
+		constraint.setIntValue(validSignatureTimestampNumber);
+
+		constraint.create(signatureXmlNode, BBB_SAV_INSTCVP);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_INSTCVP_ANS);
 		constraint.setConclusionReceiver(conclusion);
 
-		final boolean check = constraint.check();
-		if (!check) {
-			conclusion.addErrors(temporaryConclusion);
-		}
-		return check;
+		return constraint.check();
 	}
 
 	/**
@@ -702,20 +663,17 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 */
 	private boolean checkRevocationTimeConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getRevocationTimeConstraint();
+		final Constraint constraint = validationPolicy.getRevocationTimeConstraint();
 		if (constraint == null) {
 			return true;
 		}
 		constraint.create(signatureXmlNode, ADEST_IRTPTBST);
 		constraint.setIndications(INDETERMINATE, REVOKED_NO_POE, ADEST_IRTPTBST_ANS);
-		final Date revocationDate = bvpConclusion.getTimeValue("./Error/@RevocationTime");
+		final Date revocationDate = bvpConclusionXmlDom.getTimeValue("./Error/@RevocationTime");
 		final boolean before = bestSignatureTime.before(revocationDate);
 		constraint.setValue(before);
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		constraint.setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
-		// TODO: (Bob: 2014 Mar 16)
-		//        final XmlDom errorXmlDom = bvpConclusion.getElement("./Error");
-		//        conclusionNode.addChild(errorXmlDom);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -736,22 +694,19 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 */
 	private boolean checkBestSignatureTimeBeforeIssuanceDateOfSigningCertificateConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getBestSignatureTimeBeforeIssuanceDateOfSigningCertificateConstraint();
+		final Constraint constraint = validationPolicy.getBestSignatureTimeBeforeIssuanceDateOfSigningCertificateConstraint();
 		if (constraint == null) {
 			return true;
 		}
 		constraint.create(signatureXmlNode, TSV_IBSTAIDOSC);
 		constraint.setIndications(INVALID, NOT_YET_VALID, TSV_IBSTAIDOSC_ANS);
-		final String formatedNotBefore = bvpConclusion.getValue("./Error/@NotBefore");
+		final String formatedNotBefore = bvpConclusionXmlDom.getValue("./Error/@NotBefore");
 		final Date notBeforeTime = DSSUtils.parseDate(formatedNotBefore);
 		final boolean notBefore = !bestSignatureTime.before(notBeforeTime);
 		constraint.setValue(notBefore);
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		constraint.setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
 		constraint.setAttribute(NOT_BEFORE, formatedNotBefore);
-		// TODO: (Bob: 2014 Mar 16)
-		//        final XmlDom errorXmlDom = bvpConclusion.getElement("./Error");
-		//        conclusionNode.addChild(errorXmlDom);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -773,19 +728,15 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 */
 	private boolean checkSigningCertificateValidityAtBestSignatureTimeConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getSigningCertificateValidityAtBestSignatureTimeConstraint();
+		final Constraint constraint = validationPolicy.getSigningCertificateValidityAtBestSignatureTimeConstraint();
 		if (constraint == null) {
 			return true;
 		}
 		constraint.create(signatureXmlNode, TSV_ISCNVABST);
 		constraint.setIndications(INDETERMINATE, OUT_OF_BOUNDS_NO_POE, TSV_ISCNVABST_ANS);
-		// false is always returned: this corresponds to: Otherwise, terminate with INDETERMINATE/OUT_OF_BOUNDS_NO_POE.
-		constraint.setValue(false);
+		constraint.setValue(false); // false is always returned: this corresponds to: Otherwise, terminate with INDETERMINATE/OUT_OF_BOUNDS_NO_POE.
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		constraint.setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
-		// TODO: (Bob: 2014 Mar 16)
-		//        final XmlDom errorXmlDom = bvpConclusion.getElement("./Error");
-		//        conclusionNode.addChild(errorXmlDom);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -804,7 +755,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 */
 	private boolean checkAlgorithmReliableAtBestSignatureTimeConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getAlgorithmReliableAtBestSignatureTimeConstraint();
+		final Constraint constraint = validationPolicy.getAlgorithmReliableAtBestSignatureTimeConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -812,7 +763,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		constraint.setIndications(INDETERMINATE, CRYPTO_CONSTRAINTS_FAILURE_NO_POE, TSV_WACRABST_ANS);
 
 		boolean ok = false;
-		final XmlDom error = bvpConclusion.getElement("./Error");
+		final XmlDom error = bvpConclusionXmlDom.getElement(XP_ERROR);
 		if (error != null) {
 
 			final String algorithmExpirationDateString = error.getAttribute("AlgorithmExpirationDate");
@@ -828,9 +779,6 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		constraint.setValue(ok);
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		constraint.setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
-		// TODO: (Bob: 2014 Mar 16)
-		//        final XmlDom errorXmlDom = bvpConclusion.getElement("./Error");
-		//        conclusionNode.addChild(errorXmlDom);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -851,7 +799,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 */
 	private boolean checkTimestampCoherenceConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getTimestampCoherenceConstraint();
+		final Constraint constraint = validationPolicy.getTimestampCoherenceConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -861,10 +809,10 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		for (int index = timestamps.size() - 1; index >= 0; index--) {
 
 			final XmlDom timestamp = timestamps.get(index);
-			String timestampId = timestamp.getValue("./@Id");
-			final XmlDom tspvData = timestampValidationData.getElement("/TimestampValidationData/Signature[@Id='%s']/Timestamp[@Id='%s']", signatureId, timestampId);
-			final XmlDom tsvpConclusion = tspvData.getElement("./BasicBuildingBlocks/Conclusion");
-			final String tsvpIndication = tsvpConclusion.getValue("./Indication/text()");
+			String timestampId = timestamp.getAttribute(ID);
+			final XmlDom tspvData = timestampValidationXmlDom.getElement(XP_TVD_SIGNATURE_TIMESTAMP, signatureId, timestampId);
+			final XmlDom tsvpConclusion = tspvData.getElement(XP_BBB_CONCLUSION);
+			final String tsvpIndication = tsvpConclusion.getValue(XP_INDICATION);
 			if (!VALID.equals(tsvpIndication)) {
 
 				timestamps.remove(index);
@@ -945,7 +893,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 */
 	private boolean checkSigningTimeProperty(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getTimestampDelaySigningTimePropertyConstraint();
+		final Constraint constraint = validationPolicy.getTimestampDelaySigningTimePropertyConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -971,13 +919,13 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 */
 	private boolean checkTimestampDelay(final Conclusion conclusion) {
 
-		final Constraint constraint = constraintData.getTimestampDelaySigningTimePropertyConstraint();
+		final Constraint constraint = validationPolicy.getTimestampDelaySigningTimePropertyConstraint();
 		if (constraint == null) {
 			return true;
 		}
 		constraint.create(signatureXmlNode, ADEST_ISTPTDABST);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, ADEST_ISTPTDABST_ANS);
-		final Long timestampDelay = constraintData.getTimestampDelayTime();
+		final Long timestampDelay = validationPolicy.getTimestampDelayTime();
 		final String signingTime = signatureXmlDom.getValue("./DateTime/text()");
 		final Date date = DSSUtils.quietlyParseDate(signingTime);
 		constraint.setValue((date.getTime() + timestampDelay) > bestSignatureTime.getTime());

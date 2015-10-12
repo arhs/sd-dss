@@ -189,7 +189,7 @@ public class PastCertificateValidation extends X509CertificateValidation {
 		validationDataXmlNode.setAttribute(CERTIFICATE_ID, signingCertificateId);
 
 		final boolean trustedProspectiveCertificateChain = Boolean.valueOf(isTrustedProspectiveCertificateChain(params));
-		if (!checkProspectiveCertificateChainConstraint(conclusion, trustedProspectiveCertificateChain)) {
+		if (!checkProspectiveCertificateChainConstraint(conclusion, trustedProspectiveCertificateChain, signingCertificateId)) {
 			return conclusion;
 		}
 
@@ -397,19 +397,19 @@ public class PastCertificateValidation extends X509CertificateValidation {
 
 			final QualifiedCertificate qc = new QualifiedCertificate(currentValidationPolicy);
 			boolean isQC = qc.run(signingCertificate);
-			if (!checkSigningCertificateQualificationConstraint(conclusion, isQC)) {
+			if (!checkSigningCertificateQualificationConstraint(conclusion, isQC, signingCertificateId)) {
 				return conclusion;
 			}
 
 			final SSCD sscd = new SSCD(currentValidationPolicy);
 			final Boolean isSSCD = sscd.run(signingCertificate);
-			if (!checkSigningCertificateSupportedBySSCDConstraint(conclusion, isSSCD)) {
+			if (!checkSigningCertificateSupportedBySSCDConstraint(conclusion, isSSCD, signingCertificateId)) {
 				return conclusion;
 			}
 
 			final ForLegalPerson forLegalPerson = new ForLegalPerson(currentValidationPolicy);
 			final Boolean isForLegalPerson = forLegalPerson.run(signingCertificate);
-			if (!checkSigningCertificateIssuedToLegalPersonConstraint(conclusion, isForLegalPerson)) {
+			if (!checkSigningCertificateIssuedToLegalPersonConstraint(conclusion, isForLegalPerson, signingCertificateId)) {
 				return conclusion;
 			}
 		}

@@ -32,14 +32,13 @@ import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
+import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.ForLegalPerson;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.QualifiedCertificate;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.SSCD;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -85,7 +84,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
 
-public class X509CertificateValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, RuleConstant, ValidationXPathQueryHolder {
+public class X509CertificateValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage, RuleConstant, ValidationXPathQueryHolder {
 
 	/**
 	 * The following variables are used only in order to simplify the writing of the rules!
@@ -121,6 +120,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	 * See {@link ProcessParameters#getSigningCertificateId()}
 	 */
 	private String signingCertificateId;
+
 	/**
 	 * See {@link ProcessParameters#getSigningCertificate()}
 	 */
@@ -203,9 +203,10 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 		 * conditions of a prospective certificate chain as stated in [4], clause 6.1, using one of the trust anchors
 		 * provided in the inputs:
 		 */
+		final String signingCertificateId = contextElement.getValue("./SigningCertificate/@Id");
 
 		final boolean trustedProspectiveCertificateChain = isTrustedProspectiveCertificateChain(params);
-		if (!checkProspectiveCertificateChainConstraint(conclusion, trustedProspectiveCertificateChain)) {
+		if (!checkProspectiveCertificateChainConstraint(conclusion, trustedProspectiveCertificateChain, signingCertificateId)) {
 			return conclusion;
 		}
 
@@ -324,11 +325,10 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 				if (!checkSigningCertificateTSLStatusAndValidityConstraint(conclusion, certificateId, certificateXmlDom)) {
 					return conclusion;
 				}
-				// There is not need to check the revocation data for trusted and self-signed certificates
 			} else {
 
+				// There is not need to check the revocation data for trusted and self-signed certificates
 				// For all certificates different from the signing certificate and trust anchor.
-
 				if (!checkIntermediateCertificateRevokedConstraint(conclusion, certificateId, revocationStatus, revocationReason, revocationDatetime, subContext)) {
 					return conclusion;
 				}
@@ -361,19 +361,19 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 
 			final QualifiedCertificate qc = new QualifiedCertificate(currentValidationPolicy);
 			final boolean isQC = qc.run(signingCertificate);
-			if (!checkSigningCertificateQualificationConstraint(conclusion, isQC)) {
+			if (!checkSigningCertificateQualificationConstraint(conclusion, isQC, signingCertificateId)) {
 				return conclusion;
 			}
 
 			final SSCD sscd = new SSCD(currentValidationPolicy);
 			final Boolean isSSCD = sscd.run(signingCertificate);
-			if (!checkSigningCertificateSupportedBySSCDConstraint(conclusion, isSSCD)) {
+			if (!checkSigningCertificateSupportedBySSCDConstraint(conclusion, isSSCD, signingCertificateId)) {
 				return conclusion;
 			}
 
 			final ForLegalPerson forLegalPerson = new ForLegalPerson(currentValidationPolicy);
 			final Boolean isForLegalPerson = forLegalPerson.run(signingCertificate);
-			if (!checkSigningCertificateIssuedToLegalPersonConstraint(conclusion, isForLegalPerson)) {
+			if (!checkSigningCertificateIssuedToLegalPersonConstraint(conclusion, isForLegalPerson, signingCertificateId)) {
 				return conclusion;
 			}
 		}
@@ -471,9 +471,10 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	 *
 	 * @param conclusion                         the conclusion to use to add the result of the check.
 	 * @param trustedProspectiveCertificateChain
+	 * @param certificateId
 	 * @return false if the check failed and the process should stop, true otherwise.
 	 */
-	protected boolean checkProspectiveCertificateChainConstraint(final Conclusion conclusion, boolean trustedProspectiveCertificateChain) {
+	protected boolean checkProspectiveCertificateChainConstraint(final Conclusion conclusion, boolean trustedProspectiveCertificateChain, String certificateId) {
 
 		final Constraint constraint = currentValidationPolicy.getProspectiveCertificateChainConstraint(contextName);
 		if (constraint == null) {
@@ -482,6 +483,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 		constraint.create(validationDataXmlNode, BBB_XCV_CCCBB);
 		constraint.setValue(trustedProspectiveCertificateChain);
 		constraint.setIndications(INDETERMINATE, NO_CERTIFICATE_CHAIN_FOUND, BBB_XCV_CCCBB_ANS);
+		constraint.setAttribute(CERTIFICATE_ID,certificateId);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -948,11 +950,11 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	/**
 	 * Mandates the signer's certificate used in validating the signature to be a qualified certificate as defined
 	 * in Directive 1999/93/EC [9]. This status can be derived from:
-	 *
-	 * @param conclusion           the conclusion to use to add the result of the check.
+	 *  @param conclusion           the conclusion to use to add the result of the check.
 	 * @param qualifiedCertificate indicates if the signing certificate is qualified.
+	 * @param certificateId
 	 */
-	protected boolean checkSigningCertificateQualificationConstraint(final Conclusion conclusion, final boolean qualifiedCertificate) {
+	protected boolean checkSigningCertificateQualificationConstraint(final Conclusion conclusion, final boolean qualifiedCertificate, String certificateId) {
 
 		final Constraint constraint = currentValidationPolicy.getSigningCertificateQualificationConstraint();
 		if (constraint == null) {
@@ -961,6 +963,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 		constraint.create(validationDataXmlNode, BBB_XCV_CMDCIQC);
 		constraint.setValue(String.valueOf(qualifiedCertificate));
 		constraint.setIndications(INVALID, CHAIN_CONSTRAINTS_FAILURE, BBB_XCV_CMDCIQC_ANS);
+		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -969,11 +972,11 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	/**
 	 * Mandates the end user certificate used in validating the signature to be supported by a secure signature
 	 * creation device (SSCD) as defined in Directive 1999/93/EC [9].
-	 *
-	 * @param conclusion      the conclusion to use to add the result of the check.
+	 *  @param conclusion      the conclusion to use to add the result of the check.
 	 * @param supportedBySSCD indicates if the signing certificate is qualified.
+	 * @param certificateId
 	 */
-	protected boolean checkSigningCertificateSupportedBySSCDConstraint(final Conclusion conclusion, final boolean supportedBySSCD) {
+	protected boolean checkSigningCertificateSupportedBySSCDConstraint(final Conclusion conclusion, final boolean supportedBySSCD, String certificateId) {
 
 		final Constraint constraint = currentValidationPolicy.getSigningCertificateSupportedBySSCDConstraint();
 		if (constraint == null) {
@@ -982,6 +985,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 		constraint.create(validationDataXmlNode, BBB_XCV_CMDCISSCD);
 		constraint.setValue(String.valueOf(supportedBySSCD));
 		constraint.setIndications(INVALID, CHAIN_CONSTRAINTS_FAILURE, BBB_XCV_CMDCISSCD_ANS);
+		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -990,11 +994,11 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 	/**
 	 * Mandates the signer's certificate used in validating the signature to be issued by a certificate authority
 	 * issuing certificate as having been issued to a legal person.
-	 *
-	 * @param conclusion          the conclusion to use to add the result of the check.
+	 *  @param conclusion          the conclusion to use to add the result of the check.
 	 * @param issuedToLegalPerson indicates if the signing certificate is qualified.
+	 * @param certificateId
 	 */
-	protected boolean checkSigningCertificateIssuedToLegalPersonConstraint(final Conclusion conclusion, final boolean issuedToLegalPerson) {
+	protected boolean checkSigningCertificateIssuedToLegalPersonConstraint(final Conclusion conclusion, final boolean issuedToLegalPerson, String certificateId) {
 
 		final Constraint constraint = currentValidationPolicy.getSigningCertificateIssuedToLegalPersonConstraint();
 		if (constraint == null) {
@@ -1003,6 +1007,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 		constraint.create(validationDataXmlNode, BBB_XCV_CMDCIITLP);
 		constraint.setValue(String.valueOf(issuedToLegalPerson));
 		constraint.setIndications(INVALID, CHAIN_CONSTRAINTS_FAILURE, BBB_XCV_CMDCIITLP_ANS);
+		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

@@ -20,6 +20,7 @@
 
 package eu.europa.ec.markt.dss.validation102853;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -223,7 +224,7 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return array of the certified roles
 	 */
-	public List<CertifiedRole> getCertifiedSignerRoles();
+	public CertifiedRole getCertifiedSignerRoles() throws IOException;
 
 	/**
 	 * Get certificates embedded in the signature

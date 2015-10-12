@@ -305,11 +305,12 @@ public class XmlNode {
 	/**
 	 * This method returns {@link org.w3c.dom.Document} based on the current {@link XmlNode}.
 	 *
+	 * @param namespace
 	 * @return
 	 */
-	public Document toDocument() {
+	public Document toDocument(final String namespace) {
 
-		final InputStream inputStream = getInputStream();
+		final InputStream inputStream = getInputStream(namespace);
 		final Document document = DSSXMLUtils.buildDOM(inputStream);
 		return document;
 	}
@@ -321,7 +322,19 @@ public class XmlNode {
 	 */
 	public XmlDom toXmlDom() {
 
-		final Document document = toDocument();
+		final Document document = toDocument(null);
+		final XmlDom xmlDom = new XmlDom(document);
+		return xmlDom;
+	}
+
+	/**
+	 * This method returns {@code XmlDom} representation of the current {@code XmlNode}.
+	 *
+	 * @return the {@code XmlDom} representation of the current {@code XmlNode}.
+	 */
+	public XmlDom toXmlDom(final String namespace) {
+
+		final Document document = toDocument(namespace);
 		final XmlDom xmlDom = new XmlDom(document);
 		return xmlDom;
 	}
@@ -365,17 +378,19 @@ public class XmlNode {
 	}
 
 	/**
+	 * @param namespace
 	 * @return the {@code InputStream} representing the content of the node.
 	 */
-	public InputStream getInputStream() {
+	protected InputStream getInputStream(final String namespace) {
 
 		try {
 			final StringBuilder indent = new StringBuilder();
 			final StringBuilder xml = new StringBuilder();
 			final XmlNode masterNode = new XmlNode("__Master__");
 			final XmlNode savedParentNode = getParent();
-			if (savedParentNode != null) {
-
+			if (namespace != null) {
+				setNameSpace(namespace);
+			} else if (savedParentNode != null) {
 				setNameSpace(savedParentNode.getNameSpace());
 			}
 			setParent(masterNode);

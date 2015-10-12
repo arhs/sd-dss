@@ -114,11 +114,12 @@ import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.EtsiValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.report.Reports;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.scope.SignatureScope;
 import eu.europa.ec.markt.dss.validation102853.scope.SignatureScopeFinder;
 import eu.europa.ec.markt.dss.validation102853.xades.XAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
+
+import static eu.europa.ec.markt.dss.validation102853.rules.AttributeValue.COUNTERSIGNATURE;
 
 
 /**
@@ -1326,7 +1327,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		final AdvancedSignature masterSignature = signature.getMasterSignature();
 		if (masterSignature != null) {
 
-			xmlSignature.setType(AttributeValue.COUNTERSIGNATURE);
+			xmlSignature.setType(COUNTERSIGNATURE);
 			xmlSignature.setParentId(masterSignature.getId());
 		}
 	}
@@ -1368,29 +1369,32 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	}
 
 	private void dealWithCertifiedRole(AdvancedSignature signature, XmlSignature xmlSignature) {
-		List<CertifiedRole> certifiedRoles = null;
-		try {
-			certifiedRoles = signature.getCertifiedSignerRoles();
-		} catch (DSSException e) {
 
-			LOG.warn("Exception", e);
+		CertifiedRole certifiedRole = null;
+		try {
+			certifiedRole = signature.getCertifiedSignerRoles();
+		} catch (final Exception e) {
+
+			LOG.warn("Error(s) occurred when dealing with certified roles!", e);
 			addErrorMessage(xmlSignature, e);
 		}
-		if (certifiedRoles != null && !certifiedRoles.isEmpty()) {
+		if (certifiedRole != null) {
 
-			for (final CertifiedRole certifiedRole : certifiedRoles) {
+			final List<String> certifiedRoleList = certifiedRole.getRoleList();
+			for (String certifiedRoleValue : certifiedRoleList) {
 
 				final XmlCertifiedRolesType xmlCertifiedRolesType = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlCertifiedRolesType();
-
-				xmlCertifiedRolesType.setCertifiedRole(certifiedRole.getRole());
+				xmlCertifiedRolesType.setCertifiedRole(certifiedRoleValue);
 				xmlCertifiedRolesType.setNotBefore(DSSXMLUtils.createXMLGregorianCalendar(certifiedRole.getNotBefore()));
 				xmlCertifiedRolesType.setNotAfter(DSSXMLUtils.createXMLGregorianCalendar(certifiedRole.getNotAfter()));
 				xmlSignature.getCertifiedRoles().add(xmlCertifiedRolesType);
+				// TODO-Bob (11/10/2015):  Validation of the attribute certificate to be implemented
 			}
 		}
 	}
 
 	private void dealWithClaimedRole(AdvancedSignature signature, XmlSignature xmlSignature) {
+
 		String[] claimedRoles = null;
 		try {
 			claimedRoles = signature.getClaimedSignerRoles();

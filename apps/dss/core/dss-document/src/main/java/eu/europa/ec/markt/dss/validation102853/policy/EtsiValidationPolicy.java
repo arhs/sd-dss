@@ -244,11 +244,12 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	@Override
 	public Constraint getClaimedRoleConstraint() {
 
-		final String level = getValue("/ConstraintsParameters/MainSignature/MandatedSignedQProperties/ClaimedRoles/@Level");
+		final String xpRoot = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/ClaimedRoles";
+		final String level = getValue(xpRoot + "/@Level");
 		if (DSSUtils.isNotBlank(level)) {
 
 			final Constraint constraint = new Constraint(level);
-			final List<XmlDom> claimedRoles = getElements("/ConstraintsParameters/MainSignature/MandatedSignedQProperties/ClaimedRoles/Role");
+			final List<XmlDom> claimedRoles = getElements(xpRoot + "/Role");
 			final List<String> claimedRoleList = XmlDom.convertToStringList(claimedRoles);
 			constraint.setExpectedValue(claimedRoleList.toString());
 			constraint.setIdentifiers(claimedRoleList);
@@ -266,19 +267,23 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	}
 
 	@Override
-	public boolean shouldCheckIfCertifiedRoleIsPresent() {
+	public Constraint getCertifiedRoleConstraint() {
 
-		final long count = getCountValue("count(/ConstraintsParameters/MainSignature/MandatedSignedQProperties/CertifiedRoles/Role)");
-		return count > 0;
+		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/CertifiedRoles";
+		final String level = getValue(XP_ROOT + "/@Level");
+		if (DSSUtils.isNotBlank(level)) {
+
+			final Constraint constraint = new Constraint(level);
+			final List<XmlDom> certifiedRoleXmlDomList = getElements(XP_ROOT + "/Role");
+			final List<String> certifiedRoleList = XmlDom.convertToStringList(certifiedRoleXmlDomList);
+
+			constraint.setExpectedValue(certifiedRoleList.toString());
+			constraint.setIdentifiers(certifiedRoleList);
+			return constraint;
+		}
+		return null;
 	}
 
-	@Override
-	public List<String> getCertifiedRoles() {
-
-		final List<XmlDom> list = getElements("/ConstraintsParameters/MainSignature/MandatedSignedQProperties/CertifiedRoles/Role");
-		final List<String> claimedRoles = XmlDom.convertToStringList(list);
-		return claimedRoles;
-	}
 
 	@Override
 	public String getPolicyName() {
@@ -312,7 +317,7 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	}
 
 	@Override
-	public String getCertifiedRolesAttendance() {
+	public String getClaimedRolesAttendance() {
 
 		String attendance = getValue("ConstraintsParameters/MainSignature/MandatedSignedQProperties/ClaimedRoles/@Attendance");
 		return attendance;
@@ -668,14 +673,6 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	}
 
 	@Override
-	public TimestampValidationProcessValidConstraint getTimestampValidationProcessConstraint() {
-
-		final TimestampValidationProcessValidConstraint constraint = new TimestampValidationProcessValidConstraint("FAIL");
-		constraint.setExpectedValue(TRUE);
-		return constraint;
-	}
-
-	@Override
 	public Constraint getRevocationTimeConstraint() {
 
 		final String XP_ROOT = "/ConstraintsParameters/Timestamp/RevocationTimeAgainstBestSignatureTime";
@@ -776,13 +773,6 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	public ElementNumberConstraint getSignatureTimestampNumberConstraint() {
 
 		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedUnsignedQProperties/SignatureTimestamp";
-		return getElementNumberConstraint(XP_ROOT);
-	}
-
-	@Override
-	public ElementNumberConstraint getValidSignatureTimestampNumberConstraint() {
-
-		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedUnsignedQProperties/ValidSignatureTimestamp";
 		return getElementNumberConstraint(XP_ROOT);
 	}
 

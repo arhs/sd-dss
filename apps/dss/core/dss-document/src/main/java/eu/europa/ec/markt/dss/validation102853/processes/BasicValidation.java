@@ -36,7 +36,6 @@ import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
-import eu.europa.ec.markt.dss.validation102853.rules.NodeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
@@ -49,7 +48,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
  *
  * @author bielecro
  */
-public class BasicValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class BasicValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BasicValidation.class);
 
@@ -102,13 +101,13 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 
 		final XmlNode basicValidationData = mainNode.addChild(BASIC_VALIDATION_DATA);
 
-		final List<XmlDom> signatureXmlDomList = params.getBasicBuildingBlocksReport().getElements("./Signature");
+		final List<XmlDom> signatureXmlDomList = params.getBasicBuildingBlocksReport().getElements(XP_SIGNATURES);
 		for (final XmlDom signatureXmlDom : signatureXmlDomList) {
 
-			final String signatureId = signatureXmlDom.getValue("./@Id");
-			final String type = signatureXmlDom.getValue("./@Type");
+			final String signatureId = signatureXmlDom.getAttribute(ID);
 
-			params.setCurrentValidationPolicy(COUNTERSIGNATURE.equals(type) ? params.getCountersignatureValidationPolicy() : params.getValidationPolicy());
+			final String signatureType = signatureXmlDom.getAttribute(TYPE);
+			setSuitableValidationPolicy(params, signatureType);
 
 			final XmlNode signatureXmlNode = basicValidationData.addChild(SIGNATURE);
 			signatureXmlNode.setAttribute(ID, signatureId);
@@ -136,16 +135,12 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		 * 1) Identify the signer's certificate: Perform the Signer's Certificate Identification process (see clause 5.1)
 		 * with the signature and the signer's certificate, if provided as a parameter. If it returns INDETERMINATE,
 		 * terminate with INDETERMINATE and associated information, otherwise go to the next step.
-		 *
-		 * TODO: (***) The ICS process can also return INVALID.FORMAT_FAILURE. This is not mentioned in the BVP process.
 		 */
 		final XmlDom iscConclusion = signatureXmlDom.getElement("./ISC/Conclusion");
-		final String iscIndication = iscConclusion.getValue("./Indication/text()");
-
+		final String iscIndication = iscConclusion.getValue(XP_INDICATION);
 		if (!VALID.equals(iscIndication)) {
 
 			conclusion.copyConclusion(iscConclusion);
-			//			conclusionNode.addChildrenOf(iscConclusion);
 			return conclusion;
 		}
 
@@ -155,12 +150,10 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		 */
 
 		final XmlDom vciConclusion = signatureXmlDom.getElement("./VCI/Conclusion");
-		final String vciIndication = vciConclusion.getValue("./Indication/text()");
-
+		final String vciIndication = vciConclusion.getValue(XP_INDICATION);
 		if (!VALID.equals(vciIndication)) {
 
 			conclusion.copyConclusion(vciConclusion);
-			//			conclusionNode.addChildrenOf(vciConclusion);
 			return conclusion;
 		}
 
@@ -180,11 +173,10 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		 * --> We do this first to not be oblige to redo it at LTV process.
 		 */
 		final XmlDom cvConclusion = signatureXmlDom.getElement("./CV/Conclusion");
-		final String cvIndication = cvConclusion.getValue("./Indication/text()");
+		final String cvIndication = cvConclusion.getValue(XP_INDICATION);
 		if (!VALID.equals(cvIndication)) {
 
 			conclusion.copyConclusion(cvConclusion);
-			//			conclusionNode.addChildrenOf(cvConclusion);
 			return conclusion;
 		}
 
@@ -219,11 +211,10 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		 */
 		final XmlDom savConclusion = signatureXmlDom.getElement("./SAV/Conclusion");
 		if (savConclusion == null) {
-
 			throw new DSSException(EXCEPTION_TWUEIVP);
 		}
-		final String savIndication = savConclusion.getValue("./Indication/text()");
-		final String savSubIndication = savConclusion.getValue("./SubIndication/text()");
+		final String savIndication = savConclusion.getValue(XP_INDICATION);
+		final String savSubIndication = savConclusion.getValue(XP_SUB_INDICATION);
 
 		if (INDETERMINATE.equals(savIndication) && CRYPTO_CONSTRAINTS_FAILURE_NO_POE.equals(savSubIndication)) {
 
@@ -231,26 +222,23 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 			if (contentTimestamps.isEmpty()) {
 
 				conclusion.copyConclusion(savConclusion);
-				//				conclusionNode.addChildrenOf(savConclusion);
 				return conclusion;
 			}
 			// To carry out content-timestamp AdES-T validation process.
 
 			final XmlDom adestConclusion = contentTimestampsAdESTValidationData.getElement("/ContentTimestampsAdesTValidationData/Signature[@Id='%s']/Conclusion", signatureId);
-			final String adestIndication = adestConclusion.getValue("./Indication/text()");
+			final String adestIndication = adestConclusion.getValue(XP_INDICATION);
 			if (!VALID.equals(adestIndication)) {
 
 				conclusion.setIndication(INDETERMINATE);
-				//				conclusionNode.addChild(INDICATION, INDETERMINATE);
 				conclusion.setSubIndication(CRYPTO_CONSTRAINTS_FAILURE_NO_POE);
-				//				conclusionNode.addChild(SUB_INDICATION, CRYPTO_CONSTRAINTS_FAILURE_NO_POE);
 				return conclusion;
 			}
 			boolean ok = true;
 			final List<XmlDom> infoList = savConclusion.getElements(XP_INFO);
 			for (XmlDom info : infoList) {
 
-				final String field = info.getValue("./@Field");
+				final String field = info.getAttribute(FIELD);
 				if (field.contains("/AlgoExpirationDate/")) {
 
 					final String expirationDateString = info.getValue("./text()");
@@ -273,15 +261,11 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 			}
 			if (ok) {
 
-				//				conclusionNode.addChild(INDICATION, INDETERMINATE);
 				conclusion.setIndication(INDETERMINATE);
-				//				conclusionNode.addChild(SUB_INDICATION, EXPIRED);
 				conclusion.setSubIndication(EXPIRED);
 			} else {
 
-				//				conclusionNode.addChild(INDICATION, INVALID);
 				conclusion.setIndication(INVALID);
-				//				conclusionNode.addChild(SUB_INDICATION, CRYPTO_CONSTRAINTS_FAILURE_NO_POE);
 				conclusion.setSubIndication(CRYPTO_CONSTRAINTS_FAILURE_NO_POE);
 			}
 			return conclusion;
@@ -289,7 +273,6 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		if (!VALID.equals(savIndication)) {
 
 			conclusion.copyConclusion(savConclusion);
-			//			conclusionNode.addChildrenOf(savConclusion);
 			return conclusion;
 		}
 
@@ -305,8 +288,8 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		 * in step 2:<br>
 		 */
 		final XmlDom xcvConclusion = signatureXmlDom.getElement("./XCV/Conclusion");
-		final String xcvIndication = xcvConclusion.getValue("./Indication/text()");
-		final String xcvSubIndication = xcvConclusion.getValue("./SubIndication/text()");
+		final String xcvIndication = xcvConclusion.getValue(XP_INDICATION);
+		final String xcvSubIndication = xcvConclusion.getValue(XP_SUB_INDICATION);
 
 		/**
 		 * 􀀀 If the process returns VALID, go to the next step.
@@ -322,7 +305,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 			if (contentTimestamps != null) {
 
 				final XmlDom adestConclusion = contentTimestampsAdESTValidationData.getElement("/ContentTimestampsAdesTValidationData/Signature[@Id='%s']/Conclusion", signatureId);
-				final String adestIndication = adestConclusion.getValue("./Indication/text()");
+				final String adestIndication = adestConclusion.getValue(XP_INDICATION);
 				if (VALID.equals(adestIndication)) {
 
 					final Date revocationTime = xcvConclusion.getTimeValue("./Info/@RevocationTime");
@@ -330,9 +313,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 
 					if (bestSignatureTime.after(revocationTime)) {
 
-						//						conclusionNode.addChild(INDICATION, INVALID);
 						conclusion.setSubIndication(INVALID);
-						//						conclusionNode.addChild(SUB_INDICATION, REVOKED);
 						conclusion.setSubIndication(REVOKED);
 						return conclusion;
 					}
@@ -355,7 +336,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 
 				final XmlDom adestConclusionDom = contentTimestampsAdESTValidationData
 					  .getElement("/ContentTimestampsAdesTValidationData/Signature[@Id='%s']/Conclusion", signatureId);
-				final String adestIndication = adestConclusionDom.getValue("./Indication/text()");
+				final String adestIndication = adestConclusionDom.getValue(XP_INDICATION);
 				if (VALID.equals(adestIndication)) {
 
 					final Date bestSignatureTime = adestConclusionDom.getTimeValue("./Info/@BestSignatureTime");
@@ -363,9 +344,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 
 					if (bestSignatureTime.after(notAfter)) {
 
-						//						conclusionNode.addChild(INDICATION, INVALID);
 						conclusion.setSubIndication(INVALID);
-						//						conclusionNode.addChild(SUB_INDICATION, EXPIRED);
 						conclusion.setSubIndication(EXPIRED);
 						return conclusion;
 					}
@@ -380,7 +359,6 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		if (!VALID.equals(xcvIndication)) {
 
 			conclusion.copyConclusion(xcvConclusion);
-			//			conclusionNode.addChildrenOf(xcvConclusion);
 			return conclusion;
 		}
 
@@ -393,12 +371,11 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		 */
 
 
-		final XmlDom mainConclusion = signatureXmlDom.getElement("./Conclusion");
+		final XmlDom mainConclusion = signatureXmlDom.getElement(XP_CONCLUSION);
 		if (mainConclusion == null) {
 			throw new DSSException(EXCEPTION_TWUEIVP);
 		}
 		conclusion.copyConclusion(mainConclusion);
-		//				conclusionNode.addChildrenOf(mainConclusion);
 		return conclusion;
 	}
 }

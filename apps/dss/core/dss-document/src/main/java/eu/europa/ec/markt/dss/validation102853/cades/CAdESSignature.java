@@ -259,15 +259,6 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	/**
-	 * This is convenience method. To be used only internally!
-	 *
-	 * @param padesSigningTime PAdES signing time
-	 */
-	public void setPadesSigningTime(final Date padesSigningTime) {
-		this.padesSigningTime = padesSigningTime;
-	}
-
-	/**
 	 * Returns the first {@code SignerInformation} extracted from {@code CMSSignedData}.
 	 *
 	 * @param cms CMSSignedData
@@ -281,6 +272,95 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 		}
 		final SignerInformation signerInformation = (SignerInformation) signers.iterator().next();
 		return signerInformation;
+	}
+
+	/**
+	 * This method can be removed the simple IssuerSerial verification can be performed. In fact the hash verification is sufficient.
+	 *
+	 * @param generalNames
+	 * @return
+	 */
+	static String getCanonicalizedName(final GeneralNames generalNames) {
+
+		final GeneralName[] names = generalNames.getNames();
+		final TreeMap<String, String> treeMap = new TreeMap<String, String>();
+		for (final GeneralName name : names) {
+
+			final String ldapString = String.valueOf(name.getName());
+			LOG.debug("ldapString to canonicalize: {} ", ldapString);
+			try {
+
+				final LdapName ldapName = new LdapName(ldapString);
+				final List<Rdn> rdns = ldapName.getRdns();
+				for (final Rdn rdn : rdns) {
+
+					treeMap.put(rdn.getType().toLowerCase(), String.valueOf(rdn.getValue()).toLowerCase());
+				}
+			} catch (InvalidNameException e) {
+				throw new DSSException(e);
+			}
+		}
+		final StringBuilder stringBuilder = new StringBuilder();
+		for (final Map.Entry<String, String> entry : treeMap.entrySet()) {
+
+			stringBuilder.append(entry.getKey()).append('=').append(entry.getValue()).append('|');
+		}
+		final String canonicalizedName = stringBuilder.toString();
+		LOG.debug("canonicalizedName: {} ", canonicalizedName);
+		return canonicalizedName;
+	}
+
+	/**
+	 * @param cmsTypedData {@code CMSTypedData} cannot be null
+	 * @return the signed content extracted from {@code CMSTypedData}
+	 */
+	public static byte[] getSignedContent(final CMSTypedData cmsTypedData) {
+		try {
+
+			final ByteArrayOutputStream originalDocumentData = new ByteArrayOutputStream();
+			cmsTypedData.write(originalDocumentData);
+			return originalDocumentData.toByteArray();
+		} catch (IOException e) {
+			throw new DSSException(e);
+		} catch (CMSException e) {
+			throw new DSSException(e);
+		}
+	}
+
+	/**
+	 * @param signerInformation
+	 * @return the existing unsigned attributes or an empty attributes hashtable
+	 */
+	public static AttributeTable getUnsignedAttributes(final SignerInformation signerInformation) {
+		final AttributeTable unsignedAttributes = signerInformation.getUnsignedAttributes();
+		if (unsignedAttributes == null) {
+			return new AttributeTable(new Hashtable<ASN1ObjectIdentifier, Attribute>());
+		} else {
+			return unsignedAttributes;
+		}
+	}
+
+	/**
+	 * @param signerInformation
+	 * @return the existing signed attributes or an empty attributes {@code Hashtable}
+	 */
+	public static AttributeTable getSignedAttributes(final SignerInformation signerInformation) {
+
+		final AttributeTable signedAttributes = signerInformation.getSignedAttributes();
+		if (signedAttributes == null) {
+			return new AttributeTable(new Hashtable<ASN1ObjectIdentifier, Attribute>());
+		} else {
+			return signedAttributes;
+		}
+	}
+
+	/**
+	 * This is convenience method. To be used only internally!
+	 *
+	 * @param padesSigningTime PAdES signing time
+	 */
+	public void setPadesSigningTime(final Date padesSigningTime) {
+		this.padesSigningTime = padesSigningTime;
 	}
 
 	/**
@@ -501,42 +581,6 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 		}
 		// Validation of the hash is sufficient
 		return hashEqual;
-	}
-
-	/**
-	 * This method can be removed the simple IssuerSerial verification can be performed. In fact the hash verification is sufficient.
-	 *
-	 * @param generalNames
-	 * @return
-	 */
-	static String getCanonicalizedName(final GeneralNames generalNames) {
-
-		final GeneralName[] names = generalNames.getNames();
-		final TreeMap<String, String> treeMap = new TreeMap<String, String>();
-		for (final GeneralName name : names) {
-
-			final String ldapString = String.valueOf(name.getName());
-			LOG.debug("ldapString to canonicalize: {} ", ldapString);
-			try {
-
-				final LdapName ldapName = new LdapName(ldapString);
-				final List<Rdn> rdns = ldapName.getRdns();
-				for (final Rdn rdn : rdns) {
-
-					treeMap.put(rdn.getType().toLowerCase(), String.valueOf(rdn.getValue()).toLowerCase());
-				}
-			} catch (InvalidNameException e) {
-				throw new DSSException(e);
-			}
-		}
-		final StringBuilder stringBuilder = new StringBuilder();
-		for (final Map.Entry<String, String> entry : treeMap.entrySet()) {
-
-			stringBuilder.append(entry.getKey()).append('=').append(entry.getValue()).append('|');
-		}
-		final String canonicalizedName = stringBuilder.toString();
-		LOG.debug("canonicalizedName: {} ", canonicalizedName);
-		return canonicalizedName;
 	}
 
 	@Override
@@ -843,13 +887,12 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 			final String[] strings = claimedRoles.toArray(new String[claimedRoles.size()]);
 			return strings;
 		} catch (Exception e) {
-
 			throw new DSSException("Error when dealing with claimed signer roles: [" + attrValue.toString() + "]", e);
 		}
 	}
 
 	@Override
-	public List<CertifiedRole> getCertifiedSignerRoles() {
+	public CertifiedRole getCertifiedSignerRoles() {
 
 		final AttributeTable signedAttributes = signerInformation.getSignedAttributes();
 		if (signedAttributes == null) {
@@ -862,46 +905,36 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 		}
 		final ASN1Set attrValues = id_aa_ets_signerAttr.getAttrValues();
 		final ASN1Encodable asn1EncodableAttrValue = attrValues.getObjectAt(0);
-		try {
 
-			final SignerAttribute signerAttr = SignerAttribute.getInstance(asn1EncodableAttrValue);
-			if (signerAttr == null) {
-				return null;
-			}
-			List<CertifiedRole> roles = null;
-			final Object[] signerAttrValues = signerAttr.getValues();
-			for (final Object signerAttrValue : signerAttrValues) {
+		final SignerAttribute signerAttr = SignerAttribute.getInstance(asn1EncodableAttrValue);
+		if (signerAttr == null) {
+			return null;
+		}
+		CertifiedRole certifiedRole = null;
+		final Object[] signerAttrValues = signerAttr.getValues();
+		for (final Object signerAttrValue : signerAttrValues) {
 
-				if (signerAttrValue instanceof AttributeCertificate) {
+			if (signerAttrValue instanceof AttributeCertificate) {
 
-					if (roles == null) {
+				certifiedRole = new CertifiedRole();
+				final AttributeCertificate attributeCertificate = (AttributeCertificate) signerAttrValue;
+				final AttributeCertificateInfo acInfo = attributeCertificate.getAcinfo();
+				final AttCertValidityPeriod attrCertValidityPeriod = acInfo.getAttrCertValidityPeriod();
+				certifiedRole.setNotBefore(DSSASN1Utils.toDate(attrCertValidityPeriod.getNotBeforeTime()));
+				certifiedRole.setNotAfter(DSSASN1Utils.toDate(attrCertValidityPeriod.getNotAfterTime()));
+				final ASN1Sequence attributes = acInfo.getAttributes();
+				for (int ii = 0; ii < attributes.size(); ii++) {
 
-						roles = new ArrayList<CertifiedRole>();
-					}
-					final AttributeCertificate attributeCertificate = (AttributeCertificate) signerAttrValue;
-					final AttributeCertificateInfo acInfo = attributeCertificate.getAcinfo();
-					final AttCertValidityPeriod attrCertValidityPeriod = acInfo.getAttrCertValidityPeriod();
-					final ASN1Sequence attributes = acInfo.getAttributes();
-					for (int ii = 0; ii < attributes.size(); ii++) {
-
-						final ASN1Encodable objectAt = attributes.getObjectAt(ii);
-						final org.bouncycastle.asn1.x509.Attribute attribute = org.bouncycastle.asn1.x509.Attribute.getInstance(objectAt);
-						final ASN1Set attrValues1 = attribute.getAttrValues();
-						DERSequence derSequence = (DERSequence) attrValues1.getObjectAt(0);
-						RoleSyntax roleSyntax = RoleSyntax.getInstance(derSequence);
-						CertifiedRole certifiedRole = new CertifiedRole();
-						certifiedRole.setRole(roleSyntax.getRoleNameAsString());
-						certifiedRole.setNotBefore(DSSASN1Utils.toDate(attrCertValidityPeriod.getNotBeforeTime()));
-						certifiedRole.setNotAfter(DSSASN1Utils.toDate(attrCertValidityPeriod.getNotAfterTime()));
-						roles.add(certifiedRole);
-					}
+					final ASN1Encodable objectAt = attributes.getObjectAt(ii);
+					final org.bouncycastle.asn1.x509.Attribute attribute = org.bouncycastle.asn1.x509.Attribute.getInstance(objectAt);
+					final ASN1Set attrValues1 = attribute.getAttrValues();
+					final DERSequence derSequence = (DERSequence) attrValues1.getObjectAt(0);
+					final RoleSyntax roleSyntax = RoleSyntax.getInstance(derSequence);
+					certifiedRole.add(roleSyntax.getRoleNameAsString());
 				}
 			}
-			return roles;
-		} catch (Exception e) {
-
-			throw new DSSException("Error when dealing with certified signer roles: [" + asn1EncodableAttrValue.toString() + "]", e);
 		}
+		return certifiedRole;
 	}
 
 	@Override
@@ -1632,23 +1665,6 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	/**
-	 * @param cmsTypedData {@code CMSTypedData} cannot be null
-	 * @return the signed content extracted from {@code CMSTypedData}
-	 */
-	public static byte[] getSignedContent(final CMSTypedData cmsTypedData) {
-		try {
-
-			final ByteArrayOutputStream originalDocumentData = new ByteArrayOutputStream();
-			cmsTypedData.write(originalDocumentData);
-			return originalDocumentData.toByteArray();
-		} catch (IOException e) {
-			throw new DSSException(e);
-		} catch (CMSException e) {
-			throw new DSSException(e);
-		}
-	}
-
-	/**
 	 * This method handles the archive-timestamp-v2
 	 * <p/>
 	 * The value of the messageImprint field within TimeStampToken shall be a hash of the concatenation of:
@@ -1862,33 +1878,6 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 	public Set<DigestAlgorithm> getUsedCertificatesDigestAlgorithms() {
 
 		return usedCertificatesDigestAlgorithms;
-	}
-
-	/**
-	 * @param signerInformation
-	 * @return the existing unsigned attributes or an empty attributes hashtable
-	 */
-	public static AttributeTable getUnsignedAttributes(final SignerInformation signerInformation) {
-		final AttributeTable unsignedAttributes = signerInformation.getUnsignedAttributes();
-		if (unsignedAttributes == null) {
-			return new AttributeTable(new Hashtable<ASN1ObjectIdentifier, Attribute>());
-		} else {
-			return unsignedAttributes;
-		}
-	}
-
-	/**
-	 * @param signerInformation
-	 * @return the existing signed attributes or an empty attributes {@code Hashtable}
-	 */
-	public static AttributeTable getSignedAttributes(final SignerInformation signerInformation) {
-
-		final AttributeTable signedAttributes = signerInformation.getSignedAttributes();
-		if (signedAttributes == null) {
-			return new AttributeTable(new Hashtable<ASN1ObjectIdentifier, Attribute>());
-		} else {
-			return signedAttributes;
-		}
 	}
 
 	public boolean isDataForSignatureLevelPresent(final SignatureLevel signatureLevel) {

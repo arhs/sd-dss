@@ -20,12 +20,15 @@
 
 package eu.europa.ec.markt.dss.validation102853.bean;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * This class represents the certified roles extracted from the signature.
- *
- * <p>
+ * <p/>
+ * <p/>
  * DISCLAIMER: Project owner DG-MARKT.
  *
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
@@ -33,31 +36,40 @@ import java.util.Date;
  */
 public class CertifiedRole {
 
-    private String role;
-    private Date notBefore;
-    private Date notAfter;
+	private List<String> roleList = new ArrayList<String>();
+	private Date notBefore;
+	private Date notAfter;
 
-    public String getRole() {
-        return role;
-    }
+	/**
+	 * @return an unmodifiable {@code List} of certified roles
+	 */
+	public List<String> getRoleList() {
+		return Collections.unmodifiableList(roleList);
+	}
 
-    public void setRole(String role) {
-        this.role = role;
-    }
+	public Date getNotBefore() {
+		return notBefore;
+	}
 
-    public Date getNotBefore() {
-        return notBefore;
-    }
+	public void setNotBefore(Date notBefore) {
+		this.notBefore = notBefore;
+	}
 
-    public void setNotBefore(Date notBefore) {
-        this.notBefore = notBefore;
-    }
+	public Date getNotAfter() {
+		return notAfter;
+	}
 
-    public Date getNotAfter() {
-        return notAfter;
-    }
+	public void setNotAfter(Date notAfter) {
+		this.notAfter = notAfter;
+	}
 
-    public void setNotAfter(Date notAfter) {
-        this.notAfter = notAfter;
-    }
+	/**
+	 * This method allows to add a certified role
+	 *
+	 * @param certifiedRole {@code String}
+	 */
+	public void add(final String certifiedRole) {
+
+		roleList.add(certifiedRole);
+	}
 }

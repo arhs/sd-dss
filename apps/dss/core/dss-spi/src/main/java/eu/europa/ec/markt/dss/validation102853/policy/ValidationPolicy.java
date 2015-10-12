@@ -176,18 +176,11 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract List<String> getClaimedRoles();
 
 	/**
-	 * Indicates if the presence of the Signer Role is mandatory.
+	 * The {@code Constraint} is initialised with the values extracted from the constraint file.
 	 *
-	 * @return
+	 * @return {@code Constraint} if CertifiedRoles element is present in the constraint file, null otherwise
 	 */
-	public abstract boolean shouldCheckIfCertifiedRoleIsPresent();
-
-	/**
-	 * Return the mandated signer role.
-	 *
-	 * @return
-	 */
-	public abstract List<String> getCertifiedRoles();
+	public abstract Constraint getCertifiedRoleConstraint();
 
 	/**
 	 * Returns the name of the policy.
@@ -210,7 +203,7 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 */
 	public abstract Long getTimestampDelayTime();
 
-	public abstract String getCertifiedRolesAttendance();
+	public abstract String getClaimedRolesAttendance();
 
 	/**
 	 * This method creates the {@code SignatureCryptographicConstraint} corresponding to the context parameter. If AcceptableEncryptionAlgo is not present in the constraint file
@@ -407,13 +400,6 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 
 	public abstract Constraint getMessageImprintDataIntactConstraint();
 
-	/**
-	 * This constraint is always executed!
-	 *
-	 * @return
-	 */
-	public abstract TimestampValidationProcessValidConstraint getTimestampValidationProcessConstraint();
-
 	public abstract Constraint getRevocationTimeConstraint();
 
 	public abstract Constraint getBestSignatureTimeBeforeIssuanceDateOfSigningCertificateConstraint();
@@ -459,8 +445,6 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 
 	public abstract ElementNumberConstraint getSignatureTimestampNumberConstraint();
 
-	abstract ElementNumberConstraint getValidSignatureTimestampNumberConstraint();
-
 	public abstract ElementNumberConstraint getManifestReferenceNumberConstraint();
 
 	public abstract Constraint getManifestReferenceDataExistenceConstraint();
@@ -469,4 +453,3 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 
 	public abstract List<Constraint> getISCCustomizedConstraints();
 }
-

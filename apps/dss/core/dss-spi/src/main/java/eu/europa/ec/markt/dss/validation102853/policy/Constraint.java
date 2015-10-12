@@ -229,7 +229,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 			if (warn()) {
 
 				node.addChild(STATUS, WARN);
-				final XmlNode xmlNode = node.addChild(WARNING, failureMessageTag, messageAttributes);
+				node.addChild(WARNING, failureMessageTag, messageAttributes);
 				if (DSSUtils.isNotBlank(expectedValue) && !expectedValue.equals("true") && !expectedValue.equals("false")) {
 					messageAttributes.put(EXPECTED_VALUE, expectedValue);
 					messageAttributes.put(CONSTRAINT_VALUE, value);
@@ -404,6 +404,14 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	 */
 	public boolean fail() {
 		return level.equals(Level.FAIL);
+	}
+
+	/**
+	 * This method allows to clear all attributes.
+	 */
+	public void clearAttributes() {
+
+		messageAttributes.clear();
 	}
 
 	public enum Level {IGNORE, INFORM, WARN, FAIL}

@@ -38,7 +38,6 @@ import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.Identifica
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.X509CertificateValidation;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -61,7 +60,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
  *
  * @author bielecro
  */
-public class TimestampValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class TimestampValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage, ValidationXPathQueryHolder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(TimestampValidation.class);
 
@@ -118,9 +117,8 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 
 		for (final XmlDom signatureXmlNode : signatureXmlNodeList) {
 
-			final String type = signatureXmlNode.getValue("./@Type");
-
-			params.setCurrentValidationPolicy(COUNTERSIGNATURE.equals(type) ? params.getCountersignatureValidationPolicy() : params.getValidationPolicy());
+			final String signatureType = signatureXmlNode.getAttribute(TYPE);
+			setSuitableValidationPolicy(params, signatureType);
 
 			validationPolicy = params.getCurrentValidationPolicy();
 
@@ -138,7 +136,7 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 			// This defines the signature context of the execution of the following processes.
 			params.setSignatureContext(signatureXmlNode);
 
-			final String signatureId = signatureXmlNode.getValue("./@Id");
+			final String signatureId = signatureXmlNode.getAttribute(ID);
 			final XmlNode currentSignatureXmlNode = timestampValidationDataXmlNode.addChild(SIGNATURE);
 			currentSignatureXmlNode.setAttribute(ID, signatureId);
 
@@ -151,8 +149,8 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 				params.setContextName(TIMESTAMP);
 				params.setContextElement(timestamp);
 
-				final String timestampId = timestamp.getValue("./@Id");
-				final String timestampType = timestamp.getValue("./@Type");
+				final String timestampId = timestamp.getAttribute(ID);
+				final String timestampType = timestamp.getAttribute(TYPE);
 
 				final XmlNode timestampXmlNode = currentSignatureXmlNode.addChild(TIMESTAMP);
 				timestampXmlNode.setAttribute(ID, timestampId);
@@ -334,25 +332,3 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 		return conclusion;
 	}
 }
-//	/**
-//	 * Check of unsigned qualifying property: SignatureTimestamp
-//	 * The number of detected VALID SignatureTimestamps is check against the validation policy.
-//	 *
-//	 * @param conclusion the conclusion to use to add the result of the check.
-//	 * @return false if the check failed and the process should stop, true otherwise.
-//	 */
-//	private boolean checkValidSignatureTimestampNumberConstraint(final Conclusion conclusion) {
-//
-//		ElementNumberConstraint constraint = validationPolicy.getSignatureTimestampNumberConstraint();
-//		if (constraint == null) {
-//			return true;
-//		}
-//		constraint.create(subProcessXmlNode, BBB_SAV_DNSTCVP);
-//		final List<XmlDom> signatureTimestampXmlDom = basicBuildingBlocksReport.getElements("./Timestamps/Timestamp[@Type='SIGNATURE_TIMESTAMP']");
-//		constraint.setIntValue(signatureTimestampXmlDom.size());
-//		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNSTCVP_ANS);
-//		constraint.setConclusionReceiver(conclusion);
-//		boolean check = constraint.check();
-//		return check;
-//	}
-

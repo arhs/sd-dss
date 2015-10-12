@@ -25,18 +25,16 @@ import java.util.List;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ElementNumberConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
+import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.MessageTag;
@@ -46,15 +44,18 @@ import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
+import static eu.europa.ec.markt.dss.validation102853.TimestampType.SIGNATURE_TIMESTAMP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIDF;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIDF_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_INSTCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_INSTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DSFCVP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DSFCVP_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_IACV;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_IACV_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICERRM;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICERRM_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ICRM;
@@ -115,7 +116,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
-public class SignatureAcceptanceValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class SignatureAcceptanceValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage, ValidationXPathQueryHolder {
 
 	/**
 	 * The following variables are used only in order to simplify the writing of the rules!
@@ -140,14 +141,12 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 * This node is used to add the constraint nodes.
 	 */
 	private XmlNode subProcessXmlNode;
-	private XmlDom basicBuildingBlocksReport;
 
 	private void prepareParameters(final ProcessParameters params) {
 
 		this.validationPolicy = params.getCurrentValidationPolicy();
 		this.signatureContext = params.getSignatureContext();
 		this.currentTime = params.getCurrentTime();
-		this.basicBuildingBlocksReport = params.getBasicBuildingBlocksReport();
 
 		isInitialised();
 	}
@@ -356,32 +355,8 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		 property/attribute available to its DA so that it may decide additional suitable processing, which is out of the scope of
 		 the present document.
 		 */
-
-		// TODO: (Bob: 2014 Mar 23) To be converted to the WARNING system
-		final boolean checkIfCertifiedRoleIsPresent = validationPolicy.shouldCheckIfCertifiedRoleIsPresent();
-		if (checkIfCertifiedRoleIsPresent) {
-
-			final XmlNode constraintNode = addConstraint(BBB_SAV_ICERRM);
-
-			final List<String> requestedCertifiedRoles = validationPolicy.getCertifiedRoles();
-			final String requestedCertifiedRolesString = RuleUtils.toString(requestedCertifiedRoles);
-
-			final List<XmlDom> certifiedRolesXmlDom = signatureContext.getElements("./CertifiedRoles/CertifiedRole");
-			final List<String> certifiedRoles = XmlDom.convertToStringList(certifiedRolesXmlDom);
-			final String certifiedRolesString = RuleUtils.toString(certifiedRoles);
-
-			boolean contains = RuleUtils.contains(requestedCertifiedRoles, certifiedRoles);
-
-			if (!contains) {
-
-				constraintNode.addChild(STATUS, KO);
-				conclusion.setIndication(INVALID, SIG_CONSTRAINTS_FAILURE);
-				conclusion.addError(BBB_SAV_ICERRM_ANS).setAttribute(CERTIFIED_ROLES, certifiedRolesString).setAttribute(REQUESTED_ROLES, requestedCertifiedRolesString);
-				return conclusion;
-			}
-			constraintNode.addChild(STATUS, OK);
-			constraintNode.addChild(INFO, certifiedRolesString).setAttribute(FIELD, CERTIFIED_ROLES);
-			constraintNode.addChild(INFO, "WARNING: The attribute certificate is not cryptographically validated.");
+		if (!checkCertifiedRoleConstraint(conclusion)) {
+			return conclusion;
 		}
 
 		// Main signature cryptographic constraints validation
@@ -620,9 +595,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 
 			final List<XmlDom> elements = signProductionPlaceXmlDom.getElements("./*");
 			for (final XmlDom element : elements) {
-
 				if (!signatureProductionPlace.isEmpty()) {
-
 					signatureProductionPlace += "; ";
 				}
 				signatureProductionPlace += element.getName() + ": " + element.getText();
@@ -721,7 +694,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		final List<XmlDom> claimedRolesXmlDom = signatureContext.getElements("./ClaimedRoles/ClaimedRole");
 		final List<String> claimedRoles = XmlDom.convertToStringList(claimedRolesXmlDom);
 		// TODO (Bob) to be implemented for each claimed role. Attendance must be taken into account.
-		final String attendance = validationPolicy.getCertifiedRolesAttendance();
+		final String attendance = validationPolicy.getClaimedRolesAttendance();
 		String claimedRole = null;
 		for (String claimedRole_ : claimedRoles) {
 
@@ -739,7 +712,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	}
 
 	/**
-	 * Check of unsigned qualifying property: SignatureTimestamp
+	 * Check of unsigned qualifying property: SignatureTimestamp.
 	 * The number of detected SignatureTimestamps is check against the validation policy. Even not valid timestamps are taken into account.
 	 *
 	 * @param conclusion the conclusion to use to add the result of the check.
@@ -751,13 +724,57 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessXmlNode, BBB_SAV_DNSTCVP);
-		final List<XmlDom> signatureTimestampXmlDom = signatureContext.getElements("./Timestamps/Timestamp[@Type='SIGNATURE_TIMESTAMP']");
+		constraint.create(subProcessXmlNode, BBB_SAV_INSTCVP);
+		final List<XmlDom> signatureTimestampXmlDom = signatureContext.getElements(XP_TIMESTAMPS, SIGNATURE_TIMESTAMP);
 		constraint.setIntValue(signatureTimestampXmlDom.size());
-		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNSTCVP_ANS);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_INSTCVP_ANS);
 		constraint.setConclusionReceiver(conclusion);
 		boolean check = constraint.check();
 		return check;
+	}
+
+	/**
+	 * Check of: main signature certified role.
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check.
+	 * @return false if the check failed and the process should stop, true otherwise.
+	 */
+	private boolean checkCertifiedRoleConstraint(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getCertifiedRoleConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		final XmlNode xmlNode = constraint.create(subProcessXmlNode, BBB_SAV_IACV);
+
+		final XmlDom certifiedRolesXmlDom = signatureContext.getElement("./CertifiedRoles");
+		final Date notBefore = certifiedRolesXmlDom.getTimeValue(XP_NOT_BEFORE);
+		final Date notAfter = certifiedRolesXmlDom.getTimeValue(XP_NOT_AFTER);
+
+		boolean valid = currentTime.after(notBefore) && currentTime.before(notAfter);
+		constraint.setExpectedValue("true");
+		constraint.setValue(valid);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_IACV_ANS);
+		constraint.setAttribute(CURRENT_TIME, DSSUtils.formatDate(currentTime)).setAttribute(NOT_BEFORE, DSSUtils.formatDate(notBefore))
+			  .setAttribute(NOT_AFTER, DSSUtils.formatDate(notAfter));
+		constraint.setConclusionReceiver(conclusion);
+		boolean check = constraint.check();
+		if (!check) {
+			return false;
+		}
+		xmlNode.addChild(INFO, "WARNING: The attribute certificate is not cryptographically validated.");
+
+		constraint.clearAttributes();
+
+		constraint.create(subProcessXmlNode, BBB_SAV_ICERRM);
+
+		final List<XmlDom> certifiedRoleXmlDomList = certifiedRolesXmlDom.getElements("./CertifiedRole");
+		final List<String> certifiedRoles = XmlDom.convertToStringList(certifiedRoleXmlDomList);
+		constraint.setExpectedValue(constraint.getIdentifiers().toString());
+		constraint.setValue(certifiedRoles);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ICERRM_ANS);
+
+		return constraint.checkInList();
 	}
 
 	/**

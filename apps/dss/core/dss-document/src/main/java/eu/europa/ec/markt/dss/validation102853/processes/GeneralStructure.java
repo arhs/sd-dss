@@ -28,7 +28,6 @@ import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -43,7 +42,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_GS_DN
 /**
  *
  */
-public class GeneralStructure extends BasicValidationProcess implements NodeName, NodeValue, AttributeName, AttributeValue, Indication, SubIndication, ExceptionMessage {
+public class GeneralStructure extends BasicValidationProcess implements NodeName, NodeValue, AttributeName, Indication, SubIndication, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GeneralStructure.class);
 
