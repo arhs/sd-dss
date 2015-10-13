@@ -40,10 +40,23 @@
 									</xs:sequence>
 								</xs:complexType>
 							</xs:element>
-							<xs:element name="CommitmentTypeIndication" minOccurs="0">
+							<xs:element name="CommitmentTypeIndication" minOccurs="0" maxOccurs="unbounded">
 								<xs:complexType>
 									<xs:sequence>
-										<xs:element type="xs:string" name="Identifier" minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element type="xs:string" name="Identifier"/>
+										<xs:element type="xs:string" name="Description" minOccurs="0"/>
+										<xs:choice>
+											<xs:element name="ObjectReference" maxOccurs="unbounded">
+												<xs:complexType>
+													<xs:simpleContent>
+														<xs:extension base="xs:anyURI">
+															<xs:attribute type="xs:boolean" name="Exists" use="required"/>
+														</xs:extension>
+													</xs:simpleContent>
+												</xs:complexType>
+											</xs:element>
+											<xs:element name="AllSignedDataObjects"/>
+										</xs:choice>
 									</xs:sequence>
 								</xs:complexType>
 							</xs:element>

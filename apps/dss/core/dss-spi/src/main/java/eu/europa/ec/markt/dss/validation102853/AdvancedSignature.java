@@ -193,7 +193,7 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return {@code CommitmentType}
 	 */
-	public CommitmentType getCommitmentTypeIndication();
+	public List<CommitmentType> getCommitmentTypeIndication();
 
 	/**
 	 * Returns the content type of the signed data

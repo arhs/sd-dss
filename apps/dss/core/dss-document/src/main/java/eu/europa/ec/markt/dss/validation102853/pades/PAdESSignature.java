@@ -580,7 +580,7 @@ public class PAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public CommitmentType getCommitmentTypeIndication() {
+	public List<CommitmentType> getCommitmentTypeIndication() {
 		return cadesSignature.getCommitmentTypeIndication();
 	}
 

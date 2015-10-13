@@ -23,10 +23,12 @@ package eu.europa.ec.markt.dss.validation102853.bean;
 import java.util.ArrayList;
 import java.util.List;
 
+import eu.europa.ec.markt.dss.DSSUtils;
+
 /**
  * This class represents the commitment type indication identifiers extracted from the signature.
- *
- * <p>
+ * <p/>
+ * <p/>
  * DISCLAIMER: Project owner DG-MARKT.
  *
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
@@ -34,18 +36,65 @@ import java.util.List;
  */
 public class CommitmentType {
 
-    private List<String> identifiers;
+	private String identifier;
+	private String description;
 
-    public List<String> getIdentifiers() {
-        return identifiers;
-    }
+	private List<ObjectReference> objectReferenceList = null;
+	private boolean allSignedDataObjects;
 
-    public void addIdentifier(final String identifier) {
+	public String getIdentifier() {
+		return identifier;
+	}
 
-        if (identifiers == null) {
+	public void setIdentifier(final String identifier) {
+		this.identifier = identifier;
+	}
 
-            identifiers = new ArrayList<String>();
-        }
-        identifiers.add(identifier);
-    }
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(final String description) {
+		this.description = description;
+	}
+
+	public void addObjectReference(final String reference, final boolean exists) {
+
+		if (DSSUtils.isNotBlank(reference)) {
+			if (objectReferenceList == null) {
+				objectReferenceList = new ArrayList<ObjectReference>();
+			}
+			objectReferenceList.add(new ObjectReference(reference, exists));
+		}
+	}
+
+	public List<ObjectReference> getObjectReferenceList() {
+		return objectReferenceList;
+	}
+
+	public boolean isAllSignedDataObjects() {
+		return allSignedDataObjects;
+	}
+
+	public void setAllSignedDataObjects(final boolean allSignedDataObjects) {
+		this.allSignedDataObjects = allSignedDataObjects;
+	}
+
+	public class ObjectReference {
+		String reference;
+		boolean exists;
+
+		public ObjectReference(final String reference, final boolean exists) {
+			this.reference = reference;
+			this.exists = exists;
+		}
+
+		public String getReference() {
+			return reference;
+		}
+
+		public boolean isExists() {
+			return exists;
+		}
+	}
 }

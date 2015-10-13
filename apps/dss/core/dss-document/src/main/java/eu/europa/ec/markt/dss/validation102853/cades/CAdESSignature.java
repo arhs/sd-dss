@@ -811,7 +811,7 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public CommitmentType getCommitmentTypeIndication() {
+	public List<CommitmentType> getCommitmentTypeIndication() {
 
 		final AttributeTable attributes = signerInformation.getSignedAttributes();
 		if (attributes == null) {
@@ -827,15 +827,22 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 				final int size = attrValues.size();
 				if (size > 0) {
 
-					final CommitmentType commitmentType = new CommitmentType();
+					List<CommitmentType> commitmentTypeList = null;
 					for (int ii = 0; ii < size; ii++) {
 
 						final DERSequence derSequence = (DERSequence) attrValues.getObjectAt(ii);
 						final CommitmentTypeIndication commitmentTypeIndication = CommitmentTypeIndication.getInstance(derSequence);
 						final ASN1ObjectIdentifier commitmentTypeId = commitmentTypeIndication.getCommitmentTypeId();
-						commitmentType.addIdentifier(commitmentTypeId.getId());
+						final CommitmentType commitmentType = new CommitmentType();
+						commitmentType.setIdentifier(commitmentTypeId.getId());
+						//						commitmentType.setIdentifier(commitmentTypeId.get());
+						if (commitmentTypeList == null) {
+							commitmentTypeList = new ArrayList<CommitmentType>();
+						}
+						commitmentTypeList.add(commitmentType);
+
 					}
-					return commitmentType;
+					return commitmentTypeList;
 				}
 			} catch (Exception e) {
 				throw new DSSException("Error when dealing with CommitmentTypeIndication!", e);

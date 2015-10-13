@@ -880,7 +880,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			}
 			final Element element = (Element) node;
 			final TimestampToken timestampToken = makeTimestampToken(element, timestampType);
-			if (timestampToken != null) {
+			if (timestampToken == null) {
 				continue;
 			}
 			if (timestampToken.getTimestampIncludes() == null) {
@@ -2184,13 +2184,11 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			final Element unsignedSignatureElement = (Element) nodeList.item(ii);
 			final int nodeHashCode = unsignedSignatureElement.hashCode();
 			if (nodeHashCode == timestampHashCode) {
-
 				found = true;
 			} else if (found) {
 
 				final String nodeName = unsignedSignatureElement.getLocalName();
 				if ("TimeStampValidationData".equals(nodeName)) {
-
 					return unsignedSignatureElement;
 				}
 			}
@@ -2199,11 +2197,60 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public CommitmentType getCommitmentTypeIndication() {
+	public List<CommitmentType> getCommitmentTypeIndication() {
 
-		// TODO-Bob (13/10/2015):
+		final NodeList commitmentTypeIndicationNodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_COMMITMENT_TYPE_INDICATION);
+		if (commitmentTypeIndicationNodeList == null) {
+			return null;
+		}
+		List<CommitmentType> commitmentTypeList = null;
+		for (int ii = 0; ii < commitmentTypeIndicationNodeList.getLength(); ii++) {
 
-		return null;
+			final Element commitmentTypeIndicationElement = (Element) commitmentTypeIndicationNodeList.item(ii);
+			final CommitmentType commitmentType = new CommitmentType();
+
+			final String commitmentTypeIdentifier = DSSXMLUtils.getValue(commitmentTypeIndicationElement, "./xades:CommitmentTypeId/xades:Identifier");
+			commitmentType.setIdentifier(commitmentTypeIdentifier);
+			final String commitmentTypeDescription = DSSXMLUtils.getValue(commitmentTypeIndicationElement, "./xades:CommitmentTypeId/xades:Description");
+			commitmentType.setDescription(commitmentTypeDescription);
+			final NodeList objectReferenceNodeList = DSSXMLUtils.getNodeList(commitmentTypeIndicationElement, "./xades:ObjectReference");
+			if (objectReferenceNodeList != null) {
+				for (int jj = 0; jj < objectReferenceNodeList.getLength(); jj++) {
+
+					final Element objectReferenceElement = (Element) objectReferenceNodeList.item(jj);
+					final String objectReference = objectReferenceElement.getTextContent().trim();
+					if (!objectReference.startsWith("#")) {
+
+						commitmentType.addObjectReference(objectReference, false);
+						continue;
+					}
+					boolean exists = false;
+					final String objectReferenceId = objectReference.substring(1);
+					final List<Reference> references = getReferences();
+					for (final Reference reference : references) {
+
+						final String referenceId = reference.getId();
+						if (referenceId.equals(objectReferenceId)) {
+
+							exists = true;
+							break;
+						}
+					}
+					commitmentType.addObjectReference(objectReference, exists);
+				}
+			} else {
+
+				final Element allSignedDataObjects = DSSXMLUtils.getElement(commitmentTypeIndicationElement, "./xades:AllSignedDataObjects");
+				if (allSignedDataObjects != null) {
+					commitmentType.setAllSignedDataObjects(true);
+				}
+			}
+			if (commitmentTypeList == null) {
+				commitmentTypeList = new ArrayList<CommitmentType>();
+			}
+			commitmentTypeList.add(commitmentType);
+		}
+		return commitmentTypeList;
 	}
 
 	/**

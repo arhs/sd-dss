@@ -204,11 +204,12 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	@Override
 	public Constraint getCommitmentTypeIndicationConstraint() {
 
-		final String level = getValue("/ConstraintsParameters/MainSignature/MandatedSignedQProperties/CommitmentTypeIndication/@Level");
+		final String xpRoot = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/CommitmentTypeIndication";
+		final String level = getValue(xpRoot + "/@Level");
 		if (DSSUtils.isNotBlank(level)) {
 
 			final Constraint constraint = new Constraint(level);
-			final List<XmlDom> commitmentTypeIndications = getElements("/ConstraintsParameters/MainSignature/MandatedSignedQProperties/CommitmentTypeIndication/Identifier");
+			final List<XmlDom> commitmentTypeIndications = getElements(xpRoot + "/Identifier");
 			final List<String> identifierList = XmlDom.convertToStringList(commitmentTypeIndications);
 			constraint.setExpectedValue(identifierList.toString());
 			constraint.setIdentifiers(identifierList);

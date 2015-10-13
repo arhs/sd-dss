@@ -49,6 +49,8 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMI
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DCTIPER;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DCTIPER_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DSFCVP;
@@ -261,6 +263,9 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (!checkCommitmentTypeIndicationConstraint(conclusion)) {
 			return conclusion;
 		}
+		if (!checkCommitmentTypeIndicationObjectReferenceConstraint(conclusion)) {
+			return conclusion;
+		}
 
 		// signer-location
 		if (!checkSignerLocationConstraint(conclusion)) {
@@ -437,15 +442,20 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		final List<XmlDom> dataObjectFormatList = signatureContext.getElements("./BasicSignature/References/Reference/DataObjectFormat");
-		if (dataObjectFormatList.isEmpty()) { // Test only if XAdES
+		final List<XmlDom> referenceXmlDomList = signatureContext.getElements("./BasicSignature/References/Reference");
+		if (referenceXmlDomList.isEmpty()) { // Test only if XAdES
 			return true;
 		}
 		constraint.create(subProcessXmlNode, BBB_SAV_ISQPDOFP);
-		boolean dataObjectFormatOk = true;
-		for (final XmlDom xmlDom : dataObjectFormatList) {
-			if (!"true".equals(xmlDom.getText())) {
+		boolean dataObjectFormatOk = referenceXmlDomList.size() > 0 ? true : false;
+		for (final XmlDom referenceXmlDom : referenceXmlDomList) {
+
+			final boolean dataObjectFormat = referenceXmlDom.getBoolValue("./DataObjectFormat/text()");
+			if (!dataObjectFormat) {
+
 				dataObjectFormatOk = false;
+				final String uri = referenceXmlDom.getValue("./Uri/text()");
+				constraint.setAttribute(URI, uri); // TODO-Bob (13/10/2015):  It would be better to point to the Id of the reference
 				break;
 			}
 		}
@@ -561,12 +571,44 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		}
 		constraint.create(subProcessXmlNode, BBB_SAV_ISQPXTIP);
 		// TODO: A set of commitments must be checked
-		final String commitmentTypeIndicationIdentifier = signatureContext.getValue("./CommitmentTypeIndication/Identifier[1]/text()");
+		final String commitmentTypeIndicationIdentifier = signatureContext.getValue("./CommitmentTypeIndication[1]/Identifier/text()");
 		constraint.setValue(commitmentTypeIndicationIdentifier);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPXTIP_ANS);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.checkInList();
+	}
+
+	/**
+	 * Check of commitment-type-indication
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check.
+	 * @return false if the check failed and the process should stop, true otherwise.
+	 */
+	private boolean checkCommitmentTypeIndicationObjectReferenceConstraint(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getCommitmentTypeIndicationConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_DCTIPER);
+		// TODO: A set of commitments must be checked
+		final List<XmlDom> objectReferenceXmlDomList = signatureContext.getElements("./CommitmentTypeIndication[1]/ObjectReference");
+		constraint.setValue(objectReferenceXmlDomList.size() > 0 ? "true" : "false");
+		for (final XmlDom objectReferenceXmlDom : objectReferenceXmlDomList) {
+
+			final String objectReferenceValue = objectReferenceXmlDom.getText();
+			final String objectReferenceExists = objectReferenceXmlDom.getAttribute("Exists");
+			if ("false".equals(objectReferenceExists)) {
+				constraint.setValue("false");
+				constraint.setAttribute(OBJECT_REFERENCE, objectReferenceValue);
+			}
+		}
+		constraint.setExpectedValue("true");
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DCTIPER_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
 	}
 
 	/**

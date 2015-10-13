@@ -88,6 +88,7 @@ import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlDistinguishedN
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlInfoType;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlKeyUsageBits;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlMessage;
+import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlObjectReference;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlPolicy;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlQCStatement;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlQualifiers;
@@ -1416,25 +1417,41 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 	private void dealWithCommitmentTypeIndication(AdvancedSignature signature, XmlSignature xmlSignature) {
 
-		CommitmentType commitmentTypeIndication = null;
+		List<CommitmentType> commitmentTypeIndicationList = null;
 		try {
-			commitmentTypeIndication = signature.getCommitmentTypeIndication();
+			commitmentTypeIndicationList = signature.getCommitmentTypeIndication();
 		} catch (Exception e) {
 
 			LOG.warn("Exception: ", e);
 			addErrorMessage(xmlSignature, e);
 		}
-		if (commitmentTypeIndication != null) {
+		if (commitmentTypeIndicationList != null) {
 
-			final XmlCommitmentTypeIndication xmlCommitmentTypeIndication = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlCommitmentTypeIndication();
-			final List<String> xmlIdentifiers = xmlCommitmentTypeIndication.getIdentifier();
+			final List<XmlCommitmentTypeIndication> xmlCommitmentTypeIndicationList = xmlSignature.getCommitmentTypeIndication();
+			for (final CommitmentType commitmentType : commitmentTypeIndicationList) {
 
-			final List<String> identifiers = commitmentTypeIndication.getIdentifiers();
-			for (final String identifier : identifiers) {
+				final XmlCommitmentTypeIndication xmlCommitmentTypeIndication = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlCommitmentTypeIndication();
+				xmlCommitmentTypeIndication.setIdentifier(commitmentType.getIdentifier());
+				xmlCommitmentTypeIndication.setDescription(commitmentType.getDescription());
+				if (commitmentType.isAllSignedDataObjects()) {
+					xmlCommitmentTypeIndication.setAllSignedDataObjects(true);
+				} else {
 
-				xmlIdentifiers.add(identifier);
+					final List<CommitmentType.ObjectReference> objectReferenceList = commitmentType.getObjectReferenceList();
+					if (objectReferenceList != null) {
+
+						final List<XmlObjectReference> xmlObjectReferenceList = xmlCommitmentTypeIndication.getObjectReference();
+						for (final CommitmentType.ObjectReference objectReference : objectReferenceList) {
+
+							final XmlObjectReference xmlObjectReference = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlObjectReference();
+							xmlObjectReference.setValue(objectReference.getReference());
+							xmlObjectReference.setExists(objectReference.isExists());
+							xmlObjectReferenceList.add(xmlObjectReference);
+						}
+					}
+				}
+				xmlCommitmentTypeIndicationList.add(xmlCommitmentTypeIndication);
 			}
-			xmlSignature.setCommitmentTypeIndication(xmlCommitmentTypeIndication);
 		}
 	}
 

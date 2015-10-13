@@ -48,4 +48,6 @@ public interface AttributeName {
 	String TIMESTAMP_TYPE = "Type";
 	String TYPE = "Type";
 	String PARENT_ID = "ParentId";
+	String OBJECT_REFERENCE = "ObjectReference";
+	String URI = "Uri";
 }

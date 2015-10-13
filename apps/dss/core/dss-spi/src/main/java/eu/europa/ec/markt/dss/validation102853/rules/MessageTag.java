@@ -90,6 +90,8 @@ public enum MessageTag {
 	BBB_SAV_ISQPDOFP_ANS("The signed qualifying property: 'data-object-format' is not present!"),
 	BBB_SAV_ISQPXTIP("Is signed qualifying property: 'commitment-type-indication' present?"),
 	BBB_SAV_ISQPXTIP_ANS("The signed qualifying property: 'commitment-type-indication' is not present!"),
+	BBB_SAV_DCTIPER("Does 'commitment-type-indication' point to an existing reference?"),
+	BBB_SAV_DCTIPER_ANS("The 'commitment-type-indication' does not point to an existing reference!"),
 	BBB_SAV_DNSTCVP("Does the number of 'signature timestamps' comply with the validation policy?"),
 	BBB_SAV_DNSTCVP_ANS("The number of 'signature timestamps' doesn't comply with the validation policy!"),
 
