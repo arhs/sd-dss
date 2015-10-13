@@ -61,10 +61,10 @@ public class BasicValidationProcessValidConstraint extends Constraint {
 		if (!value.equals(expectedValue)) {
 
 			node.addChild(STATUS, KO);
-			conclusion.copyConclusion(basicValidationProcessConclusionNode);
+			conclusion.copyConclusionAndAddBasicInfo(basicValidationProcessConclusionNode);
 			return false;
 		}
-		node.addChild(STATUS, OK);
+		addOkNode();
 		// The consolidation of the warning is made in the SimpleReportBuilder
 		// conclusion.copyWarnings(basicValidationProcessConclusionNode);
 		return true;

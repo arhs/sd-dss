@@ -31,7 +31,6 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
-import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.ltv.PastSignatureValidation;
 import eu.europa.ec.markt.dss.validation102853.processes.ltv.PastSignatureValidationConclusion;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
@@ -86,7 +85,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_IPSVC
  *
  * @author bielecro
  */
-public class LongTermValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage, ValidationXPathQueryHolder {
+public class LongTermValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LongTermValidation.class);
 
@@ -188,7 +187,7 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 					conclusion.setIndication(VALID);
 				}
 			} catch (Exception e) {
-
+				// TODO-Bob (12/10/2015):  should not happen
 				LOG.warn("Unexpected exception: " + e.toString(), e);
 			}
 			XmlNode conclusionXmlNode = conclusion.toXmlNode();
@@ -241,8 +240,9 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 
 		if (VALID.equals(adestSignatureIndication)) {
 
+			// TODO-Bob (12/10/2015):  Validation of -A form should be added if constraint mandates it
 			constraintXmlNode.addChild(STATUS, OK);
-			conclusion.copyConclusionBasicInfo(adestSignatureConclusion);
+			conclusion.addBasicInfo(adestSignatureConclusion);
 			return true;
 		}
 
@@ -272,8 +272,7 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 			  .in(adestSignatureSubIndication, REVOKED_NO_POE, REVOKED_CA_NO_POE, OUT_OF_BOUNDS_NO_POE, CRYPTO_CONSTRAINTS_FAILURE_NO_POE));
 		if (!finalStatus) {
 
-			//			conclusionXmlNode.addChildrenOf(adestSignatureConclusion);
-			conclusion.copyConclusion(adestSignatureConclusion);
+			conclusion.copyConclusionAndAddBasicInfo(adestSignatureConclusion);
 			constraintXmlNode.addChild(STATUS, KO);
 			return false;
 		}
@@ -348,7 +347,7 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 		}
 		if (!poe.isThereAnyPOE()) {
 
-			conclusion.copyConclusion(adestSignatureConclusion);
+			conclusion.copyConclusionAndAddBasicInfo(adestSignatureConclusion);
 			constraintXmlNode.addChild(STATUS, KO);
 			return false;
 		}
@@ -376,6 +375,7 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 
 			psvConstraintXmlNode.addChild(STATUS, KO);
 			conclusion.copyConclusion(psvConclusion);
+			conclusion.addBasicInfo(adestSignatureConclusion);
 			return false;
 		}
 		psvConstraintXmlNode.addChild(STATUS, OK);

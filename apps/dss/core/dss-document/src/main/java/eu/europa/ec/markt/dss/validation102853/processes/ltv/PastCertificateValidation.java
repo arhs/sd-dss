@@ -99,6 +99,10 @@ public class PastCertificateValidation extends X509CertificateValidation {
 	 * // TODO: (Bob: 2014 Mar 12)
 	 */
 	private String contextName;
+	/**
+	 * The Id of the of certificate being validated.
+	 */
+	String toValidateCertificateId;
 
 	/**
 	 * @param params
@@ -145,14 +149,14 @@ public class PastCertificateValidation extends X509CertificateValidation {
 		prepareParameters(params);
 		LOG.debug(this.getClass().getSimpleName() + ": start.");
 
-		validationDataXmlNode = new XmlNode(PAST_CERT_VALIDATION_DATA);
-		validationDataXmlNode.setNameSpace(XmlDom.NAMESPACE);
+		pcvXmlNode = new XmlNode(PAST_CERT_VALIDATION_DATA);
+		pcvXmlNode.setNameSpace(XmlDom.NAMESPACE);
 
 		contextElement = signatureXmlDom;
 
 		final PastCertificateValidationConclusion conclusion = process(params);
 
-		conclusion.setValidationData(validationDataXmlNode);
+		conclusion.setValidationData(pcvXmlNode);
 
 		return conclusion;
 	}
@@ -184,12 +188,12 @@ public class PastCertificateValidation extends X509CertificateValidation {
 
 		// The current status is not used in this implementation because the DSS framework build just one chain.
 
-		final String signingCertificateId = certificateChainXmlDom.getValue("./ChainCertificate[1]/@Id");
+		toValidateCertificateId = certificateChainXmlDom.getValue("./ChainCertificate[1]/@Id");
 
-		validationDataXmlNode.setAttribute(CERTIFICATE_ID, signingCertificateId);
+		pcvXmlNode.setAttribute(CERTIFICATE_ID, toValidateCertificateId);
 
 		final boolean trustedProspectiveCertificateChain = Boolean.valueOf(isTrustedProspectiveCertificateChain(params));
-		if (!checkProspectiveCertificateChainConstraint(conclusion, trustedProspectiveCertificateChain, signingCertificateId)) {
+		if (!checkProspectiveCertificateChainConstraint(conclusion, trustedProspectiveCertificateChain, toValidateCertificateId)) {
 			return conclusion;
 		}
 
@@ -200,7 +204,7 @@ public class PastCertificateValidation extends X509CertificateValidation {
 		boolean isLastTrusted = false;
 		if (trustedAnchor != null) {
 
-			isLastTrusted = trustedAnchor.getBoolValue("./Trusted/text()");
+			isLastTrusted = trustedAnchor.getBoolValue(XP_TRUSTED);
 		}
 		if (!isLastTrusted) {
 
@@ -228,13 +232,13 @@ public class PastCertificateValidation extends X509CertificateValidation {
 		Date intersectionNotAfter = null;
 		for (XmlDom certToken : certChain) {
 
-			final String certificateId = certToken.getValue("./@Id");
+			final String certificateId = certToken.getAttribute(ID);
 			final XmlDom certificate = params.getCertificate(certificateId);
 
-			final boolean isTrusted = certificate.getBoolValue("./Trusted/text()");
+			final boolean isTrusted = certificate.getBoolValue(XP_TRUSTED);
 
-			final Date notBefore = certificate.getTimeValue("./NotBefore/text()");
-			final Date notAfter = certificate.getTimeValue("./NotAfter/text()");
+			final Date notBefore = certificate.getTimeValue(XP_NOT_BEFORE);
+			final Date notAfter = certificate.getTimeValue(XP_NOT_AFTER);
 			if (intersectionNotAfter == null) {
 
 				intersectionNotAfter = notAfter;
@@ -352,7 +356,7 @@ public class PastCertificateValidation extends X509CertificateValidation {
 		final ControlTimeSliding controlTimeSliding = new ControlTimeSliding();
 		final ControlTimeSlidingConclusion ctsConclusion = controlTimeSliding.run(params, certificateChainXmlDom);
 
-		validationDataXmlNode.addChild(ctsConclusion.getValidationData());
+		pcvXmlNode.addChild(ctsConclusion.getValidationData());
 
 		/**
 		 * If it outputs a success indication, go to the next step.<br>
@@ -393,23 +397,23 @@ public class PastCertificateValidation extends X509CertificateValidation {
 			 * intended use.
 			 */
 
-			final XmlDom signingCertificate = params.getCertificate(signingCertificateId);
+			final XmlDom signingCertificate = params.getCertificate(toValidateCertificateId);
 
 			final QualifiedCertificate qc = new QualifiedCertificate(currentValidationPolicy);
 			boolean isQC = qc.run(signingCertificate);
-			if (!checkSigningCertificateQualificationConstraint(conclusion, isQC, signingCertificateId)) {
+			if (!checkSigningCertificateQualificationConstraint(conclusion, isQC, toValidateCertificateId)) {
 				return conclusion;
 			}
 
 			final SSCD sscd = new SSCD(currentValidationPolicy);
 			final Boolean isSSCD = sscd.run(signingCertificate);
-			if (!checkSigningCertificateSupportedBySSCDConstraint(conclusion, isSSCD, signingCertificateId)) {
+			if (!checkSigningCertificateSupportedBySSCDConstraint(conclusion, isSSCD, toValidateCertificateId)) {
 				return conclusion;
 			}
 
 			final ForLegalPerson forLegalPerson = new ForLegalPerson(currentValidationPolicy);
 			final Boolean isForLegalPerson = forLegalPerson.run(signingCertificate);
-			if (!checkSigningCertificateIssuedToLegalPersonConstraint(conclusion, isForLegalPerson, signingCertificateId)) {
+			if (!checkSigningCertificateIssuedToLegalPersonConstraint(conclusion, isForLegalPerson, toValidateCertificateId)) {
 				return conclusion;
 			}
 		}
@@ -430,7 +434,7 @@ public class PastCertificateValidation extends X509CertificateValidation {
 	 */
 	private XmlNode addConstraint(final MessageTag messageTag) {
 
-		XmlNode constraintNode = validationDataXmlNode.addChild(CONSTRAINT);
+		XmlNode constraintNode = pcvXmlNode.addChild(CONSTRAINT);
 		constraintNode.addChild(NAME, messageTag.getMessage()).setAttribute(NAME_ID, messageTag.name());
 		return constraintNode;
 	}

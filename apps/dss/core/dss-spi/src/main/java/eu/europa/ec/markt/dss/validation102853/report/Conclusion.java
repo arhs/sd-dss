@@ -326,7 +326,7 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 		Map<String, String> allAttributes = new HashMap<String, String>(attributes);
 		if (location != null) {
 			// TODO-Bob (10/10/2015):  uncomment for OPOCE
-//			allAttributes.put(LOCATION, location);
+			//			allAttributes.put(LOCATION, location);
 		}
 		final Error error = new Error(messageTag, allAttributes);
 		ensureErrorList();
@@ -559,7 +559,7 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 		}
 	}
 
-	public void copyConclusion(final XmlDom conclusionXmlDom) {
+	public void copyConclusionAndAddBasicInfo(final XmlDom conclusionXmlDom) {
 
 		final String indication = conclusionXmlDom.getValue(XP_INDICATION);
 		if (!indication.isEmpty()) {
@@ -570,10 +570,10 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 		if (!subIndication.isEmpty()) {
 			this.subIndication = subIndication;
 		}
-		copyConclusionBasicInfo(conclusionXmlDom);
+		addBasicInfo(conclusionXmlDom);
 	}
 
-	public void copyConclusionBasicInfo(final XmlDom conclusionXmlDom) {
+	public void addBasicInfo(final XmlDom conclusionXmlDom) {
 
 		final List<XmlDom> errors = conclusionXmlDom.getElements(XP_ERROR);
 		addErrors(errors);
@@ -592,11 +592,22 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 
 		this.validationData = conclusion.validationData;
 
-		this.infoList = new ArrayList<Info>(conclusion.infoList);
+		if (conclusion.infoList != null) {
+			this.infoList = new ArrayList<Info>(conclusion.infoList);
+		}
+		if (conclusion.warningList != null) {
+			this.warningList = new ArrayList<Warning>(conclusion.warningList);
+		}
+		if (conclusion.errorList != null) {
+			this.errorList = new ArrayList<Error>(conclusion.errorList);
+		}
+	}
 
-		this.warningList = new ArrayList<Warning>(conclusion.warningList);
+	public void addBasicInfo(final Conclusion conclusion) {
 
-		this.errorList = new ArrayList<Error>(conclusion.errorList);
+		addInfo(conclusion);
+		addWarnings(conclusion);
+		addErrors(conclusion);
 	}
 
 	public void copyWarnings(final XmlDom conclusionXmlDom) {

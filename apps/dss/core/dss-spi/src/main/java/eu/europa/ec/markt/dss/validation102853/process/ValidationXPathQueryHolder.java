@@ -15,13 +15,19 @@ public interface ValidationXPathQueryHolder {
 	String XP_INDICATION = "./Indication/text()";
 	String XP_SUB_INDICATION = "./SubIndication/text()";
 	String XP_ERROR = "./Error";
+	String XP_ERROR_NOT_BEFORE = "./Error/@NotBefore";
+	String XP_ERROR_CERTIFICATE_ID = "./Error/@CertificateId";
+	String XP_ERROR_REVOCATION_TIME= "./Error/@RevocationTime";
 	String XP_WARNING = "./Warning";
 	String XP_INFO = "./Info";
 
 	String XP_NOT_BEFORE = "./NotBefore/text()";
 	String XP_NOT_AFTER = "./NotAfter/text()";
+	String XP_TRUSTED = "./Trusted/text()";
 	String XP_MESSAGE_IMPRINT_DATA_FOUND = "./MessageImprintDataFound/text()";
 	String XP_MESSAGE_IMPRINT_DATA_INTACT = "./MessageImprintDataIntact/text()";
+
+	String XP_SIGNING_CERTIFICATE_ID = "./SigningCertificate/@Id";
 
 	String XP_DIAGNOSTIC_DATA_SIGNATURE = "/DiagnosticData/Signature";
 

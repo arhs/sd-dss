@@ -31,7 +31,6 @@ import eu.europa.ec.markt.dss.validation102853.policy.ElementNumberConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
@@ -50,8 +49,8 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMI
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_INSTCVP;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_INSTCVP_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DSFCVP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DSFCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_IACV;
@@ -116,7 +115,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
-public class SignatureAcceptanceValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage, ValidationXPathQueryHolder {
+public class SignatureAcceptanceValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage {
 
 	/**
 	 * The following variables are used only in order to simplify the writing of the rules!
@@ -724,10 +723,10 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessXmlNode, BBB_SAV_INSTCVP);
+		constraint.create(subProcessXmlNode, BBB_SAV_DNSTCVP);
 		final List<XmlDom> signatureTimestampXmlDom = signatureContext.getElements(XP_TIMESTAMPS, SIGNATURE_TIMESTAMP);
 		constraint.setIntValue(signatureTimestampXmlDom.size());
-		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_INSTCVP_ANS);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNSTCVP_ANS);
 		constraint.setConclusionReceiver(conclusion);
 		boolean check = constraint.check();
 		return check;

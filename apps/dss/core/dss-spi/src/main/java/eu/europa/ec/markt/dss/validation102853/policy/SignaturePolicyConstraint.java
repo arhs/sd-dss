@@ -190,7 +190,7 @@ public class SignaturePolicyConstraint extends Constraint {
                 }
             }
         }
-        node.addChild(STATUS, OK);
+	    addOkNode();
         final XmlNode info = node.addChild(INFO);
         info.setAttribute(IDENTIFIER, identifier);
         if (!notice.isEmpty()) {

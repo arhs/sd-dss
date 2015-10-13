@@ -170,7 +170,7 @@ public class ManifestCryptographicConstraint extends Constraint {
 				}
 			}
 		}
-		node.addChild(STATUS, OK);
+		addOkNode();
 		return true;
 	}
 

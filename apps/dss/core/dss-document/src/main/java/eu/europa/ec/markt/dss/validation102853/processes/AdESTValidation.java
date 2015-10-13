@@ -34,7 +34,6 @@ import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ElementNumberConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
@@ -63,8 +62,8 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ITV
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ITVPC_INFO_1;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_ROBVPIIC;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_VFDTAOCST_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_INSTCVP;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_INSTCVP_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPSTP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.TSV_ASTPTCT;
@@ -94,7 +93,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.TSV_WACRA
  *
  * @author bielecro
  */
-public class AdESTValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage, ValidationXPathQueryHolder {
+public class AdESTValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AdESTValidation.class);
 
@@ -172,7 +171,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 	 *
 	 * @param params
 	 */
-	private void isInitialised(final XmlNode mainNode, final ProcessParameters params) {
+	private void isInitialised(final XmlNode mainXmlNode, final ProcessParameters params) {
 
 		assertDiagnosticData(params.getDiagnosticData(), getClass());
 		assertValidationPolicy(params.getValidationPolicy(), getClass());
@@ -191,7 +190,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 			 * The execution of the Basic Validation process which creates the basic validation data.<br>
 			 */
 			final BasicValidation basicValidation = new BasicValidation();
-			basicValidationXmlDom = basicValidation.run(mainNode, params);
+			basicValidationXmlDom = basicValidation.run(mainXmlNode, params);
 		}
 		if (timestampValidationXmlDom == null) {
 
@@ -200,7 +199,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 			 * This process needs the diagnostic and policy data. It creates the timestamps validation data.
 			 */
 			final TimestampValidation timeStampValidation = new TimestampValidation();
-			timestampValidationXmlDom = timeStampValidation.run(mainNode, params);
+			timestampValidationXmlDom = timeStampValidation.run(mainXmlNode, params);
 		}
 	}
 
@@ -334,7 +333,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		if (INDETERMINATE.equals(bvpIndication) && REVOKED_NO_POE.equals(bvpSubIndication)) {
 
 			if (!checkRevocationTimeConstraint(signatureConclusion)) {
-				signatureConclusion.copyConclusionBasicInfo(bvpConclusionXmlDom);
+				signatureConclusion.addBasicInfo(bvpConclusionXmlDom);
 				return signatureConclusion;
 			}
 		}
@@ -347,11 +346,11 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		if (INDETERMINATE.equals(bvpIndication) && OUT_OF_BOUNDS_NO_POE.equals(bvpSubIndication)) {
 
 			if (!checkBestSignatureTimeBeforeIssuanceDateOfSigningCertificateConstraint(signatureConclusion)) {
-				signatureConclusion.copyConclusionBasicInfo(bvpConclusionXmlDom);
+				signatureConclusion.addBasicInfo(bvpConclusionXmlDom);
 				return signatureConclusion;
 			}
 			if (!checkSigningCertificateValidityAtBestSignatureTimeConstraint(signatureConclusion)) {
-				signatureConclusion.copyConclusionBasicInfo(bvpConclusionXmlDom);
+				signatureConclusion.addBasicInfo(bvpConclusionXmlDom);
 				return signatureConclusion;
 			}
 		}
@@ -365,7 +364,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		if (INDETERMINATE.equals(bvpIndication) && CRYPTO_CONSTRAINTS_FAILURE_NO_POE.equals(bvpSubIndication)) {
 
 			if (!checkAlgorithmReliableAtBestSignatureTimeConstraint(signatureConclusion)) {
-				signatureConclusion.copyConclusionBasicInfo(bvpConclusionXmlDom);
+				signatureConclusion.addBasicInfo(bvpConclusionXmlDom);
 				return signatureConclusion;
 			}
 		}
@@ -454,16 +453,11 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 			return;
 		}
 		constraintNode.addChild(STATUS, KO);
-		final List<XmlDom> errorList = tsvpConclusion.getElements(XP_ERROR);
-		if (!errorList.isEmpty()) {
-			for (final XmlDom errorXmlDom : errorList) {
-				constraintNode.addChild(errorXmlDom);
-			}
-		}
 		conclusion.setIndication(tsvpIndication);
 		final String tsvpSubIndication = tsvpConclusion.getValue(XP_SUB_INDICATION);
 		conclusion.setSubIndication(tsvpSubIndication);
-		conclusion.addError(ADEST_ITVPC_ANS_2);
+		conclusion.addError(ADEST_ITVPC_ANS_2).setAttribute(TIMESTAMP_ID, timestampId);
+		conclusion.addBasicInfo(tsvpConclusion);
 	}
 
 	private Date getEarliestTimestampProductionTime(final List<XmlDom> timestamps, final TimestampType selectedTimestampType) {
@@ -631,7 +625,7 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 			return true;
 		}
 		int validSignatureTimestampNumber = 0;
-
+		Conclusion temporaryConclusion = new Conclusion();
 		final XmlDom signatureXmlDom = signatureXmlNode.toXmlDom(XmlDom.NAMESPACE);
 		final List<XmlDom> signatureTimestampConclusionXmlDomList = signatureXmlDom.getElements(XP_SIGNATURE_TIMESTAMP_CONCLUSION, SIGNATURE_TIMESTAMP);
 		for (final XmlDom signatureTimestampConclusionXmlDom : signatureTimestampConclusionXmlDomList) {
@@ -641,14 +635,19 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 
 				validSignatureTimestampNumber++;
 			}
+			temporaryConclusion.copyErrors(signatureTimestampConclusionXmlDom);
 		}
 		constraint.setIntValue(validSignatureTimestampNumber);
 
-		constraint.create(signatureXmlNode, BBB_SAV_INSTCVP);
-		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_INSTCVP_ANS);
+		constraint.create(signatureXmlNode, BBB_SAV_DNSTCVP);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNSTCVP_ANS);
 		constraint.setConclusionReceiver(conclusion);
 
-		return constraint.check();
+		final boolean check = constraint.check();
+		if (!check) {
+			conclusion.addBasicInfo(temporaryConclusion);
+		}
+		return check;
 	}
 
 	/**
@@ -669,9 +668,11 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		}
 		constraint.create(signatureXmlNode, ADEST_IRTPTBST);
 		constraint.setIndications(INDETERMINATE, REVOKED_NO_POE, ADEST_IRTPTBST_ANS);
-		final Date revocationDate = bvpConclusionXmlDom.getTimeValue("./Error/@RevocationTime");
+		final Date revocationDate = bvpConclusionXmlDom.getTimeValue(XP_ERROR_REVOCATION_TIME);
 		final boolean before = bestSignatureTime.before(revocationDate);
 		constraint.setValue(before);
+		final String certificateId = bvpConclusionXmlDom.getValue(XP_ERROR_CERTIFICATE_ID);
+		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		constraint.setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
 		constraint.setConclusionReceiver(conclusion);
@@ -700,10 +701,12 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		}
 		constraint.create(signatureXmlNode, TSV_IBSTAIDOSC);
 		constraint.setIndications(INVALID, NOT_YET_VALID, TSV_IBSTAIDOSC_ANS);
-		final String formatedNotBefore = bvpConclusionXmlDom.getValue("./Error/@NotBefore");
+		final String formatedNotBefore = bvpConclusionXmlDom.getValue(XP_ERROR_NOT_BEFORE);
 		final Date notBeforeTime = DSSUtils.parseDate(formatedNotBefore);
 		final boolean notBefore = !bestSignatureTime.before(notBeforeTime);
 		constraint.setValue(notBefore);
+		final String certificateId = bvpConclusionXmlDom.getValue(XP_ERROR_CERTIFICATE_ID);
+		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		constraint.setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
 		constraint.setAttribute(NOT_BEFORE, formatedNotBefore);
@@ -737,6 +740,8 @@ public class AdESTValidation extends BasicValidationProcess implements Indicatio
 		constraint.setValue(false); // false is always returned: this corresponds to: Otherwise, terminate with INDETERMINATE/OUT_OF_BOUNDS_NO_POE.
 		final String formatedBestSignatureTime = DSSUtils.formatDate(bestSignatureTime);
 		constraint.setAttribute(BEST_SIGNATURE_TIME, formatedBestSignatureTime);
+		final String certificateId = bvpConclusionXmlDom.getValue(XP_ERROR_CERTIFICATE_ID);
+		constraint.setAttribute(CERTIFICATE_ID, certificateId);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

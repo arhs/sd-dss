@@ -140,10 +140,7 @@ public class CertificateExpirationConstraint extends Constraint {
 			conclusion.addError(failureMessageTag, messageAttributes);
 			return false;
 		}
-		node.addChild(STATUS, OK);
-		if (messageAttributes.size() > 0) {
-			node.addChild(INFO, null, messageAttributes);
-		}
+		addOkNode();
 		if (expiredCertsRevocationInfo != null) {
 
 			final String formatedExpiredCertsRevocationInfo = DSSUtils.formatDate(expiredCertsRevocationInfo);

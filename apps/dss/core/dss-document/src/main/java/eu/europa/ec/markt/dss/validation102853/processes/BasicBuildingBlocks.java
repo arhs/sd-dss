@@ -64,14 +64,14 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 	 * @param params validation process parameters
 	 * @return {@code XmlDom} representing the detailed report of this process.
 	 */
-	public XmlDom run(final XmlNode mainNode, final ProcessParameters params) {
+	public XmlDom run(final XmlNode mainXmlNode, final ProcessParameters params) {
 
 		isInitialised(params);
 		LOG.debug(this.getClass().getSimpleName() + ": start.");
 
 		params.setContextName(SIGNING_CERTIFICATE);
 
-		final XmlNode basicBuildingBlocksXmlNode = mainNode.addChild(BASIC_BUILDING_BLOCKS);
+		final XmlNode basicBuildingBlocksXmlNode = mainXmlNode.addChild(BASIC_BUILDING_BLOCKS);
 
 		final List<XmlDom> signatureXmlDomList = params.getDiagnosticData().getElements("/DiagnosticData/Signature");
 		for (final XmlDom signatureXmlDom : signatureXmlDomList) {
@@ -93,7 +93,7 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 			 * 5. Basic Building Blocks
 			 */
 
-			final String signatureId = signatureXmlDom.getValue("./@Id");
+			final String signatureId = signatureXmlDom.getAttribute(ID);
 			final XmlNode signatureXmlNode = basicBuildingBlocksXmlNode.addChild(SIGNATURE);
 			signatureXmlNode.setAttribute(ID, signatureId);
 			/**

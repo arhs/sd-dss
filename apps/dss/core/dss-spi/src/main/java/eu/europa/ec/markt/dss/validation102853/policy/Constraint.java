@@ -81,6 +81,12 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	protected MessageTag failureMessageTag;
 	protected Map<String, String> messageAttributes = new HashMap<String, String>();
 	protected Conclusion conclusion;
+
+	/**
+	 * This {@code Map} contains the list of Info attributes to be added to the constraint node.
+	 */
+	protected Map<String, String> infoAttributes = null;
+
 	/**
 	 * This field represent the {@code List} of {@code String} values of the constraint
 	 */
@@ -248,10 +254,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 			conclusion.addError(failureMessageTag, messageAttributes);
 			return false;
 		}
-		node.addChild(STATUS, OK);
-		if (!messageAttributes.isEmpty()) {
-			node.addChild(INFO, null, messageAttributes);
-		}
+		addOkNode();
 		return true;
 	}
 
@@ -299,9 +302,16 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 			conclusion.addError(failureMessageTag, messageAttributes);
 			return false;
 		}
-		node.addChild(STATUS, OK);
-		node.addChild(INFO, null, messageAttributes);
+		addOkNode();
 		return true;
+	}
+
+	protected void addOkNode() {
+
+		node.addChild(STATUS, OK);
+		if (infoAttributes != null) {
+			node.addChild(INFO, null, infoAttributes);
+		}
 	}
 
 	/**
@@ -412,6 +422,23 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	public void clearAttributes() {
 
 		messageAttributes.clear();
+	}
+
+	/**
+	 * This method allows to add an INFO note to the constraint. The attribute must be set beforehand: {@link #setAttribute(String, String)}
+	 *
+	 * @param attributeName {@code String}
+	 */
+	public void addInfo(final String attributeName) {
+
+		final String attributeValue = messageAttributes.get(attributeName);
+		if (attributeValue == null) {
+			throw new DSSException("The attribute '" + attributeName + "' is not defined!");
+		}
+		if (infoAttributes == null) {
+			infoAttributes = new HashMap<String, String>();
+		}
+		infoAttributes.put(attributeName, attributeValue);
 	}
 
 	public enum Level {IGNORE, INFORM, WARN, FAIL}

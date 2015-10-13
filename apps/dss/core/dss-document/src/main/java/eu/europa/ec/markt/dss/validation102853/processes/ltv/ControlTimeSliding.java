@@ -27,7 +27,7 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
-import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
+import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
@@ -70,7 +70,7 @@ import static eu.europa.ec.markt.dss.validation102853.toolbox.Reversed.reversed;
  *         // NOTE 4 is not completely taken into account.<br>
  *         // --> Closed
  */
-public class ControlTimeSliding implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, RuleConstant, ExceptionMessage, ValidationXPathQueryHolder {
+public class ControlTimeSliding extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, RuleConstant, ExceptionMessage {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(PastCertificateValidation.class);
 
@@ -153,7 +153,7 @@ public class ControlTimeSliding implements Indication, SubIndication, NodeName, 
 
 			final XmlDom certificate = params.getCertificate(certificateId);
 
-			final boolean isTrusted = certificate.getBoolValue("./Trusted/text()");
+			final boolean isTrusted = certificate.getBoolValue(XP_TRUSTED);
 			if (isTrusted) {
 
 				continue;

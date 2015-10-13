@@ -300,7 +300,7 @@ public class SignatureCryptographicConstraint extends Constraint {
 				}
 			}
 		}
-		node.addChild(STATUS, OK);
+		addOkNode();
 		return true;
 	}
 

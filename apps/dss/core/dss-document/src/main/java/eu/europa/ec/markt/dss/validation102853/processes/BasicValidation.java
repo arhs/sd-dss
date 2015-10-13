@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
-import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
@@ -48,7 +47,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
  *
  * @author bielecro
  */
-public class BasicValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class BasicValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, AttributeName, AttributeValue, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BasicValidation.class);
 
@@ -56,7 +55,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 	// TODO-Bob (26/09/2015):  to be initialized!!!
 	private XmlDom contentTimestampsAdESTValidationData;
 
-	private void isInitialised(final XmlNode mainNode, final ProcessParameters params) {
+	private void isInitialised(final XmlNode mainXmlNode, final ProcessParameters params) {
 
 		if (params.getBasicBuildingBlocksReport() == null) {
 
@@ -64,7 +63,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 			 * The execution of the Basic Building Blocks validation process which creates the validation data.<br>
 			 */
 			final BasicBuildingBlocks basicBuildingBlocks = new BasicBuildingBlocks();
-			basicBuildingBlocks.run(mainNode, params); // this call sets BasicBuildingBlocksReport
+			basicBuildingBlocks.run(mainXmlNode, params); // this call sets BasicBuildingBlocksReport
 		}
 	}
 
@@ -90,16 +89,16 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 	 * <p/>
 	 * The following steps shall be performed:
 	 *
-	 * @param mainNode {@code XmlNode} container for the detailed report
+	 * @param mainXmlNode {@code XmlNode} container for the detailed report
 	 * @param params   {@code ProcessParameters}
 	 * @return {@code XmlDom} containing the part of the detailed report related to the current validation process
 	 */
-	public XmlDom run(final XmlNode mainNode, final ProcessParameters params) {
+	public XmlDom run(final XmlNode mainXmlNode, final ProcessParameters params) {
 
-		isInitialised(mainNode, params);
+		isInitialised(mainXmlNode, params);
 		LOG.debug(this.getClass().getSimpleName() + ": start.");
 
-		final XmlNode basicValidationData = mainNode.addChild(BASIC_VALIDATION_DATA);
+		final XmlNode basicValidationXmlNode = mainXmlNode.addChild(BASIC_VALIDATION_DATA);
 
 		final List<XmlDom> signatureXmlDomList = params.getBasicBuildingBlocksReport().getElements(XP_SIGNATURES);
 		for (final XmlDom signatureXmlDom : signatureXmlDomList) {
@@ -109,7 +108,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 			final String signatureType = signatureXmlDom.getAttribute(TYPE);
 			setSuitableValidationPolicy(params, signatureType);
 
-			final XmlNode signatureXmlNode = basicValidationData.addChild(SIGNATURE);
+			final XmlNode signatureXmlNode = basicValidationXmlNode.addChild(SIGNATURE);
 			signatureXmlNode.setAttribute(ID, signatureId);
 
 			final Conclusion conclusion = process(signatureXmlDom, signatureId);
@@ -118,7 +117,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 			signatureXmlNode.addChild(conclusionXmlNode);
 		}
 
-		final XmlDom bvDom = basicValidationData.toXmlDom();
+		final XmlDom bvDom = basicValidationXmlNode.toXmlDom();
 		params.setBvData(bvDom);
 		return bvDom;
 	}
@@ -140,7 +139,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		final String iscIndication = iscConclusion.getValue(XP_INDICATION);
 		if (!VALID.equals(iscIndication)) {
 
-			conclusion.copyConclusion(iscConclusion);
+			conclusion.copyConclusionAndAddBasicInfo(iscConclusion);
 			return conclusion;
 		}
 
@@ -153,7 +152,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		final String vciIndication = vciConclusion.getValue(XP_INDICATION);
 		if (!VALID.equals(vciIndication)) {
 
-			conclusion.copyConclusion(vciConclusion);
+			conclusion.copyConclusionAndAddBasicInfo(vciConclusion);
 			return conclusion;
 		}
 
@@ -176,7 +175,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		final String cvIndication = cvConclusion.getValue(XP_INDICATION);
 		if (!VALID.equals(cvIndication)) {
 
-			conclusion.copyConclusion(cvConclusion);
+			conclusion.copyConclusionAndAddBasicInfo(cvConclusion);
 			return conclusion;
 		}
 
@@ -221,7 +220,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 			List<XmlDom> contentTimestamps = signatureXmlDom.getElements("./ContentTimestamps/ProductionTime");
 			if (contentTimestamps.isEmpty()) {
 
-				conclusion.copyConclusion(savConclusion);
+				conclusion.copyConclusionAndAddBasicInfo(savConclusion);
 				return conclusion;
 			}
 			// To carry out content-timestamp AdES-T validation process.
@@ -272,7 +271,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		}
 		if (!VALID.equals(savIndication)) {
 
-			conclusion.copyConclusion(savConclusion);
+			conclusion.copyConclusionAndAddBasicInfo(savConclusion);
 			return conclusion;
 		}
 
@@ -358,7 +357,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 
 		if (!VALID.equals(xcvIndication)) {
 
-			conclusion.copyConclusion(xcvConclusion);
+			conclusion.copyConclusionAndAddBasicInfo(xcvConclusion);
 			return conclusion;
 		}
 
@@ -375,7 +374,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		if (mainConclusion == null) {
 			throw new DSSException(EXCEPTION_TWUEIVP);
 		}
-		conclusion.copyConclusion(mainConclusion);
+		conclusion.copyConclusionAndAddBasicInfo(mainConclusion);
 		return conclusion;
 	}
 }

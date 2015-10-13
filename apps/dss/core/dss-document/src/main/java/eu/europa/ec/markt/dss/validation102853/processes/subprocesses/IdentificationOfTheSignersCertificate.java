@@ -113,7 +113,7 @@ public class IdentificationOfTheSignersCertificate extends BasicValidationProces
 	/**
 	 * This method prepares the execution of the ISC process.
 	 *
-	 * @param params   validation process parameters
+	 * @param params        validation process parameters
 	 * @param parentXmlNode
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
@@ -147,7 +147,7 @@ public class IdentificationOfTheSignersCertificate extends BasicValidationProces
 	 * Clauses 5.1.4.1 to 5.1.4.3 provide specific processing details for each AdES signature type (i.e. XAdES, CAdES or
 	 * PAdES), once the certificate has been retrieved.
 	 *
-	 * @param params   validation process parameters
+	 * @param params validation process parameters
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
 	private Conclusion process(final ProcessParameters params) {
@@ -159,7 +159,7 @@ public class IdentificationOfTheSignersCertificate extends BasicValidationProces
 		params.setSigningCertificateId(null);
 		params.setSigningCertificate(null);
 
-		final String signingCertificateId = contextElement.getValue("./SigningCertificate/@Id");
+		final String signingCertificateId = contextElement.getValue(XP_SIGNING_CERTIFICATE_ID);
 		final XmlDom signingCertificateXmlDom = params.getCertificate(signingCertificateId);
 		final boolean signingCertificateRecognised = signingCertificateXmlDom != null;
 		if (!checkRecognitionConstraint(conclusion, signingCertificateRecognised, signingCertificateId)) {
@@ -239,12 +239,19 @@ public class IdentificationOfTheSignersCertificate extends BasicValidationProces
 		}
 		constraint.create(validationDataXmlNode, BBB_ICS_ISCI);
 		constraint.setValue(signingCertificateRecognised);
-		if (DSSUtils.isNotBlank(signingCertificateId) && !signingCertificateId.equals("0")) {
+		final boolean signingCertificateIdentified = DSSUtils.isNotBlank(signingCertificateId) && !signingCertificateId.equals("0");
+		if (signingCertificateIdentified) {
 			constraint.setAttribute(CERTIFICATE_ID, signingCertificateId);
+		}
+		if(TIMESTAMP.equals(contextName)) {
+			final String timestampId = contextElement.getAttribute(ID);
+			constraint.setAttribute(TIMESTAMP_ID, timestampId);
 		}
 		constraint.setIndications(INDETERMINATE, NO_SIGNER_CERTIFICATE_FOUND, BBB_ICS_ISCI_ANS);
 		constraint.setConclusionReceiver(conclusion);
-
+		if (signingCertificateIdentified) {
+			constraint.addInfo(CERTIFICATE_ID);
+		}
 		return constraint.check();
 	}
 

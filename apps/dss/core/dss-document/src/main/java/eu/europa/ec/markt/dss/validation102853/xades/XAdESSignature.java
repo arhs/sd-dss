@@ -2200,6 +2200,9 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 
 	@Override
 	public CommitmentType getCommitmentTypeIndication() {
+
+		// TODO-Bob (13/10/2015):
+
 		return null;
 	}
 

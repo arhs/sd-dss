@@ -5,6 +5,7 @@ import java.util.Date;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
+import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 
@@ -15,7 +16,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage.EXC
  *
  * @author Robert Bielecki
  */
-public abstract class BasicValidationProcess implements AttributeValue {
+public abstract class BasicValidationProcess implements AttributeValue, ValidationXPathQueryHolder {
 
 
 	protected static void assertDiagnosticData(final XmlDom diagnosticData, final Class<? extends BasicValidationProcess> aClass) {

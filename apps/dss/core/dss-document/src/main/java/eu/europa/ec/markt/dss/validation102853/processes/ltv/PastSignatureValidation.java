@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
-import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
+import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
@@ -56,7 +56,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_ITPOS
  *
  * @author bielecro
  */
-public class PastSignatureValidation implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage, ValidationXPathQueryHolder {
+public class PastSignatureValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PastSignatureValidation.class);
 
@@ -159,8 +159,8 @@ public class PastSignatureValidation implements Indication, SubIndication, NodeN
 		if (ok) {
 			returnedPcvIndication = constraintNode.addChild(INFO);
 		} else {
-
 			returnedPcvIndication = constraintNode.addChild(ERROR, PSV_IPCVC_ANS);
+			returnedPcvIndication.setAttribute(CERTIFICATE_ID, pcv.toValidateCertificateId);
 		}
 		returnedPcvIndication.setAttribute(INDICATION, pcvConclusion.getIndication());
 		final String pcvSubIndication = pcvConclusion.getSubIndication();

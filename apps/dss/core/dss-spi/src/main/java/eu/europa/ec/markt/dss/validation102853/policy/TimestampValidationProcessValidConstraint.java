@@ -62,10 +62,7 @@ public class TimestampValidationProcessValidConstraint extends Constraint {
 			conclusion.addError(failureMessageTag, messageAttributes);
 			return false;
 		}
-		node.addChild(STATUS, OK);
-		if (!messageAttributes.isEmpty()) {
-			node.addChild(INFO, null, messageAttributes);
-		}
+		addOkNode();
 		return true;
 	}
 }
