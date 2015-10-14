@@ -27,6 +27,10 @@ public class XsdResourceResolver implements LSResourceResolver {
 		InputStream resourceAsStream = null;
 		if ("http://uri.etsi.org/01903/v1.3.2/XAdES.xsd".equals(systemId)) {
 			resourceAsStream = resourceLoader.getResource(DSSXMLUtils.XAD_ESV132_XSD);
+		} else if ("http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201506.xsd".equals(systemId)) {
+			resourceAsStream = resourceLoader.getResource(DSSXMLUtils.XAD_ESV132_201506_XSD);
+		} else if("http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd".equals(systemId)) {
+			resourceAsStream = resourceLoader.getResource(DSSXMLUtils.XMLDSIG_CORE_SCHEMA_20080610_XSD);
 		} else if ("http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd".equals(systemId)) {
 			resourceAsStream = resourceLoader.getResource(DSSXMLUtils.XMLDSIG_CORE_SCHEMA_XSD);
 		} else if ("http://www.w3.org/2001/XMLSchema.dtd".equals(systemId)) {

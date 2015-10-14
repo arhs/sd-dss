@@ -100,25 +100,24 @@ public final class DSSXMLUtils {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DSSXMLUtils.class);
 
-	public static final String ID_ATTRIBUTE_NAME = "id";
-	public static final String XAD_ESV141_XSD = "/XAdESv141.xsd";
-	public static final String XAD_ESV132_XSD = "/XAdES.xsd";
-	public static final String XMLDSIG_CORE_SCHEMA_XSD = "/xmldsig-core-schema.xsd";
-	public static final String XML_SCHEMA_DTD = "/XMLSchema.dtd";
-	public static final String DATA_TYPES_DTD = "/datatypes.dtd";
+	private static final XPathFactory factory = XPathFactory.newInstance();
+	private static final Map<String, String> namespaces;
+	private static final Set<String> transforms;
+	private static final Set<String> canonicalizers;
 
 	private static DocumentBuilderFactory dbFactory;
-
-
-	private static final XPathFactory factory = XPathFactory.newInstance();
-
 	private static NamespaceContextMap namespacePrefixMapper;
+	private static Schema schema = null;
 
-	private static final Map<String, String> namespaces;
-
-	private static final Set<String> transforms;
-
-	private static final Set<String> canonicalizers;
+	public static final String ID_ATTRIBUTE_NAME = "id";
+	public static final String XAD_ESV141_XSD = "/XAdESv141.xsd";
+	public static final String XAdES01903v141_201506_XSD = "/XAdES01903v141-201506.xsd";
+	public static final String XAD_ESV132_XSD = "/XAdES.xsd";
+	public static final String XAD_ESV132_201506_XSD = "/XAdES01903v132-201506.xsd";
+	public static final String XMLDSIG_CORE_SCHEMA_XSD = "/xmldsig-core-schema.xsd";
+	public static final String XMLDSIG_CORE_SCHEMA_20080610_XSD = "/xmldsig-core-schema-20080610.xsd";
+	public static final String XML_SCHEMA_DTD = "/XMLSchema.dtd";
+	public static final String DATA_TYPES_DTD = "/datatypes.dtd";
 
 	static {
 
@@ -135,7 +134,11 @@ public final class DSSXMLUtils {
 		registerDefaultCanonicalizers();
 	}
 
-	private static Schema schema = null;
+	/**
+	 * This class is an utility class and cannot be instantiated.
+	 */
+	private DSSXMLUtils() {
+	}
 
 	/**
 	 * This method registers the default namespaces.
@@ -176,12 +179,6 @@ public final class DSSXMLUtils {
 		registerCanonicalizer(Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS);
 		registerCanonicalizer(Canonicalizer.ALGO_ID_C14N_EXCL_WITH_COMMENTS);
 		registerCanonicalizer(Canonicalizer.ALGO_ID_C14N11_WITH_COMMENTS);
-	}
-
-	/**
-	 * This class is an utility class and cannot be instantiated.
-	 */
-	private DSSXMLUtils() {
 	}
 
 	/**
@@ -1101,7 +1098,8 @@ public final class DSSXMLUtils {
 	private static Schema getSchema() throws SAXException {
 
 		final ResourceLoader resourceLoader = new ResourceLoader();
-		final InputStream xadesXsd = resourceLoader.getResource(XAD_ESV141_XSD);
+		//		final InputStream xadesXsd = resourceLoader.getResource(XAD_ESV141_XSD);
+		final InputStream xadesXsd = resourceLoader.getResource(XAdES01903v141_201506_XSD);
 		final SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		factory.setResourceResolver(new XsdResourceResolver());
 		return factory.newSchema(new StreamSource(xadesXsd));
