@@ -450,13 +450,17 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		boolean dataObjectFormatOk = referenceXmlDomList.size() > 0 ? true : false;
 		for (final XmlDom referenceXmlDom : referenceXmlDomList) {
 
-			final boolean dataObjectFormat = referenceXmlDom.getBoolValue("./DataObjectFormat/text()");
-			if (!dataObjectFormat) {
+			final XmlDom dataObjectFormatElement = referenceXmlDom.getElement("./DataObjectFormat");
+			if (dataObjectFormatElement != null) {
 
-				dataObjectFormatOk = false;
-				final String uri = referenceXmlDom.getValue("./Uri/text()");
-				constraint.setAttribute(URI, uri); // TODO-Bob (13/10/2015):  It would be better to point to the Id of the reference
-				break;
+				final boolean dataObjectFormat = dataObjectFormatElement.getBoolValue("./text()");
+				if (!dataObjectFormat) {
+
+					dataObjectFormatOk = false;
+					final String uri = referenceXmlDom.getValue("./Uri/text()");
+					constraint.setAttribute(URI, uri); // TODO-Bob (13/10/2015):  It would be better to point to the Id of the reference
+					break;
+				}
 			}
 		}
 		constraint.setValue(dataObjectFormatOk);
