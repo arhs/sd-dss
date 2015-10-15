@@ -55,15 +55,12 @@ import eu.europa.ec.markt.dss.exception.DSSException;
  */
 public class XmlDom {
 
-	public static final String NAMESPACE = "http://dss.markt.ec.europa.eu/validation/diagnostic";
 	private static final Logger LOG = LoggerFactory.getLogger(XmlDom.class);
 	private static final String NS_PREFIX = "dss";
-
 	private static final XPathFactory factory = XPathFactory.newInstance();
-
 	private static final NamespaceContextMap nsContext;
-
 	private static final Map<String, String> namespaces;
+	public static final String NAMESPACE = "http://dss.markt.ec.europa.eu/validation/diagnostic";
 
 	static {
 
@@ -256,7 +253,7 @@ public class XmlDom {
 	 *
 	 * @param xPath
 	 * @param params
-	 * @return
+	 * @return an empty {@code List} is returned if nothing is found
 	 */
 	public List<XmlDom> getElements(final String xPath, final Object... params) {
 
@@ -283,7 +280,6 @@ public class XmlDom {
 	}
 
 	/**
-	 *
 	 * @param xPath
 	 * @param params
 	 * @return {@code XmlDom} retrieved base on the XPath query. If more than one elements are found then the first one is returned

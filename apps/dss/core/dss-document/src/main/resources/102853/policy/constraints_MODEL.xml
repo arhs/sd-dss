@@ -117,7 +117,9 @@
 			</CertifiedRoles>
 
 			<SignerAttributes>false</SignerAttributes>
-			<ContentTimeStamp>true</ContentTimeStamp>
+			<ContentTimestamp Level="FAIL" Min="1" Max="1">
+				<Type>ALL_DATA_OBJECTS_TIMESTAMP</Type>
+			</ContentTimestamp>
 		</MandatedSignedQProperties>
 		<MandatedUnsignedQProperties>
 			<CounterSignature>false</CounterSignature>

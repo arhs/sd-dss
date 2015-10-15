@@ -30,8 +30,6 @@ import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.MessageTag;
@@ -70,7 +68,7 @@ import static eu.europa.ec.markt.dss.validation102853.toolbox.Reversed.reversed;
  *         // NOTE 4 is not completely taken into account.<br>
  *         // --> Closed
  */
-public class ControlTimeSliding extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, RuleConstant, ExceptionMessage {
+public class ControlTimeSliding extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, RuleConstant, ExceptionMessage {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(PastCertificateValidation.class);
 

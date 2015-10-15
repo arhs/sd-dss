@@ -30,8 +30,6 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -47,7 +45,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
  *
  * @author bielecro
  */
-public class BasicValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, AttributeName, AttributeValue, ExceptionMessage {
+public class BasicValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BasicValidation.class);
 
@@ -118,7 +116,7 @@ public class BasicValidation extends BasicValidationProcess implements Indicatio
 		}
 
 		final XmlDom bvDom = basicValidationXmlNode.toXmlDom();
-		params.setBvData(bvDom);
+		params.setBvXmlDom(bvDom);
 		return bvDom;
 	}
 

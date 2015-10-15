@@ -90,8 +90,8 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 	/**
 	 * This field represent the {@code List} of {@code String} values of the constraint
 	 */
-	private List<String> valueList;
-	private Level level;
+	protected List<String> valueList;
+	protected Level level;
 
 	/**
 	 * This is the default constructor. It takes a level of the constraint as parameter. The string representing the level is trimmed and capitalized. If there is no corresponding
@@ -236,7 +236,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 
 				node.addChild(STATUS, WARN);
 				node.addChild(WARNING, failureMessageTag, messageAttributes);
-				if (DSSUtils.isNotBlank(expectedValue) && !expectedValue.equals("true") && !expectedValue.equals("false")) {
+				if (DSSUtils.isNotBlank(expectedValue) && !TRUE.equals(expectedValue) && !FALSE.equals(expectedValue)) {
 					messageAttributes.put(EXPECTED_VALUE, expectedValue);
 					messageAttributes.put(CONSTRAINT_VALUE, value);
 				}
@@ -244,7 +244,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 				return true;
 			}
 			node.addChild(STATUS, KO);
-			if (DSSUtils.isNotBlank(expectedValue) && !expectedValue.equals("true") && !expectedValue.equals("false")) {
+			if (DSSUtils.isNotBlank(expectedValue) && !TRUE.equals(expectedValue) && !FALSE.equals(expectedValue)) {
 				messageAttributes.put(EXPECTED_VALUE, expectedValue);
 				messageAttributes.put(CONSTRAINT_VALUE, value);
 			}
@@ -273,7 +273,7 @@ public class Constraint implements NodeName, NodeValue, AttributeName, Attribute
 		if (inform()) {
 
 			node.addChild(STATUS, INFORMATION);
-			node.addChild(INFO, null, messageAttributes).setAttribute("ExpectedValue", expectedValue).setAttribute("ConstraintValue", value);
+			node.addChild(INFO, null, messageAttributes).setAttribute(EXPECTED_VALUE, expectedValue).setAttribute(CONSTRAINT_VALUE, value);
 			return true;
 		}
 		final boolean contains;

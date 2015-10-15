@@ -35,7 +35,6 @@ import eu.europa.ec.markt.dss.validation102853.processes.ltv.PastSignatureValida
 import eu.europa.ec.markt.dss.validation102853.processes.ltv.PastSignatureValidationConclusion;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.MessageTag;
@@ -85,11 +84,11 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_IPSVC
  *
  * @author bielecro
  */
-public class LongTermValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage {
+public class LongTermValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LongTermValidation.class);
 
-	ProcessParameters params;
+	ProcessParameters context;
 
 	// Primary inputs
 	private XmlDom timestampValidationData; // Basic Building Blocks for timestamps
@@ -113,15 +112,15 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 			 * The execution of the Basic Validation process which creates the basic validation data.<br>
 			 */
 			final AdESTValidation adestValidation = new AdESTValidation();
-			adestValidationData = adestValidation.run(mainNode, params);
+			adestValidationData = adestValidation.run(mainNode, context);
 
 			// Basic Building Blocks for timestamps
-			timestampValidationData = params.getTsData();
+			timestampValidationData = context.getTsXmlDom();
 		}
 		if (poe == null) {
 
 			poe = new EtsiPOEExtraction();
-			params.setPOE(poe);
+			context.setPOE(poe);
 		}
 	}
 
@@ -145,17 +144,17 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 	 * The following steps shall be performed:
 	 *
 	 * @param mainNode {@code XmlNode} container for the detailed report
-	 * @param params   {@code ProcessParameters}
+	 * @param context   {@code ProcessParameters}
 	 * @return {@code XmlDom} containing the part of the detailed report related to the current validation process
 	 */
-	public XmlDom run(final XmlNode mainNode, final ProcessParameters params) {
+	public XmlDom run(final XmlNode mainNode, final ProcessParameters context) {
 
-		this.params = params;
-		assertDiagnosticData(params.getDiagnosticData(), getClass());
-		assertValidationPolicy(params.getValidationPolicy(), getClass());
+		this.context = context;
+		assertDiagnosticData(context.getDiagnosticData(), getClass());
+		assertValidationPolicy(context.getValidationPolicy(), getClass());
 
 		final GeneralStructure generalStructure = new GeneralStructure();
-		final Conclusion generalStructureConclusion = generalStructure.run(params);
+		final Conclusion generalStructureConclusion = generalStructure.run(context);
 		mainNode.addChild(generalStructureConclusion.getValidationData());
 
 		isInitialised(mainNode);
@@ -165,13 +164,13 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 
 		XmlNode longTermValidationData = mainNode.addChild(LONG_TERM_VALIDATION_DATA);
 
-		final List<XmlDom> signatureXmlDomList = params.getDiagnosticData().getElements(XP_DIAGNOSTIC_DATA_SIGNATURE);
+		final List<XmlDom> signatureXmlDomList = context.getDiagnosticData().getElements(XP_DIAGNOSTIC_DATA_SIGNATURE);
 
 		for (final XmlDom signatureXmlDom : signatureXmlDomList) {
 
 			final String signatureId = signatureXmlDom.getAttribute(ID);
 			final String signatureType = signatureXmlDom.getAttribute(TYPE);
-			setSuitableValidationPolicy(params, signatureType);
+			setSuitableValidationPolicy(context, signatureType);
 			final XmlDom signatureTimestampValidationData = timestampValidationData.getElement(XP_SIGNATURE, signatureId);
 			final XmlDom adestSignatureValidationData = adestValidationData.getElement(XP_ADEST_SIGNATURE, signatureId);
 
@@ -181,7 +180,7 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 			conclusion = new Conclusion();
 			try {
 
-				final boolean valid = process(params, signatureXmlDom, signatureTimestampValidationData, adestSignatureValidationData);
+				final boolean valid = process(context, signatureXmlDom, signatureTimestampValidationData, adestSignatureValidationData);
 				if (valid) {
 
 					conclusion.setIndication(VALID);
@@ -194,7 +193,7 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 			conclusionXmlNode.setParent(signatureXmlNode);
 		}
 		final XmlDom ltvDom = longTermValidationData.toXmlDom();
-		params.setLtvData(ltvDom);
+		context.setLtvXmlDom(ltvDom);
 		return ltvDom;
 	}
 
@@ -224,7 +223,7 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 		 * inputs, including the processing of any signed attributes/properties as specified.<br>
 		 */
 
-		// --> This is done in the prepareParameters(ProcessParameters params) method.
+		// --> This is done in the prepareParameters(ProcessParameters context) method.
 
 		final XmlDom adestSignatureConclusion = adestSignatureValidationData.getElement(XP_CONCLUSION);
 		final String adestSignatureIndication = adestSignatureConclusion.getValue(XP_INDICATION);
@@ -466,7 +465,7 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 					 */
 
 					final PastSignatureValidation psvp = new PastSignatureValidation();
-					final PastSignatureValidationConclusion psvConclusion = psvp.run(params, timestampXmlDom, timestampConclusionXmlDom, TIMESTAMP);
+					final PastSignatureValidationConclusion psvConclusion = psvp.run(context, timestampXmlDom, timestampConclusionXmlDom, TIMESTAMP);
 
 					timestampXmlNode.addChild(psvConclusion.getValidationData());
 
@@ -512,11 +511,11 @@ public class LongTermValidation extends BasicValidationProcess implements Indica
 	private boolean extractPOEs(final XmlDom timestamp) throws DSSException {
 
 		final String digestAlgorithm = RuleUtils.canonicalizeDigestAlgo(timestamp.getValue(XP_SIGNED_DATA_DIGEST_ALGO));
-		final Date algorithmExpirationDate = params.getCurrentValidationPolicy().getAlgorithmExpirationDate(digestAlgorithm);
+		final Date algorithmExpirationDate = context.getCurrentValidationPolicy().getAlgorithmExpirationDate(digestAlgorithm);
 		final Date timestampProductionTime = timestamp.getTimeValue(XP_PRODUCTION_TIME);
 		if (algorithmExpirationDate == null || timestampProductionTime.before(algorithmExpirationDate)) {
 
-			poe.addPOE(timestamp, params.getCertPool());
+			poe.addPOE(timestamp, context.getCertPool());
 			return true;
 		}
 		return false;

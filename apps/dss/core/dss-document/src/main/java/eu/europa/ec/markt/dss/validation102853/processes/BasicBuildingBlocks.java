@@ -32,7 +32,6 @@ import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.SignatureA
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.ValidationContextInitialisation;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.X509CertificateValidation;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -49,7 +48,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
  *
  * @author bielecro
  */
-public class BasicBuildingBlocks extends BasicValidationProcess implements NodeName, NodeValue, AttributeName, Indication, ExceptionMessage {
+public class BasicBuildingBlocks extends BasicValidationProcess implements NodeName, NodeValue, Indication, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BasicBuildingBlocks.class);
 
@@ -93,9 +92,8 @@ public class BasicBuildingBlocks extends BasicValidationProcess implements NodeN
 			 * 5. Basic Building Blocks
 			 */
 
-			final String signatureId = signatureXmlDom.getAttribute(ID);
 			final XmlNode signatureXmlNode = basicBuildingBlocksXmlNode.addChild(SIGNATURE);
-			signatureXmlNode.setAttribute(ID, signatureId);
+			signatureXmlNode.setAttribute(ID, params.getSignatureId());
 			/**
 			 * 5.1. Identification of the signer's certificate (ISC)
 			 */

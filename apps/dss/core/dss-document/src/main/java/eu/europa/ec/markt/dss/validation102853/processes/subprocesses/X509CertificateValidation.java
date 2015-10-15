@@ -37,7 +37,6 @@ import eu.europa.ec.markt.dss.validation102853.processes.dss.ForLegalPerson;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.QualifiedCertificate;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.SSCD;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -83,7 +82,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.CTS_WITSS_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
 
-public class X509CertificateValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage, RuleConstant {
+public class X509CertificateValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, ExceptionMessage, RuleConstant {
 
 	/**
 	 * The following variables are used only in order to simplify the writing of the rules!

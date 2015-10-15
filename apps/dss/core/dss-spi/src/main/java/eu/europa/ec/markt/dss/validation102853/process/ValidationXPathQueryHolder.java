@@ -63,7 +63,8 @@ public interface ValidationXPathQueryHolder {
 
 	String XP_TVD_SIGNATURE_TIMESTAMP = "/TimestampValidationData/Signature[@Id='%s']/Timestamp[@Id='%s']";
 
-	String XP_SIGNATURE_TIMESTAMP_CONCLUSION = "./Timestamp[@Type='%s']/Conclusion";
+	String XP_TIMESTAMP_TYPE_CONCLUSION = "./Timestamp[@Type='%s']/Conclusion";
+	String XP_TIMESTAMP_ID_CONCLUSION = "./Timestamp[@Id='%s']/Conclusion";
 	String XP_TIMESTAMPS = "./Timestamps/Timestamp[@Type='%s']";
 	String XP_TIMESTAMP_BBB_CONCLUSION = "./Timestamp[@Id='%s']/BasicBuildingBlocks/Conclusion";
 	String XP_PRODUCTION_TIME = "./ProductionTime/text()";

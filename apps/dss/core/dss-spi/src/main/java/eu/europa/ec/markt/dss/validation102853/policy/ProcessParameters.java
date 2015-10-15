@@ -21,11 +21,13 @@
 package eu.europa.ec.markt.dss.validation102853.policy;
 
 import java.util.Date;
+import java.util.List;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.process.POEExtraction;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
 import eu.europa.ec.markt.dss.validation102853.report.DiagnosticData;
+import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 
@@ -34,7 +36,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
  *
  * @author bielecro
  */
-public class ProcessParameters implements ExceptionMessage {
+public class ProcessParameters implements AttributeName, ExceptionMessage {
 
 	/**
 	 * This variable contains the diagnostic data which is used to carry out all validation processes. It is extracted
@@ -60,7 +62,12 @@ public class ProcessParameters implements ExceptionMessage {
 	 * Represents the current main signature DOM element being validated. This element provides general information used
 	 * in validation process like the list of used certificates.
 	 */
-	protected XmlDom signatureContext;
+	protected XmlDom signatureXmlDom;
+
+	/**
+	 * Related id
+	 */
+	protected String signatureId;
 
 	/**
 	 * Represents the current signature DOM element being validated:<br>
@@ -89,41 +96,44 @@ public class ProcessParameters implements ExceptionMessage {
 	 * IdentificationOfTheSignersCertificate sub process.
 	 * This variable is different for each context.
 	 */
-	private XmlDom signingCertificate;
+	private XmlDom signingCertificateXmlDom;
 	/**
 	 * This {@code XmlDom} is returned by the Basic Building Blocks process (see BasicBuildingBlocks) and
 	 * it depicts the validation detailed report.
 	 */
-	private XmlDom basicBuildingBlocksReport;
+	private XmlDom basicBuildingBlocksXmlDom;
 
 	/**
 	 * This {@code XmlDom} is returned by the Basic Validation process (see BasicValidation) and
 	 * it depicts the validation detailed report.
 	 */
-	private XmlDom bvData;
+	private XmlDom bvXmlDom;
 
 	/**
 	 * This {@code XmlDom} is returned by the Basic Timestamp Validation process (see TimestampValidation)
 	 * and it depicts the validation detailed report.
 	 */
-	private XmlDom tsData;
+	private XmlDom tsXmlDom;
 
 	/**
 	 * This {@code XmlDom} is returned by the AdEST Validation process (see AdESTValidation) and
 	 * it depicts the validation detailed report.
 	 */
-	private XmlDom adestData;
+	private XmlDom adestXmlDom;
 
 	/**
 	 * This {@code XmlDom} is returned by the Long Term Validation process (see LongTermValidation) and
 	 * it depicts the validation detailed report.
 	 */
-	private XmlDom ltvData;
+	private XmlDom ltvXmlDom;
 
 	private XmlDom certPool;
 
 	private POEExtraction poe;
+
 	private Conclusion generalStructureConclusion;
+
+	private List<String> contentTimestampIdList;
 
 	/**
 	 * See {@link #diagnosticData}
@@ -136,11 +146,15 @@ public class ProcessParameters implements ExceptionMessage {
 
 	/**
 	 * See {@link #diagnosticData}
+	 * This method sets the used certificate pool.
 	 *
 	 * @return
 	 */
 	public void setDiagnosticData(final DiagnosticData diagnosticData) {
+
 		this.diagnosticData = diagnosticData;
+		final XmlDom usedCertificates = diagnosticData.getElement("/DiagnosticData/UsedCertificates");
+		setCertPool(usedCertificates);
 	}
 
 	/**
@@ -206,113 +220,113 @@ public class ProcessParameters implements ExceptionMessage {
 	}
 
 	/**
-	 * See {@link #signingCertificate}
+	 * See {@link #signingCertificateXmlDom}
 	 *
 	 * @return
 	 */
 	public XmlDom getSigningCertificate() {
-		return signingCertificate;
+		return signingCertificateXmlDom;
 	}
 
 	/**
-	 * See {@link #signingCertificate}
+	 * See {@link #signingCertificateXmlDom}
 	 *
 	 * @return
 	 */
 	public void setSigningCertificate(final XmlDom signingCertificate) {
-		this.signingCertificate = signingCertificate;
+		this.signingCertificateXmlDom = signingCertificate;
 	}
 
 	/**
-	 * See {@link #basicBuildingBlocksReport}
+	 * See {@link #basicBuildingBlocksXmlDom}
 	 *
 	 * @return
 	 */
 	public XmlDom getBasicBuildingBlocksReport() {
-		return basicBuildingBlocksReport;
+		return basicBuildingBlocksXmlDom;
 	}
 
 	/**
-	 * See {@link #basicBuildingBlocksReport}
+	 * See {@link #basicBuildingBlocksXmlDom}
 	 *
 	 * @return
 	 */
 	public void setBasicBuildingBlocksReport(final XmlDom basicBuildingBlocksReport) {
-		this.basicBuildingBlocksReport = basicBuildingBlocksReport;
+		this.basicBuildingBlocksXmlDom = basicBuildingBlocksReport;
 	}
 
 	/**
-	 * See {@link #bvData}
+	 * See {@link #bvXmlDom}
 	 *
 	 * @return
 	 */
-	public XmlDom getBvData() {
-		return bvData;
+	public XmlDom getBvXmlDom() {
+		return bvXmlDom;
 	}
 
 	/**
-	 * See {@link #bvData}
+	 * See {@link #bvXmlDom}
 	 *
 	 * @return
 	 */
-	public void setBvData(XmlDom bvData) {
-		this.bvData = bvData;
+	public void setBvXmlDom(XmlDom bvXmlDom) {
+		this.bvXmlDom = bvXmlDom;
 	}
 
 	/**
-	 * See {@link #tsData}
+	 * See {@link #tsXmlDom}
 	 *
 	 * @return
 	 */
-	public XmlDom getTsData() {
-		return tsData;
+	public XmlDom getTsXmlDom() {
+		return tsXmlDom;
 	}
 
 	/**
-	 * See {@link #tsData}
+	 * See {@link #tsXmlDom}
 	 *
 	 * @return
 	 */
-	public void setTsData(XmlDom tsData) {
-		this.tsData = tsData;
+	public void setTsXmlDom(XmlDom tsXmlDom) {
+		this.tsXmlDom = tsXmlDom;
 	}
 
 	/**
-	 * See {@link #adestData}
-	 *
-	 * @return
-	 */
-
-	public XmlDom getAdestData() {
-		return adestData;
-	}
-
-	/**
-	 * See {@link #adestData}
-	 *
-	 * @return
-	 */
-	public void setAdestData(XmlDom adestData) {
-		this.adestData = adestData;
-	}
-
-	/**
-	 * See {@link #ltvData}
+	 * See {@link #adestXmlDom}
 	 *
 	 * @return
 	 */
 
-	public XmlDom getLtvData() {
-		return ltvData;
+	public XmlDom getAdestXmlDom() {
+		return adestXmlDom;
 	}
 
 	/**
-	 * See {@link #ltvData}
+	 * See {@link #adestXmlDom}
 	 *
 	 * @return
 	 */
-	public void setLtvData(XmlDom ltvData) {
-		this.ltvData = ltvData;
+	public void setAdestXmlDom(XmlDom adestXmlDom) {
+		this.adestXmlDom = adestXmlDom;
+	}
+
+	/**
+	 * See {@link #ltvXmlDom}
+	 *
+	 * @return
+	 */
+
+	public XmlDom getLtvXmlDom() {
+		return ltvXmlDom;
+	}
+
+	/**
+	 * See {@link #ltvXmlDom}
+	 *
+	 * @return
+	 */
+	public void setLtvXmlDom(XmlDom ltvXmlDom) {
+		this.ltvXmlDom = ltvXmlDom;
 	}
 
 	/**
@@ -338,21 +352,30 @@ public class ProcessParameters implements ExceptionMessage {
 	}
 
 	/**
-	 * See {@link #signatureContext}
+	 * See {@link #signatureXmlDom}
 	 *
 	 * @return
 	 */
 	public XmlDom getSignatureContext() {
-		return signatureContext;
+		return signatureXmlDom;
 	}
 
 	/**
-	 * See {@link #signatureContext}
+	 * See {@link #signatureXmlDom}
+	 * This method sets local variable {@code signatureId}
 	 *
 	 * @param signature
 	 */
 	public void setSignatureContext(final XmlDom signature) {
-		this.signatureContext = signature;
+		this.signatureXmlDom = signature;
+		signatureId = signatureXmlDom.getAttribute(ID);
+	}
+
+	/**
+	 * @return
+	 */
+	public String getSignatureId() {
+		return signatureId;
 	}
 
 	/**
@@ -430,6 +453,14 @@ public class ProcessParameters implements ExceptionMessage {
 		this.poe = poe;
 	}
 
+	public Conclusion getGeneralStructureConclusion() {
+		return generalStructureConclusion;
+	}
+
+	public void setGeneralStructureConclusion(final Conclusion generalStructureConclusion) {
+		this.generalStructureConclusion = generalStructureConclusion;
+	}
+
 	@Override
 	public String toString() {
 
@@ -447,11 +478,18 @@ public class ProcessParameters implements ExceptionMessage {
 		}
 	}
 
-	public void setGeneralStructureConclusion(final Conclusion generalStructureConclusion) {
-		this.generalStructureConclusion = generalStructureConclusion;
+	/**
+	 * @return the {@code List} of content-timestamp-id obtained in SAV building block
+	 */
+	public List<String> getContentTimestampIdList() {
+		return contentTimestampIdList;
 	}
 
-	public Conclusion getGeneralStructureConclusion() {
-		return generalStructureConclusion;
+	/**
+	 * @param contentTimestampIdList sets the {@code List} of content-timestamp-id obtained in SAV building block
+	 */
+	public void setContentTimestampIdList(final List<String> contentTimestampIdList) {
+
+		this.contentTimestampIdList = contentTimestampIdList;
 	}
 }

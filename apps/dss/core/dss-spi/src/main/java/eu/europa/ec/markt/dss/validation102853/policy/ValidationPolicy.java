@@ -159,7 +159,12 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 *
 	 * @return {@code Constraint} if ContentTimeStamp element is present in the constraint file, null otherwise.
 	 */
-	public abstract Constraint getContentTimestampPresenceConstraint();
+	public abstract ElementNumberConstraint getContentTimestampNumberConstraint();
+
+	/**
+	 * @return the {@code List} of content timestamp types to be taken into account, or an empty {@code List} if each content-timestamp should be considered
+	 */
+	public abstract List<String> getContentTimestampTypeList();
 
 	/**
 	 * Indicates if the signed property: content-time-stamp should be checked. If ClaimedRoles element is absent within the constraint file then null is returned.
@@ -416,10 +421,6 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 * @return
 	 */
 	public abstract Constraint getTimestampDelaySigningTimePropertyConstraint();
-
-	public abstract Constraint getContentTimestampImprintIntactConstraint();
-
-	public abstract Constraint getContentTimestampImprintFoundConstraint();
 
 	public abstract Constraint getCounterSignatureReferenceDataExistenceConstraint();
 

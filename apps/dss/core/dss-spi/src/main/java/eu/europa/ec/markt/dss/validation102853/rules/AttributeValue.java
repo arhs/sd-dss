@@ -51,4 +51,7 @@ public interface AttributeValue {
 
 	String COUNTERSIGNATURE = "COUNTERSIGNATURE";
 
+	String TRUE = "true";
+	String FALSE = "false";
+
 }

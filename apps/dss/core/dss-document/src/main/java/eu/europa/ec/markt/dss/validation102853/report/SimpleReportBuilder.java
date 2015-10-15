@@ -255,9 +255,9 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 
 			addSignedBy(signatureXmlNode, signCertificateXmlDom);
 
-			XmlDom bvData = params.getBvData();
+			XmlDom bvData = params.getBvXmlDom();
 			final XmlDom basicValidationConclusion = bvData.getElement("/BasicValidationData/Signature[@Id='%s']/Conclusion", signatureId);
-			final XmlDom ltvDom = params.getLtvData();
+			final XmlDom ltvDom = params.getLtvXmlDom();
 			final XmlDom ltvConclusion = ltvDom.getElement("/LongTermValidationData/Signature[@Id='%s']/Conclusion", signatureId);
 			final String ltvIndication = ltvConclusion.getValue(XP_INDICATION);
 			final String ltvSubIndication = ltvConclusion.getValue(XP_SUB_INDICATION);

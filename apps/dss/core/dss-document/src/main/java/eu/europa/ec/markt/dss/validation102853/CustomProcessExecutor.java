@@ -64,7 +64,7 @@ public class CustomProcessExecutor implements ProcessExecutor {
 	 */
 	protected ValidationPolicy countersignatureValidationPolicy;
 
-	protected ProcessParameters processParams;
+	protected ProcessParameters context;
 
 	/**
 	 * The simple validation report, contains only the most important information like validation date, signer from DN,
@@ -136,26 +136,24 @@ public class CustomProcessExecutor implements ProcessExecutor {
 	@Override
 	public Reports execute() {
 
-		processParams = new ProcessParameters();
+		context = new ProcessParameters();
 		diagnosticData = new DiagnosticData(diagnosticDataDom);
-		processParams.setDiagnosticData(diagnosticData);
-		processParams.setValidationPolicy(validationPolicy);
-		processParams.setCountersignatureValidationPolicy(countersignatureValidationPolicy);
-		processParams.setCurrentTime(currentTime);
-		final XmlDom usedCertificates = diagnosticData.getElement("/DiagnosticData/UsedCertificates");
-		processParams.setCertPool(usedCertificates);
+		context.setDiagnosticData(diagnosticData);
+		context.setValidationPolicy(validationPolicy);
+		context.setCountersignatureValidationPolicy(countersignatureValidationPolicy);
+		context.setCurrentTime(currentTime);
 
 		final XmlNode mainNode = new XmlNode(NodeName.VALIDATION_DATA);
 		mainNode.setNameSpace(XmlDom.NAMESPACE);
 
 		final LongTermValidation ltv = new LongTermValidation();
-		ltv.run(mainNode, processParams);
+		ltv.run(mainNode, context);
 
 		final Document validationReportDocument = mainNode.toDocument(null);
 		detailedReport = new DetailedReport(validationReportDocument);
 
 		final SimpleReportBuilder simpleReportBuilder = new SimpleReportBuilder(validationPolicy, diagnosticData);
-		simpleReport = simpleReportBuilder.build(processParams);
+		simpleReport = simpleReportBuilder.build(context);
 
 		final Reports reports = new Reports(diagnosticData, detailedReport, simpleReport);
 		return reports;

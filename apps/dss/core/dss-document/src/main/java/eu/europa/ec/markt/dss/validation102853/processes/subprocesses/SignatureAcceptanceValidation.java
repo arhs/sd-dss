@@ -25,7 +25,6 @@ import java.util.List;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.validation102853.TimestampType;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ElementNumberConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
@@ -33,10 +32,8 @@ import eu.europa.ec.markt.dss.validation102853.policy.SignatureCryptographicCons
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
-import eu.europa.ec.markt.dss.validation102853.rules.MessageTag;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
@@ -44,13 +41,11 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
 import static eu.europa.ec.markt.dss.validation102853.TimestampType.SIGNATURE_TIMESTAMP;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIDF;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIDF_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ADEST_IMIVC_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DCTIPER;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DCTIPER_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNCTCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNCTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DSFCVP;
@@ -67,8 +62,6 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_I
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPCIP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPCTP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPCTP_ANS;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPCTSIP;
-import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPCTSIP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPDOFP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPDOFP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_ISQPSLP;
@@ -117,11 +110,13 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
  * @author <a href="mailto:dgmarkt.Project-DSS@arhs-developments.com">ARHS Developments</a>
  * @version $Revision: 1016 $ - $Date: 2011-06-17 15:30:45 +0200 (Fri, 17 Jun 2011) $
  */
-public class SignatureAcceptanceValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage {
+public class SignatureAcceptanceValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, ExceptionMessage {
 
 	/**
 	 * The following variables are used only in order to simplify the writing of the rules!
 	 */
+
+	protected ProcessParameters context;
 
 	/**
 	 * See {@link ProcessParameters#getCurrentValidationPolicy()}
@@ -143,11 +138,11 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 */
 	private XmlNode subProcessXmlNode;
 
-	private void prepareParameters(final ProcessParameters params) {
+	private void prepareParameters() {
 
-		this.validationPolicy = params.getCurrentValidationPolicy();
-		this.signatureContext = params.getSignatureContext();
-		this.currentTime = params.getCurrentTime();
+		this.validationPolicy = context.getCurrentValidationPolicy();
+		this.signatureContext = context.getSignatureContext();
+		this.currentTime = context.getCurrentTime();
 
 		isInitialised();
 	}
@@ -181,23 +176,24 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 * <p/>
 	 * This method prepares the execution of the SAV process.
 	 *
-	 * @param params        validation process parameters
+	 * @param context       validation process parameters
 	 * @param parentXmlNode the parent process {@code XmlNode} to use to include the validation information
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
-	public Conclusion run(final ProcessParameters params, final XmlNode parentXmlNode) {
+	public Conclusion run(final ProcessParameters context, final XmlNode parentXmlNode) {
 
 		if (parentXmlNode == null) {
 			throw new DSSException(String.format(EXCEPTION_TCOPPNTBI, getClass().getSimpleName(), "parentXmlNode"));
 		}
-		prepareParameters(params);
+		this.context = context;
+		prepareParameters();
 
 		/**
 		 * 5.5 Signature Acceptance Validation (SAV)
 		 */
 		subProcessXmlNode = parentXmlNode.addChild(SAV);
 
-		final Conclusion conclusion = process(params);
+		final Conclusion conclusion = process();
 
 		final XmlNode conclusionXmlNode = conclusion.toXmlNode();
 		subProcessXmlNode.addChild(conclusionXmlNode);
@@ -207,10 +203,9 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	/**
 	 * This method implement SAV process.
 	 *
-	 * @param params validation process parameters
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
-	private Conclusion process(final ProcessParameters params) {
+	private Conclusion process() {
 
 		final Conclusion conclusion = new Conclusion();
 		conclusion.setLocation(subProcessXmlNode.getLocation());
@@ -371,17 +366,6 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		// This validation process returns VALID
 		conclusion.setIndication(VALID);
 		return conclusion;
-	}
-
-	/**
-	 * @param messageTag
-	 * @return
-	 */
-	private XmlNode addConstraint(final MessageTag messageTag) {
-
-		final XmlNode constraintNode = subProcessXmlNode.addChild(CONSTRAINT);
-		constraintNode.addChild(NAME, messageTag.getMessage()).setAttribute(NAME_ID, messageTag.name());
-		return constraintNode;
 	}
 
 	/**
@@ -598,17 +582,17 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		constraint.create(subProcessXmlNode, BBB_SAV_DCTIPER);
 		// TODO: A set of commitments must be checked
 		final List<XmlDom> objectReferenceXmlDomList = signatureContext.getElements("./CommitmentTypeIndication[1]/ObjectReference");
-		constraint.setValue(objectReferenceXmlDomList.size() > 0 ? "true" : "false");
+		constraint.setValue(objectReferenceXmlDomList.size() > 0 ? TRUE : FALSE);
 		for (final XmlDom objectReferenceXmlDom : objectReferenceXmlDomList) {
 
 			final String objectReferenceValue = objectReferenceXmlDom.getText();
 			final String objectReferenceExists = objectReferenceXmlDom.getAttribute("Exists");
-			if ("false".equals(objectReferenceExists)) {
-				constraint.setValue("false");
+			if (FALSE.equals(objectReferenceExists)) {
+				constraint.setValue(FALSE);
 				constraint.setAttribute(OBJECT_REFERENCE, objectReferenceValue);
 			}
 		}
-		constraint.setExpectedValue("true");
+		constraint.setExpectedValue(TRUE);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DCTIPER_ANS);
 		constraint.setConclusionReceiver(conclusion);
 
@@ -661,63 +645,17 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 */
 	private boolean checkContentTimeStampConstraints(final Conclusion conclusion) {
 
-		final Constraint constraint1 = validationPolicy.getContentTimestampPresenceConstraint();
-		if (constraint1 == null) {
-			return true;
-		}
-		constraint1.create(subProcessXmlNode, BBB_SAV_ISQPCTSIP);
-
-		//get count of all possible content timestamps
-		long count = signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.CONTENT_TIMESTAMP);
-		count += signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.ALL_DATA_OBJECTS_TIMESTAMP);
-		count += signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.INDIVIDUAL_DATA_OBJECTS_TIMESTAMP);
-
-		final String countValue = count <= 0 ? "" : String.valueOf(count);
-		constraint1.setValue(countValue);
-		constraint1.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPCTSIP_ANS);
-		constraint1.setConclusionReceiver(conclusion);
-
-		final Constraint constraint2 = validationPolicy.getContentTimestampImprintFoundConstraint();
-		if (constraint2 == null) {
-			return constraint1.check();
-		}
-		constraint2.create(subProcessXmlNode, ADEST_IMIDF);
-		constraint2.setValue(true);
-		constraint2.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, ADEST_IMIDF_ANS);
-		constraint2.setConclusionReceiver(conclusion);
-
-		final Constraint constraint3 = validationPolicy.getContentTimestampImprintIntactConstraint();
-		if (constraint3 == null) {
-			return constraint1.check() && constraint2.check();
-		}
-		constraint3.create(subProcessXmlNode, ADEST_IMIVC);
-		constraint3.setValue(true);
-		constraint3.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, ADEST_IMIVC_ANS);
-		constraint3.setConclusionReceiver(conclusion);
-
-		return constraint1.check() && constraint2.check() && constraint3.check();
-	}
-
-	/**
-	 * @param conclusion
-	 * @return
-	 */
-	private boolean checkContentTimestampImprintFoundConstraint(final Conclusion conclusion) {
-
-		final Constraint constraint = validationPolicy.getContentTimestampPresenceConstraint();
+		final List<String> contentTimestampTypeList = validationPolicy.getContentTimestampTypeList();
+		final List<String> contentTimestampIdList = getContentTimestampIdList(contentTimestampTypeList, signatureContext);
+		context.setContentTimestampIdList(contentTimestampIdList);
+		final ElementNumberConstraint constraint = validationPolicy.getContentTimestampNumberConstraint();
 		if (constraint == null) {
 			return true;
 		}
-		constraint.create(subProcessXmlNode, BBB_SAV_ISQPCTSIP);
-
-		//get all possible content timestamps
-		long count = signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.CONTENT_TIMESTAMP);
-		count += signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.ALL_DATA_OBJECTS_TIMESTAMP);
-		count += signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.INDIVIDUAL_DATA_OBJECTS_TIMESTAMP);
-
-		final String countValue = count <= 0 ? "" : String.valueOf(count);
-		constraint.setValue(countValue);
-		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPCTSIP_ANS);
+		constraint.create(subProcessXmlNode, BBB_SAV_DNCTCVP);
+		constraint.setIntValue(contentTimestampIdList.size());
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNCTCVP_ANS);
+		constraint.setAttribute("ExpectedTypeList", contentTimestampTypeList.toString());
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();
@@ -797,7 +735,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		final Date notAfter = certifiedRolesXmlDom.getTimeValue(XP_NOT_AFTER);
 
 		boolean valid = currentTime.after(notBefore) && currentTime.before(notAfter);
-		constraint.setExpectedValue("true");
+		constraint.setExpectedValue(TRUE);
 		constraint.setValue(valid);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_IACV_ANS);
 		constraint.setAttribute(CURRENT_TIME, DSSUtils.formatDate(currentTime)).setAttribute(NOT_BEFORE, DSSUtils.formatDate(notBefore))
@@ -844,43 +782,4 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 
 		return constraint.check();
 	}
-
-	/**
-	 * Check of countersignature attributes:
-	 *
-	 * 5.5.4.7 Processing Countersignatures
-	 If the signature constraints define specific constraints for countersignature attributes, the SVA shall check that they are
-	 satisfied. To do so, the SVA shall do the following steps for each countersignature attribute:
-	 1) Perform the validation process for AdES-BES/EPES using the countersignature in the property/attribute and
-	 the signature value octet string of the signature as the signed data object.
-	 2) Apply the constraints for countersignature attributes to the result returned in the previous step. If any check
-	 fails, return INVALID/SIG_CONSTRAINTS_FAILURE with an explanation of the unverified constraint.
-	 If the signature constraints do not contain any constraint on countersignatures, the SVA may still verify the
-	 countersignature and provide the results in the validation report. However, it shall not consider the signature validation
-	 to having failed if the countersignature could not be verified.
-
-	 * @param conclusion
-	 * @return
-	 */
-	/*private boolean checkCounterSignatureConstraints(Conclusion conclusion) {
-		//get countersignatures
-		final Constraint constraint = validationPolicy.getCounterSignatureConstraint();
-		if (constraint == null) {
-			return true;
-		}
-		constraint.create(subProcessXmlNode, BBB_SAV_ISQPCTSIP);
-
-		//get all possible content timestamps
-		long count = signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.CONTENT_TIMESTAMP);
-		count += signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.ALL_DATA_OBJECTS_TIMESTAMP);
-		count += signatureContext.getCountValue("count(./Timestamps/Timestamp[@Type='%s'])", TimestampType.INDIVIDUAL_DATA_OBJECTS_TIMESTAMP);
-
-		final String countValue = count <= 0 ? "" : String.valueOf(count);
-		constraint.setValue(countValue);
-		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_ISQPCTSIP_ANS);
-		constraint.setConclusionReceiver(conclusion);
-
-		return constraint.check();
-		//perform validation process for each of them
-	}*/
 }

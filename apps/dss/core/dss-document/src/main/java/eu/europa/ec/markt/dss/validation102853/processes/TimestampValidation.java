@@ -36,7 +36,6 @@ import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.Cryptograp
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.IdentificationOfTheSignersCertificate;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.X509CertificateValidation;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -59,7 +58,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.EMPTY;
  *
  * @author bielecro
  */
-public class TimestampValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, ExceptionMessage {
+public class TimestampValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(TimestampValidation.class);
 
@@ -135,9 +134,8 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 			// This defines the signature context of the execution of the following processes.
 			params.setSignatureContext(signatureXmlNode);
 
-			final String signatureId = signatureXmlNode.getAttribute(ID);
 			final XmlNode currentSignatureXmlNode = timestampValidationDataXmlNode.addChild(SIGNATURE);
-			currentSignatureXmlNode.setAttribute(ID, signatureId);
+			currentSignatureXmlNode.setAttribute(ID, params.getSignatureId());
 
 			for (final XmlDom timestamp : timestampXmlNodeList) {
 
@@ -228,7 +226,7 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 			}
 		}
 		final XmlDom tsDom = timestampValidationDataXmlNode.toXmlDom();
-		params.setTsData(tsDom);
+		params.setTsXmlDom(tsDom);
 		return tsDom;
 	}
 

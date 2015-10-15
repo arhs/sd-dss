@@ -31,6 +31,8 @@ import org.w3c.dom.Document;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.RuleUtils;
+import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
+import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 
 /**
@@ -39,10 +41,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
  *
  * @author bielecro
  */
-public class EtsiValidationPolicy extends ValidationPolicy {
-
-	protected static final String TRUE = "true";
-	protected static final String FALSE = "false";
+public class EtsiValidationPolicy extends ValidationPolicy implements AttributeName, AttributeValue {
 
 	private long maxRevocationFreshnessString;
 
@@ -231,15 +230,26 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	}
 
 	@Override
-	public Constraint getContentTimestampPresenceConstraint() {
+	public ElementNumberConstraint getContentTimestampNumberConstraint() {
 
-		final String level = getValue("/ConstraintsParameters/MainSignature/MandatedSignedQProperties/ContentTimestamp/@Level");
-		if (DSSUtils.isNotBlank(level)) {
-
-			final Constraint constraint = new Constraint(level);
-			return constraint;
+		final String xpRoot = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/ContentTimestamp";
+		final ElementNumberConstraint elementNumberConstraint = getElementNumberConstraint(xpRoot);
+		if (elementNumberConstraint != null) {
+			return elementNumberConstraint;
 		}
 		return null;
+	}
+
+	@Override
+	public List<String> getContentTimestampTypeList() {
+
+		final String xpRoot = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/ContentTimestamp/Type";
+		final List<XmlDom> elementXmlList = getElements(xpRoot);
+		List<String> foundTypeList = new ArrayList<String>();
+		for (final XmlDom elementXmlDom : elementXmlList) {
+			foundTypeList.add(elementXmlDom.getText());
+		}
+		return foundTypeList;
 	}
 
 	@Override
@@ -615,16 +625,20 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 	 */
 	private ElementNumberConstraint getElementNumberConstraint(final String xpRoot) {
 
-		final String level = getValue(xpRoot + "/@Level");
-		if (DSSUtils.isNotBlank(level)) {
+		final XmlDom elementXmlDom = getElement(xpRoot);
+		if (elementXmlDom != null) {
 
-			final String minStr = getValue(xpRoot + "/@Min");
-			final int min = DSSUtils.parseIntSilently(minStr, 0);
-			final String maxStr = getValue(xpRoot + "/@Max");
-			final int max = DSSUtils.parseIntSilently(maxStr, 999);
+			final String level = elementXmlDom.getAttribute(LEVEL);
+			if (DSSUtils.isNotBlank(level)) {
 
-			final ElementNumberConstraint constraint = new ElementNumberConstraint(level, min, max);
-			return constraint;
+				final String minStr = elementXmlDom.getAttribute(MIN);
+				final int min = DSSUtils.parseIntSilently(minStr, 0);
+				final String maxStr = elementXmlDom.getAttribute(MAX);
+				final int max = DSSUtils.parseIntSilently(maxStr, 999);
+
+				final ElementNumberConstraint constraint = new ElementNumberConstraint(level, min, max);
+				return constraint;
+			}
 		}
 		return null;
 	}
@@ -720,19 +734,6 @@ public class EtsiValidationPolicy extends ValidationPolicy {
 			return constraint;
 		}
 		return null;
-	}
-
-	@Override
-	public Constraint getContentTimestampImprintIntactConstraint() {
-
-		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/ContentTimestamp/MessageImprintDataIntact";
-		return getBasicConstraint(XP_ROOT, true);
-	}
-
-	@Override
-	public Constraint getContentTimestampImprintFoundConstraint() {
-		final String XP_ROOT = "/ConstraintsParameters/MainSignature/MandatedSignedQProperties/ContentTimestamp/MessageImprintDataFound";
-		return getBasicConstraint(XP_ROOT, true);
 	}
 
 	@Override

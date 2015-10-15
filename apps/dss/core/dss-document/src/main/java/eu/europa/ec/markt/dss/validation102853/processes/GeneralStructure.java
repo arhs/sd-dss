@@ -27,7 +27,6 @@ import eu.europa.ec.markt.dss.validation102853.policy.ElementNumberConstraint;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.report.Conclusion;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
@@ -42,7 +41,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_GS_DN
 /**
  *
  */
-public class GeneralStructure extends BasicValidationProcess implements NodeName, NodeValue, AttributeName, Indication, SubIndication, ExceptionMessage {
+public class GeneralStructure extends BasicValidationProcess implements NodeName, NodeValue, Indication, SubIndication, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GeneralStructure.class);
 
@@ -93,7 +92,7 @@ public class GeneralStructure extends BasicValidationProcess implements NodeName
 			return conclusion;
 		}
 		//      This check can be performed only after the signatures(s) validation
-		//		if (!checkValidSignatureNumberConstraint(conclusion, params.getDiagnosticData())) {
+		//		if (!checkValidSignatureNumberConstraint(conclusion, context.getDiagnosticData())) {
 		//			return conclusion;
 		//		}
 		// This validation process returns VALID

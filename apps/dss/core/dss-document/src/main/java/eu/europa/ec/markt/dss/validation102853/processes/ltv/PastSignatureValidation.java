@@ -30,8 +30,6 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.validation102853.policy.ProcessParameters;
 import eu.europa.ec.markt.dss.validation102853.processes.BasicValidationProcess;
 import eu.europa.ec.markt.dss.validation102853.processes.subprocesses.EtsiPOEExtraction;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.AttributeValue;
 import eu.europa.ec.markt.dss.validation102853.rules.ExceptionMessage;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
 import eu.europa.ec.markt.dss.validation102853.rules.MessageTag;
@@ -56,7 +54,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.PSV_ITPOS
  *
  * @author bielecro
  */
-public class PastSignatureValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, AttributeName, AttributeValue, ExceptionMessage {
+public class PastSignatureValidation extends BasicValidationProcess implements Indication, SubIndication, NodeName, NodeValue, ExceptionMessage {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PastSignatureValidation.class);
 
