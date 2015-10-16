@@ -422,11 +422,7 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	 */
 	public abstract Constraint getTimestampDelaySigningTimePropertyConstraint();
 
-	public abstract Constraint getCounterSignatureReferenceDataExistenceConstraint();
-
-	public abstract Constraint getCounterSignatureReferenceDataIntactConstraint();
-
-	public abstract Constraint getCounterSignatureIntactConstraint();
+	public abstract ElementNumberConstraint getCounterSignatureNumberConstraint();
 
 	/**
 	 * This constraint is related to the global structure.
@@ -453,4 +449,12 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 	public abstract Constraint getManifestReferenceIntactConstraint();
 
 	public abstract List<Constraint> getISCCustomizedConstraints();
+
+	public abstract Constraint getCompleteCertificateRefsConstraint();
+
+	public abstract Constraint getCompleteRevocationRefsConstraint();
+
+	public abstract ElementNumberConstraint getRefsOnlyTimestampNumberConstraint();
+
+	public abstract ElementNumberConstraint getArchiveTimestampNumberConstraint();
 }

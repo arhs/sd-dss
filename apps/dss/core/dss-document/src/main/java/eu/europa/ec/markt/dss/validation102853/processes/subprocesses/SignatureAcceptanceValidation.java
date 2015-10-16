@@ -40,10 +40,22 @@ import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
+import static eu.europa.ec.markt.dss.validation102853.TimestampType.ARCHIVE_TIMESTAMP;
 import static eu.europa.ec.markt.dss.validation102853.TimestampType.SIGNATURE_TIMESTAMP;
+import static eu.europa.ec.markt.dss.validation102853.TimestampType.VALIDATION_DATA_REFSONLY_TIMESTAMP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_1;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_1_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_2;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_2_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_3;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_3_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_4;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_4_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DCTIPER;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DCTIPER_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNCSCVP;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNCSCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNCTCVP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNCTCVP_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNSTCVP;
@@ -226,6 +238,22 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		 * This clause describes the application of Signature Constraints on the content of the signature including the processing
 		 *on signed and unsigned properties/attributes.
 		 */
+
+		/**
+		 * 5.5.4.2 Processing signing certificate reference constraint
+		 * --> A part of this rule is already implemented within ISC.
+		 * If the SigningCertificate property contains references to other certificates in the path, the verifier shall check
+		 * each of the certificates in the certification path against these references as specified in steps 1 and 2 in clause 5.1.4.1
+		 * (resp clause 5.1.4.2) for XAdES (resp CAdES).
+		 * Should this property contain one or more references to certificates other than those present in the certification path, the
+		 * verifier shall assume that a failure has occurred during the verification.
+		 * Should one or more certificates in the certification path not be referenced by this property, the verifier shall assume that
+		 * the verification is successful unless the signature policy mandates that references to all the certificates in the
+		 * certification path "shall" be present.
+		 *
+		 * // TODO: (Bob: 2014 Mar 07) The check of the path against all elements (if exist) is not implemented (to be checked, maybe yes).
+		 */
+
 		// data-object-format
 		if (!checkDataObjectFormatConstraint(conclusion)) {
 			return conclusion;
@@ -267,26 +295,18 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 			return conclusion;
 		}
 
-		// signer-attributes
-		// TODO: (Bob: 2014 Mar 08)
-
 		// content-time-stamp
 		if (!checkContentTimeStampConstraints(conclusion)) {
 			return conclusion;
 		}
 
-		/*if (!checkCounterSignatureConstraints(conclusion)) {
-			return conclusion;
-		}*/
-
-		/**
-		 * <MandatedUnsignedQProperties>
-		 *
-		 * ../..
-		 *
-		 * <OnRoles>
-		 */
 		if (!checkClaimedRoleConstraint(conclusion)) {
+			return conclusion;
+		}
+
+		// <MandatedUnsignedQProperties>
+
+		if (!checkCounterSignatureNumberConstraint(conclusion)) {
 			return conclusion;
 		}
 
@@ -294,67 +314,23 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 			return conclusion;
 		}
 
-		/**
-		 * 5.5.4.2 Processing signing certificate reference constraint
-		 * If the SigningCertificate property contains references to other certificates in the path, the verifier shall check
-		 * each of the certificates in the certification path against these references as specified in steps 1 and 2 in clause 5.1.4.1
-		 * (resp clause 5.1.4.2) for XAdES (resp CAdES).
-		 * Should this property contain one or more references to certificates other than those present in the certification path, the
-		 * verifier shall assume that a failure has occurred during the verification.
-		 * Should one or more certificates in the certification path not be referenced by this property, the verifier shall assume that
-		 * the verification is successful unless the signature policy mandates that references to all the certificates in the
-		 * certification path "shall" be present.
-		 *
-		 * // TODO: (Bob: 2014 Mar 07) This is not yet implemented.
-		 *
-		 * 5.5.4.3 Processing claimed signing time
-		 * If the signature constraints contain constraints regarding this property, the verifying application shall
-		 * follow its rules for checking this signed property. Otherwise, the verifying application shall make the value
-		 * of this property/attribute available to its DA, so that it may decide additional suitable processing, which is
-		 * out of the scope of the present document.
-		 *
-		 * ../..
-		 */
+		if (!checkArchiveTimestampNumberConstraint(conclusion)) {
+			return conclusion;
+		}
 
-		/**
-		 * 5.5.4.6 Processing Time-stamps on signed data objects<br>
-		 * If the signature constraints contain specific constraints for content-time-stamp attributes, the SVA shall
-		 * check that they are satisfied. To do so, the SVA shall do the following steps for each content-time-stamp
-		 * attribute:<br>
-		 * 1) Perform the Validation Process for AdES Time-Stamps as defined in clause 7 with the time-stamp token of the
-		 * content-time-stamp attribute.<br>
-		 * 2) Check the message imprint: check that the hash of the signed data obtained using the algorithm indicated in
-		 * the time-stamp token matches the message imprint indicated in the token.<br>
-		 * 3) Apply the constraints for content-time-stamp attributes to the results returned in the previous steps. If
-		 * any check fails, return INVALID/SIG_CONSTRAINTS_FAILURE with an explanation of the unverified constraint.
-		 */
-
-		/**
-		 5.5.4.7 Processing Countersignatures
-		 If the signature constraints define specific constraints for countersignature attributes, the SVA shall check that they are
-		 satisfied. To do so, the SVA shall do the following steps for each countersignature attribute:
-		 1) Perform the validation process for AdES-BES/EPES using the countersignature in the property/attribute and
-		 the signature value octet string of the signature as the signed data object.
-		 2) Apply the constraints for countersignature attributes to the result returned in the previous step. If any check
-		 fails, return INVALID/SIG_CONSTRAINTS_FAILURE with an explanation of the unverified constraint.
-		 If the signature constraints do not contain any constraint on countersignatures, the SVA may still verify the
-		 countersignature and provide the results in the validation report. However, it shall not consider the signature validation
-		 to having failed if the countersignature could not be verified.
-		 */
-
-		/**
-		 *
-		 5.5.4.8 Processing signer attributes/roles
-		 If the signature constraints define specific constraints for certified attributes/roles, the SVA shall perform the following
-		 checks:
-		 1) The SVA shall verify the validity of the attribute certificate(s) present in this property/attribute following the
-		 rules established in [6].
-		 2) The SVA shall check that the attribute certificate(s) actually match the rules specified in the input constraints.
-		 If the signature rules do not specify rules for certified attributes/roles, the SVA shall make the value of this
-		 property/attribute available to its DA so that it may decide additional suitable processing, which is out of the scope of
-		 the present document.
-		 */
 		if (!checkCertifiedRoleConstraint(conclusion)) {
+			return conclusion;
+		}
+
+		if (!checkCompleteCertificateRefs(conclusion)) {
+			return conclusion;
+		}
+
+		if (!checkCompleteRevocationRefs(conclusion)) {
+			return conclusion;
+		}
+
+		if (!checkRefsOnlyTimestampNumberConstraint(conclusion)) {
 			return conclusion;
 		}
 
@@ -366,6 +342,51 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		// This validation process returns VALID
 		conclusion.setIndication(VALID);
 		return conclusion;
+	}
+
+	private boolean checkRefsOnlyTimestampNumberConstraint(final Conclusion conclusion) {
+
+		final ElementNumberConstraint constraint = validationPolicy.getRefsOnlyTimestampNumberConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_1);
+		final List<XmlDom> refsOnlyTimestampXmlDom = signatureContext.getElements(XP_TIMESTAMPS, VALIDATION_DATA_REFSONLY_TIMESTAMP);
+		constraint.setIntValue(refsOnlyTimestampXmlDom.size());
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_1_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
+	}
+
+	private boolean checkCompleteRevocationRefs(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getCompleteRevocationRefsConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_3);
+		final boolean exist = signatureContext.getBoolValue("./CompleteCertificateRefs/text()");
+		constraint.setValue(exist);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_3_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
+	}
+
+	private boolean checkCompleteCertificateRefs(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getCompleteCertificateRefsConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_4);
+		final boolean exist = signatureContext.getBoolValue("./CompleteRevocationRefs/text()");
+		constraint.setValue(exist);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_4_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
 	}
 
 	/**
@@ -639,6 +660,17 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 
 	/**
 	 * Check of content-time-stamp: verifies whether a content-timestamp (or similar) element is present
+	 * <p/>
+	 * 5.5.4.6 Processing Time-stamps on signed data objects<br>
+	 * If the signature constraints contain specific constraints for content-time-stamp attributes, the SVA shall
+	 * check that they are satisfied. To do so, the SVA shall do the following steps for each content-time-stamp
+	 * attribute:<br>
+	 * 1) Perform the Validation Process for AdES Time-Stamps as defined in clause 7 with the time-stamp token of the
+	 * content-time-stamp attribute.<br>
+	 * 2) Check the message imprint: check that the hash of the signed data obtained using the algorithm indicated in
+	 * the time-stamp token matches the message imprint indicated in the token.<br>
+	 * 3) Apply the constraints for content-time-stamp attributes to the results returned in the previous steps. If
+	 * any check fails, return INVALID/SIG_CONSTRAINTS_FAILURE with an explanation of the unverified constraint.
 	 *
 	 * @param conclusion the conclusion to use to add the result of the check.
 	 * @return false if the check failed and the process should stop, true otherwise.
@@ -695,6 +727,41 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	}
 
 	/**
+	 * Check of unsigned qualifying property: CounterSignature.
+	 * The number of detected SignatureTimestamps is check against the validation policy. Even not valid timestamps are taken into account.
+	 * <p/>
+	 * 5.5.4.7 Processing Countersignatures
+	 * If the signature constraints define specific constraints for countersignature attributes, the SVA shall check that they are
+	 * satisfied. To do so, the SVA shall do the following steps for each countersignature attribute:
+	 * 1) Perform the validation process for AdES-BES/EPES using the countersignature in the property/attribute and
+	 * the signature value octet string of the signature as the signed data object.
+	 * 2) Apply the constraints for countersignature attributes to the result returned in the previous step. If any check
+	 * fails, return INVALID/SIG_CONSTRAINTS_FAILURE with an explanation of the unverified constraint.
+	 * If the signature constraints do not contain any constraint on countersignatures, the SVA may still verify the
+	 * countersignature and provide the results in the validation report. However, it shall not consider the signature validation
+	 * to having failed if the countersignature could not be verified.
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check.
+	 * @return false if the check failed and the process should stop, true otherwise.
+	 */
+	private boolean checkCounterSignatureNumberConstraint(final Conclusion conclusion) {
+
+		ElementNumberConstraint constraint = validationPolicy.getCounterSignatureNumberConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_DNCSCVP);
+		final XmlDom diagnosticDataXmlDom = context.getDiagnosticData();
+		final long counterSignatureCount = diagnosticDataXmlDom.getCountValue("count(./Signature[@ParentId='%s'])", context.getSignatureId());
+		constraint.setIntValue((int) counterSignatureCount);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_DNCSCVP_ANS);
+		constraint.setConclusionReceiver(conclusion);
+		boolean check = constraint.check();
+		return check;
+	}
+
+
+	/**
 	 * Check of unsigned qualifying property: SignatureTimestamp.
 	 * The number of detected SignatureTimestamps is check against the validation policy. Even not valid timestamps are taken into account.
 	 *
@@ -703,7 +770,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	 */
 	private boolean checkSignatureTimestampNumberConstraint(final Conclusion conclusion) {
 
-		ElementNumberConstraint constraint = validationPolicy.getSignatureTimestampNumberConstraint();
+		final ElementNumberConstraint constraint = validationPolicy.getSignatureTimestampNumberConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -717,7 +784,39 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 	}
 
 	/**
+	 * Check of unsigned qualifying property: ArchiveTimestamp.
+	 * The number of detected SignatureTimestamps is check against the validation policy. Even not valid timestamps are taken into account.
+	 *
+	 * @param conclusion the conclusion to use to add the result of the check.
+	 * @return false if the check failed and the process should stop, true otherwise.
+	 */
+	private boolean checkArchiveTimestampNumberConstraint(final Conclusion conclusion) {
+
+		final ElementNumberConstraint constraint = validationPolicy.getArchiveTimestampNumberConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_2);
+		final List<XmlDom> archiveTimestampXmlDom = signatureContext.getElements(XP_TIMESTAMPS, ARCHIVE_TIMESTAMP);
+		constraint.setIntValue(archiveTimestampXmlDom.size());
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_2_ANS);
+		constraint.setConclusionReceiver(conclusion);
+		boolean check = constraint.check();
+		return check;
+	}
+
+	/**
 	 * Check of: main signature certified role.
+	 * <p/>
+	 * 5.5.4.8 Processing signer attributes/roles
+	 * If the signature constraints define specific constraints for certified attributes/roles, the SVA shall perform the following
+	 * checks:
+	 * 1) The SVA shall verify the validity of the attribute certificate(s) present in this property/attribute following the
+	 * rules established in [6].
+	 * 2) The SVA shall check that the attribute certificate(s) actually match the rules specified in the input constraints.
+	 * If the signature rules do not specify rules for certified attributes/roles, the SVA shall make the value of this
+	 * property/attribute available to its DA so that it may decide additional suitable processing, which is out of the scope of
+	 * the present document.
 	 *
 	 * @param conclusion the conclusion to use to add the result of the check.
 	 * @return false if the check failed and the process should stop, true otherwise.

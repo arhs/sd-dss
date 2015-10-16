@@ -5,6 +5,9 @@
 	<Description>Our validation process follows ETSI TS 102 853 V1.1.2 (2012-10) standard.</Description>
 	<MainSignature>
 		<StructuralValidation Level="WARN"/>
+		<AcceptableSignatureFormats>
+			<Format>XAdES_BASELINE_B</Format>
+		</AcceptableSignatureFormats>
 		<AcceptablePolicies Level="FAIL">
 			<Id>ANY_POLICY</Id>
 			<Id>IMPLICIT_POLICY</Id>
@@ -120,9 +123,13 @@
 			<ContentTimestamp Level="FAIL" Min="1" Max="1">
 				<Type>ALL_DATA_OBJECTS_TIMESTAMP</Type>
 			</ContentTimestamp>
+
+			<CompleteCertificateRefs Level="FAIL"/>
+			<CompleteRevocationRefs Level="FAIL"/>
+			<RefsOnlyTimeStamp Level="FAIL"/>
 		</MandatedSignedQProperties>
 		<MandatedUnsignedQProperties>
-			<CounterSignature>false</CounterSignature>
+			<CounterSignature Level="FAIL" Min="1" Max="1">false</CounterSignature>
 			<SignatureTimestamp Level="FAIL" Min="1" Max="1"/>
 		</MandatedUnsignedQProperties>
 		<Manifest Level="FAIL">

@@ -69,8 +69,10 @@ import eu.europa.ec.markt.dss.validation102853.bean.SignatureCryptographicVerifi
 import eu.europa.ec.markt.dss.validation102853.bean.SignatureProductionPlace;
 import eu.europa.ec.markt.dss.validation102853.cades.CAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.cades.CMSDocumentValidator;
+import eu.europa.ec.markt.dss.validation102853.certificate.CertificateRef;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
+import eu.europa.ec.markt.dss.validation102853.crl.CRLRef;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.ObjectFactory;
@@ -109,6 +111,7 @@ import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlTrustedService
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlUsedCertificates;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
+import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPRef;
 import eu.europa.ec.markt.dss.validation102853.pades.PAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.pades.PDFDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
@@ -601,6 +604,8 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 			dealWithCertificateChain(xmlSignature, signingToken);
 
+			dealWithReferences(signature, xmlSignature);
+
 			signature.validateTimestamps();
 
 			XmlTimestamps xmlTimestamps = null;
@@ -989,6 +994,20 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			final XmlCertificateChainType xmlCertChainType = xmlForCertificateChain(signingToken);
 			xmlSignature.setCertificateChain(xmlCertChainType);
 		}
+	}
+
+	/**
+	 * @param signature    Signature to be validated (can be XAdES, CAdES, PAdES).
+	 * @param xmlSignature The JAXB object containing all diagnostic data pertaining to the signature
+	 */
+	private void dealWithReferences(final AdvancedSignature signature, final XmlSignature xmlSignature) {
+
+		final List<CertificateRef> certificateRefList = signature.getCertificateRefs();
+		xmlSignature.setCompleteCertificateRefs(certificateRefList != null && certificateRefList.size() > 0);
+
+		final List<CRLRef> crlRefList = signature.getCRLRefs();
+		final List<OCSPRef> ocspRefList = signature.getOCSPRefs();
+		xmlSignature.setCompleteRevocationRefs((crlRefList != null && crlRefList.size() > 0) || (ocspRefList != null && ocspRefList.size() > 0));
 	}
 
 	/**
@@ -1455,10 +1474,12 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		}
 	}
 
-	protected void dealSignatureScope(XmlSignature xmlSignature, AdvancedSignature signature) {
+	protected void dealSignatureScope(final XmlSignature xmlSignature, final AdvancedSignature signature) {
+
 		final XmlSignatureScopes xmlSignatureScopes = new XmlSignatureScopes();
 		final List<SignatureScope> signatureScope = getSignatureScopeFinder().findSignatureScope(signature);
 		for (final SignatureScope scope : signatureScope) {
+
 			final XmlSignatureScopeType xmlSignatureScope = new XmlSignatureScopeType();
 			xmlSignatureScope.setName(scope.getName());
 			xmlSignatureScope.setScope(scope.getType());
@@ -1469,7 +1490,8 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		xmlSignature.setSignatureScopes(xmlSignatureScopes);
 	}
 
-	private XmlBasicSignatureType getXmlBasicSignatureType(XmlSignature xmlSignature) {
+	private XmlBasicSignatureType getXmlBasicSignatureType(final XmlSignature xmlSignature) {
+
 		XmlBasicSignatureType xmlBasicSignature = xmlSignature.getBasicSignature();
 		if (xmlBasicSignature == null) {
 

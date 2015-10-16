@@ -52,14 +52,14 @@ public interface AdvancedSignature extends Serializable {
 	/**
 	 * @return in the case of the detached signature this is the {@code List} of signed contents.
 	 */
-	public List<DSSDocument> getDetachedContents();
+	List<DSSDocument> getDetachedContents();
 
 	/**
 	 * This method allows to set the signed contents in the case of the detached signature.
 	 *
 	 * @param detachedContents array of {@code DSSDocument} representing the signed detached contents.
 	 */
-	public void setDetachedContents(final DSSDocument... detachedContents);
+	void setDetachedContents(final DSSDocument... detachedContents);
 
 
 	/**
@@ -67,12 +67,12 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @param detachedContents {@code List} of {@code DSSDocument} representing the signed detached contents.
 	 */
-	public void setDetachedContents(final List<DSSDocument> detachedContents);
+	void setDetachedContents(final List<DSSDocument> detachedContents);
 
 	/**
 	 * @return This method returns the provided signing certificate or {@code null}
 	 */
-	public CertificateToken getProvidedSigningCertificateToken();
+	CertificateToken getProvidedSigningCertificateToken();
 
 	/**
 	 * This method allows to provide a signing certificate to be used in the validation process. It can happen in the case of a non-AdES signature without the signing certificate
@@ -80,12 +80,12 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @param certificateToken {@code CertificateToken} representing the signing certificate token.
 	 */
-	public void setProvidedSigningCertificateToken(final CertificateToken certificateToken);
+	void setProvidedSigningCertificateToken(final CertificateToken certificateToken);
 
 	/**
 	 * Specifies the format of the signature
 	 */
-	public SignatureForm getSignatureForm();
+	SignatureForm getSignatureForm();
 
 	/**
 	 * Retrieves the signature algorithm (or cipher) used for generating the signature.
@@ -93,7 +93,7 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return {@code EncryptionAlgorithm}
 	 */
-	public EncryptionAlgorithm getEncryptionAlgorithm();
+	EncryptionAlgorithm getEncryptionAlgorithm();
 
 	/**
 	 * Retrieves the signature algorithm (or cipher) used for generating the signature.
@@ -101,35 +101,35 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return {@code DigestAlgorithm}
 	 */
-	public DigestAlgorithm getDigestAlgorithm();
+	DigestAlgorithm getDigestAlgorithm();
 
 	/**
 	 * Returns the signing time included within the signature.
 	 *
 	 * @return {@code Date} representing the signing time or null
 	 */
-	public Date getSigningTime();
+	Date getSigningTime();
 
 	/**
 	 * Gets a certificate source which contains ALL certificates embedded in the signature.
 	 *
 	 * @return
 	 */
-	public SignatureCertificateSource getCertificateSource();
+	SignatureCertificateSource getCertificateSource();
 
 	/**
 	 * Gets a CRL source which contains ALL CRLs embedded in the signature.
 	 *
 	 * @return
 	 */
-	public OfflineCRLSource getCRLSource();
+	OfflineCRLSource getCRLSource();
 
 	/**
 	 * Gets an OCSP source which contains ALL OCSP responses embedded in the signature.
 	 *
 	 * @return
 	 */
-	public OfflineOCSPSource getOCSPSource();
+	OfflineOCSPSource getOCSPSource();
 
 	/**
 	 * Gets an object containing the signing certificate or information indicating why it is impossible to extract it
@@ -138,19 +138,19 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return
 	 */
-	public CandidatesForSigningCertificate getCandidatesForSigningCertificate();
+	CandidatesForSigningCertificate getCandidatesForSigningCertificate();
 
 	/**
 	 * This setter allows to indicate the master signature. It means that this is a countersignature.
 	 *
 	 * @param masterSignature {@code AdvancedSignature}
 	 */
-	public void setMasterSignature(final AdvancedSignature masterSignature);
+	void setMasterSignature(final AdvancedSignature masterSignature);
 
 	/**
 	 * @return {@code AdvancedSignature}
 	 */
-	public AdvancedSignature getMasterSignature();
+	AdvancedSignature getMasterSignature();
 
 	/**
 	 * This method returns the signing certificate token or null if there is no valid signing certificate. Note that to determinate the signing certificate the signature must be
@@ -158,7 +158,7 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return
 	 */
-	public CertificateToken getSigningCertificateToken();
+	CertificateToken getSigningCertificateToken();
 
 	/**
 	 * Verifies the signature integrity; checks if the signed content has not been tampered with. In the case of a non-AdES signature no including the signing certificate then the
@@ -167,78 +167,78 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return SignatureCryptographicVerification with all the information collected during the validation process.
 	 */
-	public SignatureCryptographicVerification checkSignatureIntegrity();
+	SignatureCryptographicVerification checkSignatureIntegrity();
 
 	/**
 	 * This method checks the protection of the certificates included within the signature (XAdES: KeyInfo) against the substitution attack.
 	 */
-	public void checkSigningCertificate();
+	void checkSigningCertificate();
 
 	/**
 	 * Returns the Signature Policy OID from the signature.
 	 *
 	 * @return {@code SignaturePolicy}
 	 */
-	public SignaturePolicy getPolicyId();
+	SignaturePolicy getPolicyId();
 
 	/**
 	 * Returns information about the place where the signature was generated
 	 *
 	 * @return {@code SignatureProductionPlace}
 	 */
-	public SignatureProductionPlace getSignatureProductionPlace();
+	SignatureProductionPlace getSignatureProductionPlace();
 
 	/**
 	 * This method obtains the information concerning commitment type indication linked to the signature
 	 *
 	 * @return {@code CommitmentType}
 	 */
-	public List<CommitmentType> getCommitmentTypeIndication();
+	List<CommitmentType> getCommitmentTypeIndication();
 
 	/**
 	 * Returns the content type of the signed data
 	 *
 	 * @return content type as {@code String}
 	 */
-	public String getContentType();
+	String getContentType();
 
 	/**
 	 * @return content identifier as {@code String}
 	 */
-	public abstract String getContentIdentifier();
+	String getContentIdentifier();
 
 	/**
 	 * @return content hints as {@code String}
 	 */
-	public abstract String getContentHints();
+	String getContentHints();
 
 	/**
 	 * Returns the claimed role of the signer.
 	 *
 	 * @return array of the claimed roles as {@code String} array
 	 */
-	public String[] getClaimedSignerRoles();
+	String[] getClaimedSignerRoles();
 
 	/**
 	 * Returns the certified role of the signer.
 	 *
 	 * @return array of the certified roles
 	 */
-	public CertifiedRole getCertifiedSignerRoles() throws IOException;
+	CertifiedRole getCertifiedSignerRoles() throws IOException;
 
 	/**
 	 * Get certificates embedded in the signature
 	 *
 	 * @reutrn a list of certificate contained within the signature
 	 */
-	public List<CertificateToken> getCertificates();
+	List<CertificateToken> getCertificates();
 
 	/**
 	 * Returns the content timestamps
 	 *
 	 * @return {@code List} of {@code TimestampToken}
 	 */
-	public List<TimestampToken> getContentTimestamps();
+	List<TimestampToken> getContentTimestamps();
 
 	/**
 	 * Returns the content timestamp data (timestamped or to be).
@@ -246,14 +246,14 @@ public interface AdvancedSignature extends Serializable {
 	 * @param timestampToken
 	 * @return {@code byte} array representing the canonicalized data to be timestamped
 	 */
-	public byte[] getContentTimestampData(final TimestampToken timestampToken);
+	byte[] getContentTimestampData(final TimestampToken timestampToken);
 
 	/**
 	 * Returns the signature timestamps
 	 *
 	 * @return {@code List} of {@code TimestampToken}
 	 */
-	public List<TimestampToken> getSignatureTimestamps();
+	List<TimestampToken> getSignatureTimestamps();
 
 	/**
 	 * Returns the data (signature value) that was timestamped by the SignatureTimeStamp for the given timestamp.
@@ -262,7 +262,7 @@ public interface AdvancedSignature extends Serializable {
 	 * @param canonicalizationMethod
 	 * @return {@code byte} array representing the canonicalized data to be timestamped
 	 */
-	public byte[] getSignatureTimestampData(final TimestampToken timestampToken, String canonicalizationMethod);
+	byte[] getSignatureTimestampData(final TimestampToken timestampToken, String canonicalizationMethod);
 
 	/**
 	 * Returns the time-stamp which is placed on the digital signature (XAdES example: ds:SignatureValue element), the
@@ -271,7 +271,7 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return {@code List} of {@code TimestampToken}
 	 */
-	public List<TimestampToken> getTimestampsX1();
+	List<TimestampToken> getTimestampsX1();
 
 	/**
 	 * Returns the data to be time-stamped. The data contains the digital signature (XAdES example: ds:SignatureValue
@@ -282,7 +282,7 @@ public interface AdvancedSignature extends Serializable {
 	 * @param canonicalizationMethod canonicalization method
 	 * @return {@code byte} array representing the canonicalized data to be timestamped
 	 */
-	public byte[] getTimestampX1Data(final TimestampToken timestampToken, String canonicalizationMethod);
+	byte[] getTimestampX1Data(final TimestampToken timestampToken, String canonicalizationMethod);
 
 	/**
 	 * Returns the time-stamp which is computed over the concatenation of CompleteCertificateRefs and
@@ -290,7 +290,7 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return {@code List} of {@code TimestampToken}
 	 */
-	public List<TimestampToken> getTimestampsX2();
+	List<TimestampToken> getTimestampsX2();
 
 	/**
 	 * Returns the data to be time-stamped which contains the concatenation of CompleteCertificateRefs and
@@ -298,14 +298,14 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return {@code byte} array representing the canonicalized data to be timestamped
 	 */
-	public byte[] getTimestampX2Data(final TimestampToken timestampToken, String canonicalizationMethod);
+	byte[] getTimestampX2Data(final TimestampToken timestampToken, String canonicalizationMethod);
 
 	/**
 	 * Returns the archive Timestamps
 	 *
 	 * @return {@code List} of {@code TimestampToken}
 	 */
-	public List<TimestampToken> getArchiveTimestamps();
+	List<TimestampToken> getArchiveTimestamps();
 
 	/**
 	 * Archive timestamp seals the data of the signature in a specific order. We need to retrieve the data for each
@@ -315,14 +315,14 @@ public interface AdvancedSignature extends Serializable {
 	 * @param canonicalizationMethod
 	 * @return {@code byte} array representing the canonicalized data to be timestamped
 	 */
-	public byte[] getArchiveTimestampData(final TimestampToken timestampToken, String canonicalizationMethod);
+	byte[] getArchiveTimestampData(final TimestampToken timestampToken, String canonicalizationMethod);
 
 	/**
 	 * Returns a list of counter signatures applied to this signature
 	 *
 	 * @return a {@code List} of {@code AdvancedSignatures} representing the counter signatures
 	 */
-	public List<AdvancedSignature> getCounterSignatures();
+	List<AdvancedSignature> getCounterSignatures();
 
 	/**
 	 * Returns the {@code List} of {@code TimestampReference} representing digest value of the certification path references and the revocation status references. (XAdES
@@ -330,31 +330,31 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return a {@code List} of {@code TimestampReference}
 	 */
-	public List<TimestampReference> getTimestampedReferences();
+	List<TimestampReference> getTimestampedReferences();
 
 	/**
 	 * Retrieve list of certificate ref
 	 *
 	 * @return {@code List} of {@code CertificateRef}
 	 */
-	public List<CertificateRef> getCertificateRefs();
+	List<CertificateRef> getCertificateRefs();
 
 	/**
 	 * @return The list of CRLRefs contained in the Signature
 	 */
-	public List<CRLRef> getCRLRefs();
+	List<CRLRef> getCRLRefs();
 
 	/**
 	 * @return The list of OCSPRef contained in the Signature
 	 */
-	public List<OCSPRef> getOCSPRefs();
+	List<OCSPRef> getOCSPRefs();
 
 	/**
 	 * This method returns the DSS unique signature id. It allows to unambiguously identify each signature.
 	 *
 	 * @return The signature unique Id
 	 */
-	public String getId();
+	String getId();
 
 	/**
 	 * Returns the set of digest algorithms used to build the certificate's digest. For example, these digests are
@@ -362,7 +362,7 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return
 	 */
-	public Set<DigestAlgorithm> getUsedCertificatesDigestAlgorithms();
+	Set<DigestAlgorithm> getUsedCertificatesDigestAlgorithms();
 
 	/**
 	 * @param signatureLevel {@code SignatureLevel} to be checked

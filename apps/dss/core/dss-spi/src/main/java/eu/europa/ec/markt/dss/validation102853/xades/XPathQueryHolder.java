@@ -24,6 +24,7 @@ public class XPathQueryHolder implements Serializable {
 	public static final String XMLE_TRANSFORM = "Transform";
 	public static final String XMLE_CITY = "City";
 	public static final String XMLE_STATE_OR_PROVINCE = "StateOrProvince";
+	public static final String XMLE_STREET_ADDRESS = "StreetAddress";
 
 	public static final String XMLE_POSTAL_CODE = "PostalCode";
 	public static final String XMLE_COUNTRY_NAME = "CountryName";
@@ -37,6 +38,7 @@ public class XPathQueryHolder implements Serializable {
 	public static final String XMLE_REFS_ONLY_TIME_STAMP = "RefsOnlyTimeStamp";
 	public static final String XMLE_SIG_AND_REFS_TIME_STAMP = "SigAndRefsTimeStamp";
 	public final static String XPATH_OBJECT = "./ds:Object";
+	public final static String XPATH__CERT = "./xades:Cert";
 	public final String XPATH__SIGNATURE = "./ds:Signature";
 	public final String XPATH_SIGNED_INFO = "./ds:SignedInfo";
 	public final String XPATH_SIGNATURE_METHOD = XPATH_SIGNED_INFO + "/ds:SignatureMethod";
@@ -51,6 +53,7 @@ public class XPathQueryHolder implements Serializable {
 	public final String XPATH__CANONICALIZATION_METHOD = "./ds:CanonicalizationMethod";
 	public String XADES_SIGNED_PROPERTIES = "http://uri.etsi.org/01903#SignedProperties";
 	public String XADES_COUNTERSIGNED_SIGNATURE = "http://uri.etsi.org/01903#CountersignedSignature";
+
 	public String XPATH_CV = "/xades:CertificateValues";
 	public String XPATH_EX509C = "/xades:EncapsulatedX509Certificate";
 	public String XPATH_ECRLV = "/xades:CRLValues/xades:EncapsulatedCRLValue";
@@ -75,18 +78,21 @@ public class XPathQueryHolder implements Serializable {
 	public String XPATH_INDIVIDUAL_DATA_OBJECTS_TIMESTAMP = XPATH_SIGNED_DATA_OBJECT_PROPERTIES + "/" + XPATH__INDIVIDUAL_DATA_OBJECTS_TIMESTAMP;
 	public String XPATH_COMMITMENT_TYPE_INDICATION = XPATH_SIGNED_DATA_OBJECT_PROPERTIES + "/xades:CommitmentTypeIndication";
 	public String XPATH_SIGNING_TIME = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SigningTime";
-	public String XPATH_SIGNING_CERTIFICATE_CERT = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SigningCertificate/xades:Cert";
+	public String XPATH_SIGNING_CERTIFICATE_CERT = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/*[self::xades:SigningCertificate or self::xades:SigningCertificateV2]/xades:Cert";
+	public String XPATH_SIGNING_CERTIFICATE_CERT_V2 = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SigningCertificateV2/xades:Cert";
 	public String XPATH_CERT_DIGEST = XPATH_SIGNING_CERTIFICATE_CERT + "/xades:CertDigest";
 	public String XPATH_SIGNATURE_POLICY_IDENTIFIER = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SignaturePolicyIdentifier";
-	public String XPATH_CLAIMED_ROLE = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SignerRole/xades:ClaimedRoles/xades:ClaimedRole";
-	public String XPATH_CERTIFIED_ROLE = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SignerRole/xades:CertifiedRoles/xades:CertifiedRole";///EncapsulatedX509Certificate";
-	public String XPATH_PRODUCTION_PLACE = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SignatureProductionPlace";
+	public String XPATH_SIGNER_ROLE ="/*[self::xades:SignerRole or self::xades:SignerRoleV2]";
+	public String XPATH_CLAIMED_ROLE = XPATH_SIGNED_SIGNATURE_PROPERTIES + XPATH_SIGNER_ROLE + "/xades:ClaimedRoles/xades:ClaimedRole";
+	public String XPATH_CERTIFIED_ROLE = XPATH_SIGNED_SIGNATURE_PROPERTIES + XPATH_SIGNER_ROLE + "/xades:CertifiedRoles/xades:CertifiedRole";///EncapsulatedX509Certificate";
+	public String XPATH_PRODUCTION_PLACE = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/*[self::xades:SignatureProductionPlace or self::xades:SignatureProductionPlaceV2]";
 	public String XPATH__SIGNATURE_POLICY_IMPLIED = "./xades:SignaturePolicyImplied";
 	public String XPATH__POLICY_ID = "./xades:SignaturePolicyId/xades:SigPolicyId/xades:Identifier";
 	public String XPATH__POLICY_DIGEST_METHOD = "./xades:SignaturePolicyId/xades:SigPolicyHash/ds:DigestMethod/@Algorithm";
 	public String XPATH__POLICY_DIGEST_VALUE = "./xades:SignaturePolicyId/xades:SigPolicyHash/ds:DigestValue";
 	public String XPATH__INCLUDE = "./xades:Include";
 	public String XPATH__X509_ISSUER_NAME = "./xades:IssuerSerial/ds:X509IssuerName";
+	public String XPATH__X509_ISSUER_SERIAL_V2 = "./xades:IssuerSerialV2/text()";
 	public String XPATH__X509_SERIAL_NUMBER = "./xades:IssuerSerial/ds:X509SerialNumber";
 	public String XPATH__CERT_DIGEST = "./xades:CertDigest";
 	public String XPATH__DIGEST_METHOD = "./ds:DigestMethod";

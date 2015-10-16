@@ -16,7 +16,6 @@
 				<xs:element name="Signature" maxOccurs="unbounded" minOccurs="0">
 					<xs:complexType>
 						<xs:sequence>
-							<xs:element type="xs:string" name="ParentId" minOccurs="0"/>
 							<xs:element type="xs:string" name="ErrorMessage" minOccurs="0"/>
 							<xs:element type="xs:dateTime" name="DateTime"/>
 							<xs:element type="xs:string" name="SignatureFormat"/>
@@ -82,6 +81,8 @@
 									</xs:sequence>
 								</xs:complexType>
 							</xs:element>
+							<xs:element type="xs:boolean" name="CompleteRevocationRefs"/>
+							<xs:element type="xs:boolean" name="CompleteCertificateRefs"/>
 							<xs:element name="Timestamps">
 								<xs:complexType>
 									<xs:sequence>
@@ -99,6 +100,7 @@
 						</xs:sequence>
 						<xs:attribute type="xs:string" name="Id" use="required"/>
 						<xs:attribute type="xs:string" name="Type" use="optional"/>
+						<xs:attribute type="xs:string" name="ParentId" use="optional"/>
 					</xs:complexType>
 				</xs:element>
 				<xs:element name="UsedCertificates">

@@ -94,6 +94,21 @@ public enum MessageTag {
 	BBB_SAV_DCTIPER_ANS("The 'commitment-type-indication' does not point to an existing reference!"),
 	BBB_SAV_DNSTCVP("Does the number of 'signature-timestamps' comply with the validation policy?"),
 	BBB_SAV_DNSTCVP_ANS("The number of 'signature-timestamps' doesn't comply with the validation policy!"),
+	BBB_SAV_DNCSCVP("Does the number of 'counter-signatures' comply with the validation policy?"),
+	BBB_SAV_DNCSCVP_ANS("The number of 'counter-signatures' doesn't comply with the validation policy!"),
+	BBB_SAV_1("Does the number of 'refs-only-timestamp' comply with the validation policy?"),
+	BBB_SAV_1_ANS("The number of 'refs-only-timestamp' does not comply with the validation policy!"),
+
+	BBB_SAV_3("Does the number of 'complete-certificate-refs' comply with the validation policy?"),
+	BBB_SAV_3_ANS("The number of 'complete-certificate-refs' does not comply with the validation policy!"),
+
+	BBB_SAV_4("Does the number of 'complete-revocation-refs' comply with the validation policy?"),
+	BBB_SAV_4_ANS("The number of 'complete-revocation-refs' does not comply with the validation policy!"),
+
+	BBB_SAV_2("Does the number of 'archive-timestamps' comply with the validation policy?"),
+	BBB_SAV_2_ANS("The number of 'archive-timestamps' doesn't comply with the validation policy!"),
+
+
 
 	BBB_VCI_ISPK("Is the signature policy known?"),
 	BBB_VCI_ISPK_ANS_1("The signature policy is mandatory!"),

@@ -54,6 +54,7 @@ import org.apache.xml.security.signature.XMLSignatureException;
 import org.apache.xml.security.utils.SignerOutputStream;
 import org.apache.xml.security.utils.UnsyncBufferedOutputStream;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSequence;
@@ -110,6 +111,7 @@ import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XML
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_REFS_ONLY_TIME_STAMP;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIGNATURE_TIME_STAMP;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIG_AND_REFS_TIME_STAMP;
+import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XPATH__CERT;
 
 /**
  * Parse an XAdES signature structure. Note that for each signature to be validated a new instance of this object must be created.
@@ -119,12 +121,12 @@ import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XML
 
 public class XAdESSignature extends DefaultAdvancedSignature {
 
+	private static final Logger LOG = LoggerFactory.getLogger(XAdESSignature.class);
 	/**
 	 * This array contains all the XAdES signatures levels
 	 * TODO: do not return redundant levels.
 	 */
 	private static SignatureLevel[] signatureLevels = new SignatureLevel[]{SignatureLevel.XAdES_A, SignatureLevel.XAdES_XL, SignatureLevel.XAdES_X, SignatureLevel.XAdES_C, SignatureLevel.XAdES_BASELINE_LTA, SignatureLevel.XAdES_BASELINE_LT, SignatureLevel.XAdES_BASELINE_T, SignatureLevel.XAdES_BASELINE_B, SignatureLevel.XML_NOT_ETSI};
-	private static final Logger LOG = LoggerFactory.getLogger(XAdESSignature.class);
 	public static final String DEFAULT_TIMESTAMP_VALIDATION_CANONICALIZATION_METHOD = CanonicalizationMethod.INCLUSIVE;
 
 	static {
@@ -478,31 +480,36 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				if (Arrays.equals(recalculatedBase64DigestValue, storedBase64DigestValue)) {
 
 					final Element issuerNameEl = DSSXMLUtils.getElement(element, xPathQueryHolder.XPATH__X509_ISSUER_NAME);
-					// This can be allayed when the distinguished name is not correctly encoded
-					// final String textContent = DSSUtils.unescapeMultiByteUtf8Literals(issuerNameEl.getTextContent());
-					final String textContent = issuerNameEl.getTextContent();
-					final X500Principal issuerName = DSSUtils.getX500PrincipalOrNull(textContent);
-					final X500Principal candidateIssuerName = certificateToken.getIssuerX500Principal();
+					if (issuerNameEl != null) {
 
-					// final boolean issuerNameMatches = candidateIssuerName.equals(issuerName);
-					final boolean issuerNameMatches = DSSUtils.equals(candidateIssuerName, issuerName);
-					if (!issuerNameMatches) {
+						final String textContent = issuerNameEl.getTextContent();
+						final X500Principal issuerName = DSSUtils.getX500PrincipalOrNull(textContent);
+						final X500Principal candidateIssuerName = certificateToken.getIssuerX500Principal();
 
-						final String c14nCandidateIssuerName = candidateIssuerName.getName(X500Principal.CANONICAL);
-						LOG.info("candidateIssuerName: " + c14nCandidateIssuerName);
-						final String c14nIssuerName = issuerName == null ? "" : issuerName.getName(X500Principal.CANONICAL);
-						LOG.info("issuerName         : " + c14nIssuerName);
+						final boolean issuerNameMatches = DSSUtils.equals(candidateIssuerName, issuerName);
+						if (!issuerNameMatches) {
+
+							final String c14nCandidateIssuerName = candidateIssuerName.getName(X500Principal.CANONICAL);
+							LOG.info("candidateIssuerName: " + c14nCandidateIssuerName);
+							final String c14nIssuerName = issuerName == null ? "" : issuerName.getName(X500Principal.CANONICAL);
+							LOG.info("issuerName         : " + c14nIssuerName);
+						}
+
+						final Element serialNumberEl = DSSXMLUtils.getElement(element, xPathQueryHolder.XPATH__X509_SERIAL_NUMBER);
+						final String serialNumberText = serialNumberEl.getTextContent(); // serial number can contain leading and trailing whitespace.
+						final BigInteger serialNumber = new BigInteger(serialNumberText.trim());
+						final BigInteger candidateSerialNumber = certificateToken.getSerialNumber();
+						final boolean serialNumberMatches = candidateSerialNumber.equals(serialNumber);
+						certificateValidity.setSerialNumberEqual(serialNumberMatches);
+						certificateValidity.setDistinguishedNameEqual(issuerNameMatches);
+					} else {
+
+						final String issuerSerialV2 = DSSXMLUtils.getValue(element, xPathQueryHolder.XPATH__X509_ISSUER_SERIAL_V2);
+						final byte[] issuerSerialV2Bytes = DSSUtils.base64Decode(issuerSerialV2);
+						final ASN1Sequence asn1Sequence = ASN1Sequence.getInstance(issuerSerialV2Bytes);
+						System.out.println("*********:" + asn1Sequence.toString());
 					}
-
-					final Element serialNumberEl = DSSXMLUtils.getElement(element, xPathQueryHolder.XPATH__X509_SERIAL_NUMBER);
-					final String serialNumberText = serialNumberEl.getTextContent(); // serial number can contain leading and trailing whitespace.
-					final BigInteger serialNumber = new BigInteger(serialNumberText.trim());
-					final BigInteger candidateSerialNumber = certificateToken.getSerialNumber();
-					final boolean serialNumberMatches = candidateSerialNumber.equals(serialNumber);
-
 					certificateValidity.setDigestEqual(true);
-					certificateValidity.setSerialNumberEqual(serialNumberMatches);
-					certificateValidity.setDistinguishedNameEqual(issuerNameMatches);
 					// The certificate was identified
 					alreadyProcessedElements.put(element, true);
 					// If the signing certificate is not set yet then it must be done now. Actually if the signature is tempered then the method checkSignatureIntegrity cannot set the signing certificate.
@@ -606,7 +613,6 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 
 		final NodeList nodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_PRODUCTION_PLACE);
 		if (nodeList.getLength() == 0 || nodeList.item(0) == null) {
-
 			return null;
 		}
 		final SignatureProductionPlace signatureProductionPlace = new SignatureProductionPlace();
@@ -628,6 +634,8 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			} else if (XPathQueryHolder.XMLE_COUNTRY_NAME.equals(name)) {
 
 				signatureProductionPlace.setCountryName(nodeValue);
+			} else if (XPathQueryHolder.XMLE_STREET_ADDRESS.equals(name)) {
+				signatureProductionPlace.setAddress(nodeValue);
 			}
 		}
 		return signatureProductionPlace;
@@ -1581,46 +1589,44 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	@Override
 	public List<CertificateRef> getCertificateRefs() {
 
-		Element signingCertEl = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_CERT_REFS);
+		final Element signingCertEl = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_CERT_REFS);
 		if (signingCertEl == null) {
-
 			return null;
 		}
-		List<CertificateRef> certIds = new ArrayList<CertificateRef>();
-		NodeList certIdnodes = DSSXMLUtils.getNodeList(signingCertEl, "./xades:Cert");
-		for (int i = 0; i < certIdnodes.getLength(); i++) {
+		final List<CertificateRef> certificateRefList = new ArrayList<CertificateRef>();
+		final NodeList certificateRefNodeList = DSSXMLUtils.getNodeList(signingCertEl, XPATH__CERT);
+		for (int ii = 0; ii < certificateRefNodeList.getLength(); ii++) {
 
-			Element certId = (Element) certIdnodes.item(i);
-			Element issuerNameEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__X509_ISSUER_NAME);
-			Element issuerSerialEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__X509_SERIAL_NUMBER);
-			Element digestAlgorithmEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__CERT_DIGEST_DIGEST_METHOD);
-			Element digestValueEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__CERT_DIGEST_DIGEST_VALUE);
+			final Element certId = (Element) certificateRefNodeList.item(ii);
+			final Element issuerNameEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__X509_ISSUER_NAME);
+			final Element issuerSerialEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__X509_SERIAL_NUMBER);
+			final Element digestAlgorithmEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__CERT_DIGEST_DIGEST_METHOD);
+			final Element digestValueEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__CERT_DIGEST_DIGEST_VALUE);
 
-			CertificateRef genericCertId = new CertificateRef();
+			final CertificateRef genericCertId = new CertificateRef();
 			if (issuerNameEl != null && issuerSerialEl != null) {
+
 				genericCertId.setIssuerName(issuerNameEl.getTextContent());
 				genericCertId.setIssuerSerial(issuerSerialEl.getTextContent());
 			}
 
-			String xmlName = digestAlgorithmEl.getAttribute(XMLE_ALGORITHM);
+			final String xmlName = digestAlgorithmEl.getAttribute(XMLE_ALGORITHM);
 			genericCertId.setDigestAlgorithm(DigestAlgorithm.forXML(xmlName).getName());
 
 			genericCertId.setDigestValue(DSSUtils.base64Decode(digestValueEl.getTextContent()));
-			certIds.add(genericCertId);
+			certificateRefList.add(genericCertId);
 		}
-
-		return certIds;
-
+		return certificateRefList;
 	}
 
 	@Override
 	public List<CRLRef> getCRLRefs() {
 
-		final List<CRLRef> certIds = new ArrayList<CRLRef>();
-		final Element signingCertEl = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_REVOCATION_CRL_REFS);
-		if (signingCertEl != null) {
+		final List<CRLRef> crlRefList = new ArrayList<CRLRef>();
+		final Element crlRefsEl = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_REVOCATION_CRL_REFS);
+		if (crlRefsEl != null) {
 
-			final NodeList crlRefNodes = DSSXMLUtils.getNodeList(signingCertEl, xPathQueryHolder.XPATH__CRL_REF);
+			final NodeList crlRefNodes = DSSXMLUtils.getNodeList(crlRefsEl, xPathQueryHolder.XPATH__CRL_REF);
 			for (int i = 0; i < crlRefNodes.getLength(); i++) {
 
 				final Element certId = (Element) crlRefNodes.item(i);
@@ -1628,25 +1634,25 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				final Element digestValueEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__DAAV_DIGEST_VALUE);
 
 				final String xmlName = digestAlgorithmEl.getAttribute(XMLE_ALGORITHM);
-				final DigestAlgorithm digestAlgo = DigestAlgorithm.forXML(xmlName);
+				final DigestAlgorithm digestAlgorithm = DigestAlgorithm.forXML(xmlName);
 
 				final CRLRef ref = new CRLRef();
-				ref.setDigestAlgorithm(digestAlgo);
+				ref.setDigestAlgorithm(digestAlgorithm);
 				ref.setDigestValue(DSSUtils.base64Decode(digestValueEl.getTextContent()));
-				certIds.add(ref);
+				crlRefList.add(ref);
 			}
 		}
-		return certIds;
+		return crlRefList;
 	}
 
 	@Override
 	public List<OCSPRef> getOCSPRefs() {
 
-		final List<OCSPRef> certIds = new ArrayList<OCSPRef>();
-		final Element signingCertEl = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_OCSP_REFS);
-		if (signingCertEl != null) {
+		final List<OCSPRef> ocspRefList = new ArrayList<OCSPRef>();
+		final Element ocspRefsEl = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_OCSP_REFS);
+		if (ocspRefsEl != null) {
 
-			final NodeList ocspRefNodes = DSSXMLUtils.getNodeList(signingCertEl, xPathQueryHolder.XPATH__OCSPREF);
+			final NodeList ocspRefNodes = DSSXMLUtils.getNodeList(ocspRefsEl, xPathQueryHolder.XPATH__OCSPREF);
 			for (int i = 0; i < ocspRefNodes.getLength(); i++) {
 
 				final Element certId = (Element) ocspRefNodes.item(i);
@@ -1658,15 +1664,15 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				}
 
 				final String xmlName = digestAlgorithmEl.getAttribute(XMLE_ALGORITHM);
-				final DigestAlgorithm digestAlgo = DigestAlgorithm.forXML(xmlName);
+				final DigestAlgorithm digestAlgorithm = DigestAlgorithm.forXML(xmlName);
 
 				final String digestValue = digestValueEl.getTextContent();
 				final byte[] base64EncodedDigestValue = DSSUtils.base64Decode(digestValue);
-				final OCSPRef ocspRef = new OCSPRef(digestAlgo, base64EncodedDigestValue, false);
-				certIds.add(ocspRef);
+				final OCSPRef ocspRef = new OCSPRef(digestAlgorithm, base64EncodedDigestValue, false);
+				ocspRefList.add(ocspRef);
 			}
 		}
-		return certIds;
+		return ocspRefList;
 	}
 
 	@Override
