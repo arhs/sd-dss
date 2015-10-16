@@ -454,7 +454,11 @@ public abstract class ValidationPolicy extends XmlDom implements RuleConstant, A
 
 	public abstract Constraint getCompleteRevocationRefsConstraint();
 
-	public abstract ElementNumberConstraint getRefsOnlyTimestampNumberConstraint();
+	public abstract ElementNumberConstraint getValidationDataTimestampNumberConstraint();
 
 	public abstract ElementNumberConstraint getArchiveTimestampNumberConstraint();
+
+	public abstract Constraint getCertificateValuesConstraint();
+
+	public abstract Constraint getRevocationValuesConstraint();
 }

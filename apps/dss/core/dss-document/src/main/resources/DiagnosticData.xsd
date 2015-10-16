@@ -83,6 +83,8 @@
 							</xs:element>
 							<xs:element type="xs:boolean" name="CompleteRevocationRefs"/>
 							<xs:element type="xs:boolean" name="CompleteCertificateRefs"/>
+							<xs:element type="xs:boolean" name="RevocationValues"/>
+							<xs:element type="xs:boolean" name="CertificateValues"/>
 							<xs:element name="Timestamps">
 								<xs:complexType>
 									<xs:sequence>

@@ -797,9 +797,9 @@ public class EtsiValidationPolicy extends ValidationPolicy implements AttributeN
 	}
 
 	@Override
-	public ElementNumberConstraint getRefsOnlyTimestampNumberConstraint() {
+	public ElementNumberConstraint getValidationDataTimestampNumberConstraint() {
 
-		final String xpRoot = XP_ROOT + "/MainSignature/MandatedUnsignedQProperties/RefsOnlyTimeStamp";
+		final String xpRoot = XP_ROOT + "/MainSignature/MandatedUnsignedQProperties/ValidationDataTimestamp";
 		final ElementNumberConstraint elementNumberConstraint = getElementNumberConstraint(xpRoot);
 		if (elementNumberConstraint != null) {
 			return elementNumberConstraint;
@@ -816,6 +816,20 @@ public class EtsiValidationPolicy extends ValidationPolicy implements AttributeN
 			return elementNumberConstraint;
 		}
 		return null;
+	}
+
+	@Override
+	public Constraint getCertificateValuesConstraint() {
+
+		final String xpRoot = "/MainSignature/MandatedUnsignedQProperties/CertificateValues";
+		return getBasicConstraint(xpRoot, false);
+	}
+
+	@Override
+	public Constraint getRevocationValuesConstraint() {
+
+		final String xpRoot = "/MainSignature/MandatedUnsignedQProperties/RevocationValues";
+		return getBasicConstraint(xpRoot, false);
 	}
 }
 

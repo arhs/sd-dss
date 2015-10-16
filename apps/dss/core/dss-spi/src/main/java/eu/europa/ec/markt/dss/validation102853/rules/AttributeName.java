@@ -33,7 +33,7 @@ public interface AttributeName {
 	String EXPECTED_MIN_VALUE = "ExpectedMinValue";
 	String EXPECTED_VALUE = "ExpectedValue";
 	String FIELD = "Field";
-	String GENERATION_TIME = "GenerationTime";
+	String PRODUCTION_TIME = "ProductionTime";
 	String ID = "Id";
 	String LEVEL = "Level";
 	String LOCATION = "Location";

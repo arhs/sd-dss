@@ -43,6 +43,7 @@ import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 import static eu.europa.ec.markt.dss.validation102853.TimestampType.ARCHIVE_TIMESTAMP;
 import static eu.europa.ec.markt.dss.validation102853.TimestampType.SIGNATURE_TIMESTAMP;
 import static eu.europa.ec.markt.dss.validation102853.TimestampType.VALIDATION_DATA_REFSONLY_TIMESTAMP;
+import static eu.europa.ec.markt.dss.validation102853.TimestampType.VALIDATION_DATA_TIMESTAMP;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.ASCCM;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_1;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_1_ANS;
@@ -52,6 +53,10 @@ import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_3
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_3_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_4;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_4_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_5;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_5_ANS;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_6;
+import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_6_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DCTIPER;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DCTIPER_ANS;
 import static eu.europa.ec.markt.dss.validation102853.rules.MessageTag.BBB_SAV_DNCSCVP;
@@ -322,11 +327,11 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 			return conclusion;
 		}
 
-		if (!checkCompleteCertificateRefs(conclusion)) {
+		if (!checkCompleteCertificateRefsConstraint(conclusion)) {
 			return conclusion;
 		}
 
-		if (!checkCompleteRevocationRefs(conclusion)) {
+		if (!checkCompleteRevocationRefsConstraint(conclusion)) {
 			return conclusion;
 		}
 
@@ -334,6 +339,13 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 			return conclusion;
 		}
 
+		if (!checkCertificateValuesConstraint(conclusion)) {
+			return conclusion;
+		}
+
+		if (!checkRevocationValuesConstraint(conclusion)) {
+			return conclusion;
+		}
 		// Main signature cryptographic constraints validation
 		if (!checkMainSignatureCryptographicConstraint(conclusion)) {
 			return conclusion;
@@ -346,12 +358,13 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 
 	private boolean checkRefsOnlyTimestampNumberConstraint(final Conclusion conclusion) {
 
-		final ElementNumberConstraint constraint = validationPolicy.getRefsOnlyTimestampNumberConstraint();
+		final ElementNumberConstraint constraint = validationPolicy.getValidationDataTimestampNumberConstraint();
 		if (constraint == null) {
 			return true;
 		}
 		constraint.create(subProcessXmlNode, BBB_SAV_1);
-		final List<XmlDom> refsOnlyTimestampXmlDom = signatureContext.getElements(XP_TIMESTAMPS, VALIDATION_DATA_REFSONLY_TIMESTAMP);
+		final List<XmlDom> refsOnlyTimestampXmlDom = signatureContext
+			  .getElements("./Timestamps/Timestamp[@Type='%s' or @Type='%s']", VALIDATION_DATA_REFSONLY_TIMESTAMP, VALIDATION_DATA_TIMESTAMP);
 		constraint.setIntValue(refsOnlyTimestampXmlDom.size());
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_1_ANS);
 		constraint.setConclusionReceiver(conclusion);
@@ -359,7 +372,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		return constraint.check();
 	}
 
-	private boolean checkCompleteRevocationRefs(final Conclusion conclusion) {
+	private boolean checkCompleteRevocationRefsConstraint(final Conclusion conclusion) {
 
 		final Constraint constraint = validationPolicy.getCompleteRevocationRefsConstraint();
 		if (constraint == null) {
@@ -374,7 +387,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		return constraint.check();
 	}
 
-	private boolean checkCompleteCertificateRefs(final Conclusion conclusion) {
+	private boolean checkCompleteCertificateRefsConstraint(final Conclusion conclusion) {
 
 		final Constraint constraint = validationPolicy.getCompleteCertificateRefsConstraint();
 		if (constraint == null) {
@@ -384,6 +397,36 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		final boolean exist = signatureContext.getBoolValue("./CompleteRevocationRefs/text()");
 		constraint.setValue(exist);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_4_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
+	}
+
+	private boolean checkCertificateValuesConstraint(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getCompleteRevocationRefsConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_5);
+		final boolean exist = signatureContext.getBoolValue("./CertificateValues/text()");
+		constraint.setValue(exist);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_5_ANS);
+		constraint.setConclusionReceiver(conclusion);
+
+		return constraint.check();
+	}
+
+	private boolean checkRevocationValuesConstraint(final Conclusion conclusion) {
+
+		final Constraint constraint = validationPolicy.getCompleteRevocationRefsConstraint();
+		if (constraint == null) {
+			return true;
+		}
+		constraint.create(subProcessXmlNode, BBB_SAV_6);
+		final boolean exist = signatureContext.getBoolValue("./RevocationValues/text()");
+		constraint.setValue(exist);
+		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_6_ANS);
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

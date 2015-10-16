@@ -96,14 +96,19 @@ public enum MessageTag {
 	BBB_SAV_DNSTCVP_ANS("The number of 'signature-timestamps' doesn't comply with the validation policy!"),
 	BBB_SAV_DNCSCVP("Does the number of 'counter-signatures' comply with the validation policy?"),
 	BBB_SAV_DNCSCVP_ANS("The number of 'counter-signatures' doesn't comply with the validation policy!"),
-	BBB_SAV_1("Does the number of 'refs-only-timestamp' comply with the validation policy?"),
-	BBB_SAV_1_ANS("The number of 'refs-only-timestamp' does not comply with the validation policy!"),
+	BBB_SAV_1("Does the number of 'validation-data-timestamp' comply with the validation policy?"),
+	BBB_SAV_1_ANS("The number of 'validation-data-timestamp' does not comply with the validation policy!"),
 
 	BBB_SAV_3("Does the number of 'complete-certificate-refs' comply with the validation policy?"),
 	BBB_SAV_3_ANS("The number of 'complete-certificate-refs' does not comply with the validation policy!"),
 
 	BBB_SAV_4("Does the number of 'complete-revocation-refs' comply with the validation policy?"),
 	BBB_SAV_4_ANS("The number of 'complete-revocation-refs' does not comply with the validation policy!"),
+
+	BBB_SAV_5("Does the number of 'certificate-values' comply with the validation policy?"),
+	BBB_SAV_5_ANS("The number of 'certificate-values' does not comply with the validation policy!"),
+	BBB_SAV_6("Does the number of 'revocation-values' comply with the validation policy?"),
+	BBB_SAV_6_ANS("The number of 'revocation-values' does not comply with the validation policy!"),
 
 	BBB_SAV_2("Does the number of 'archive-timestamps' comply with the validation policy?"),
 	BBB_SAV_2_ANS("The number of 'archive-timestamps' doesn't comply with the validation policy!"),

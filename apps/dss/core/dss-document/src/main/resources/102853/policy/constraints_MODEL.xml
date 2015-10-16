@@ -126,11 +126,13 @@
 
 			<CompleteCertificateRefs Level="FAIL"/>
 			<CompleteRevocationRefs Level="FAIL"/>
-			<RefsOnlyTimeStamp Level="FAIL"/>
+			<CertificateValues Level="FAIL"/>
+			<RevocationValues Level="FAIL"/>
 		</MandatedSignedQProperties>
 		<MandatedUnsignedQProperties>
 			<CounterSignature Level="FAIL" Min="1" Max="1">false</CounterSignature>
 			<SignatureTimestamp Level="FAIL" Min="1" Max="1"/>
+			<ValidationDataTimestamp Level="FAIL" Min="1" Max="1"/>
 		</MandatedUnsignedQProperties>
 		<Manifest Level="FAIL">
 			<Reference Level="FAIL" Min="1" Max="1"/>

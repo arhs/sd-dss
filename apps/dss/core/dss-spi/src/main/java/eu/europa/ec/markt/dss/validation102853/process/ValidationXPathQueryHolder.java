@@ -13,11 +13,12 @@ public interface ValidationXPathQueryHolder {
 
 	String XP_CONCLUSION = "./Conclusion";
 	String XP_INDICATION = "./Indication/text()";
+	String XP_CONCLUSION_INDICATION = XP_CONCLUSION + "/Indication/text()";
 	String XP_SUB_INDICATION = "./SubIndication/text()";
 	String XP_ERROR = "./Error";
 	String XP_ERROR_NOT_BEFORE = "./Error/@NotBefore";
 	String XP_ERROR_CERTIFICATE_ID = "./Error/@CertificateId";
-	String XP_ERROR_REVOCATION_TIME= "./Error/@RevocationTime";
+	String XP_ERROR_REVOCATION_TIME = "./Error/@RevocationTime";
 	String XP_WARNING = "./Warning";
 	String XP_INFO = "./Info";
 
@@ -63,6 +64,7 @@ public interface ValidationXPathQueryHolder {
 
 	String XP_TVD_SIGNATURE_TIMESTAMP = "/TimestampValidationData/Signature[@Id='%s']/Timestamp[@Id='%s']";
 
+	String XP_TIMESTAMP = "./Timestamp";
 	String XP_TIMESTAMP_TYPE_CONCLUSION = "./Timestamp[@Type='%s']/Conclusion";
 	String XP_TIMESTAMP_ID_CONCLUSION = "./Timestamp[@Id='%s']/Conclusion";
 	String XP_TIMESTAMPS = "./Timestamps/Timestamp[@Type='%s']";

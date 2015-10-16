@@ -74,6 +74,7 @@ import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.crl.CRLRef;
 import eu.europa.ec.markt.dss.validation102853.crl.ListCRLSource;
+import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.DiagnosticData;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.ObjectFactory;
 import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlBasicSignatureType;
@@ -112,6 +113,7 @@ import eu.europa.ec.markt.dss.validation102853.data.diagnostic.XmlUsedCertificat
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
 import eu.europa.ec.markt.dss.validation102853.ocsp.ListOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPRef;
+import eu.europa.ec.markt.dss.validation102853.ocsp.OfflineOCSPSource;
 import eu.europa.ec.markt.dss.validation102853.pades.PAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.pades.PDFDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
@@ -1008,6 +1010,24 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		final List<CRLRef> crlRefList = signature.getCRLRefs();
 		final List<OCSPRef> ocspRefList = signature.getOCSPRefs();
 		xmlSignature.setCompleteRevocationRefs((crlRefList != null && crlRefList.size() > 0) || (ocspRefList != null && ocspRefList.size() > 0));
+	}
+
+	/**
+	 * @param signature    Signature to be validated (can be XAdES, CAdES, PAdES).
+	 * @param xmlSignature The JAXB object containing all diagnostic data pertaining to the signature
+	 */
+	private void dealWithValues(final AdvancedSignature signature, final XmlSignature xmlSignature) {
+
+		final SignatureCertificateSource certificateSource = signature.getCertificateSource();
+		final int certificateValueNumber = certificateSource.getEncapsulatedCertificates().size();
+		xmlSignature.setCertificateValues(certificateValueNumber > 0);
+
+		// TODO-Bob (16/10/2015):  Concerning the revocation values the test is not complete. Only RevocationValues must be taken into account.
+		final OfflineCRLSource crlSource = signature.getCRLSource();
+		final int crlRevocationValueNumber = crlSource.getContainedX509CRLs().size();
+		final OfflineOCSPSource ocspSource = signature.getOCSPSource();
+		final int ocspRevocationValueNumber = ocspSource.getContainedOCSPResponses().size();
+		xmlSignature.setRevocationValues(crlRevocationValueNumber > 0 || ocspRevocationValueNumber > 0);
 	}
 
 	/**
