@@ -73,7 +73,7 @@ public class OfflineResolver extends ResourceResolverSpi {
 		//		// For the file name as "../toto.txt"
 		//		final boolean case3 = documentUri.startsWith("../") && length - 3 == length_;
 		//		if (documentUri.endsWith(documentUri_) && (case1 || case2 || case3)) {
-		if (documentUri.endsWith(documentUri_)) {
+		if (documentUri_ != null && documentUri.endsWith(documentUri_)) {
 
 			return true;
 		}

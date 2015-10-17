@@ -899,7 +899,7 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public CertifiedRole getCertifiedSignerRoles() {
+	public List<CertifiedRole> getCertifiedSignerRoles() {
 
 		final AttributeTable signedAttributes = signerInformation.getSignedAttributes();
 		if (signedAttributes == null) {
@@ -911,6 +911,7 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 			return null;
 		}
 		final ASN1Set attrValues = id_aa_ets_signerAttr.getAttrValues();
+		final List<CertifiedRole> certifiedRoleList = new ArrayList<CertifiedRole>();
 		final ASN1Encodable asn1EncodableAttrValue = attrValues.getObjectAt(0);
 
 		final SignerAttribute signerAttr = SignerAttribute.getInstance(asn1EncodableAttrValue);
@@ -941,7 +942,10 @@ public class CAdESSignature extends DefaultAdvancedSignature {
 				}
 			}
 		}
-		return certifiedRole;
+		if (certifiedRole != null) {
+			certifiedRoleList.add(certifiedRole);
+		}
+		return certifiedRoleList;
 	}
 
 	@Override

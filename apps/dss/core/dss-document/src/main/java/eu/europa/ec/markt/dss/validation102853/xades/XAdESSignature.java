@@ -59,7 +59,6 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.Attribute;
-import org.bouncycastle.cert.AttributeCertificateHolder;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
@@ -658,35 +657,42 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public CertifiedRole getCertifiedSignerRoles() throws IOException {
+	public List<CertifiedRole> getCertifiedSignerRoles() throws IOException {
 
-		final Element element = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_CERTIFIED_ROLE);
-		if (element == null) {
+		NodeList nodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_CERTIFIED_ROLE);
+		if (nodeList.getLength() == 0) {
+			nodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_CERTIFIED_ROLE_V2);
+		}
+		if (nodeList.getLength() == 0) {
 			return null;
 		}
-		final String textContent = element.getTextContent();
-		final byte[] bytes = DSSUtils.base64Decode(textContent);
+		final List<CertifiedRole> certifiedRoleList = new ArrayList<CertifiedRole>();
+		for (int ii = 0; ii < nodeList.getLength(); ii++) {
 
-		final X509AttributeCertificateHolder x509AttributeCertificateHolder = new X509AttributeCertificateHolder(bytes);
-		final CertifiedRole certifiedRole = new CertifiedRole();
-		certifiedRole.setNotBefore(x509AttributeCertificateHolder.getNotBefore());
-		certifiedRole.setNotAfter(x509AttributeCertificateHolder.getNotAfter());
-		final Attribute[] attributes = x509AttributeCertificateHolder.getAttributes();
-		for (final Attribute attribute : attributes) {
+			final Node item = nodeList.item(ii);
+			final String textContent = item.getTextContent().trim();
+			final byte[] bytes = DSSUtils.base64Decode(textContent);
 
-			final ASN1Encodable[] attributeValues = attribute.getAttributeValues();
-			for (final ASN1Encodable attributeValue : attributeValues) {
+			final X509AttributeCertificateHolder x509AttributeCertificateHolder = new X509AttributeCertificateHolder(bytes);
+			final CertifiedRole certifiedRole = new CertifiedRole();
+			certifiedRole.setNotBefore(x509AttributeCertificateHolder.getNotBefore());
+			certifiedRole.setNotAfter(x509AttributeCertificateHolder.getNotAfter());
+			final Attribute[] attributes = x509AttributeCertificateHolder.getAttributes();
+			for (final Attribute attribute : attributes) {
 
-				final DLSequence dlSequence = (DLSequence) attributeValue;
-				DERTaggedObject derTaggedObject = (DERTaggedObject) dlSequence.getObjectAt(0);
-				derTaggedObject = (DERTaggedObject) derTaggedObject.getObject();
-				final String certifiedRoleString = DSSASN1Utils.toString((DEROctetString) derTaggedObject.getObject());
-				certifiedRole.add(certifiedRoleString);
+				final ASN1Encodable[] attributeValues = attribute.getAttributeValues();
+				for (final ASN1Encodable attributeValue : attributeValues) {
+
+					final DLSequence dlSequence = (DLSequence) attributeValue;
+					DERTaggedObject derTaggedObject = (DERTaggedObject) dlSequence.getObjectAt(0);
+					derTaggedObject = (DERTaggedObject) derTaggedObject.getObject();
+					final String certifiedRoleString = DSSASN1Utils.toString((DEROctetString) derTaggedObject.getObject());
+					certifiedRole.add(certifiedRoleString);
+				}
+				certifiedRoleList.add(certifiedRole);
 			}
 		}
-		final AttributeCertificateHolder holder = x509AttributeCertificateHolder.getHolder();
-		final BigInteger serialNumber = holder.getSerialNumber();
-		return certifiedRole;
+		return certifiedRoleList;
 	}
 
 	@Override
@@ -943,18 +949,21 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 		//return digest of resulting byte stream using the algorithm indicated in the time-stamp token
 
 		//get include elements from signature
-		List<TimestampInclude> includes = timestampToken.getTimestampIncludes();
+		final List<TimestampInclude> timestampIncludeList = timestampToken.getTimestampIncludes();
 
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-		for (TimestampInclude include : includes) {
+		for (final TimestampInclude timestampInclude : timestampIncludeList) {
 			//retrieve reference element
-			//-> go through references and check for one whose URI matches the URI of include
+			//-> go through references and check for one whose URI matches the URI of timestampInclude
+			final String uri = timestampInclude.getURI();
 			for (final Reference reference : references) {
-				String id = include.getURI();
 
-				if (reference.getId().equals(id)) {
+				final String referenceId = reference.getId();
+				if (referenceId.equals(uri)) {
+
 					try {
+
 						final byte[] referencedBytes = reference.getReferencedBytes();
 						outputStream.write(referencedBytes);
 					} catch (IOException e) {
@@ -967,7 +976,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				}
 			}
 		}
-		byte[] octetStream = outputStream.toByteArray();
+		final byte[] octetStream = outputStream.toByteArray();
 		return octetStream;
 	}
 

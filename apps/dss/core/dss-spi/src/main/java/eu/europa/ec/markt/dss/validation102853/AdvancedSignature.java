@@ -224,7 +224,7 @@ public interface AdvancedSignature extends Serializable {
 	 *
 	 * @return array of the certified roles
 	 */
-	CertifiedRole getCertifiedSignerRoles() throws IOException;
+	List<CertifiedRole> getCertifiedSignerRoles() throws IOException;
 
 	/**
 	 * Get certificates embedded in the signature

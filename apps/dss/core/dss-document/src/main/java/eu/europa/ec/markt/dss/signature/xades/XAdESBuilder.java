@@ -68,26 +68,31 @@ public abstract class XAdESBuilder {
 
 	public static final String XADES_ALL_DATA_OBJECTS_TIME_STAMP = "xades:AllDataObjectsTimeStamp";
 	public static final String XADES_ALL_SIGNED_DATA_OBJECTS = "xades:AllSignedDataObjects";
-	public static final String XADES_COUNTER_SIGNATURE = "xades:CounterSignature";
 	public static final String XADES_CERT = "xades:Cert";
 	public static final String XADES_CERT_DIGEST = "xades:CertDigest";
 	public static final String XADES_CERTIFICATE_VALUES = "xades:CertificateValues";
-	public static final String XADES_CERTIFIED_ROLES = "xades:CertifiedRoles";
 	public static final String XADES_CERTIFIED_ROLE = "xades:CertifiedRole";
+	public static final String XADES_CERTIFIED_ROLES = "xades:CertifiedRoles";
 	public static final String XADES_CITY = "xades:City";
-	public static final String XADES_CLAIMED_ROLES = "xades:ClaimedRoles";
 	public static final String XADES_CLAIMED_ROLE = "xades:ClaimedRole";
+	public static final String XADES_CLAIMED_ROLES = "xades:ClaimedRoles";
 	public static final String XADES_COMMITMENT_TYPE_ID = "xades:CommitmentTypeId";
 	public static final String XADES_COMMITMENT_TYPE_INDICATION = "xades:CommitmentTypeIndication";
+	public static final String XADES_COUNTER_SIGNATURE = "xades:CounterSignature";
 	public static final String XADES_COUNTRY_NAME = "xades:CountryName";
 	public static final String XADES_DATA_OBJECT_FORMAT = "xades:DataObjectFormat";
+	public static final String XADES_DESCRIPTION = "xades:Description";
+	public static final String XADES_DOCUMENTATION_REFERENCE = "xades:DocumentationReference";
+	public static final String XADES_DOCUMENTATION_REFERENCES = "xades:DocumentationReferences";
 	public static final String XADES_ENCAPSULATED_TIME_STAMP = "xades:EncapsulatedTimeStamp";
 	public static final String XADES_ENCAPSULATED_X509_CERTIFICATE = "xades:EncapsulatedX509Certificate";
+	public static final String XADES_ENCODING = "xades:Encoding";
 	public static final String XADES_IDENTIFIER = "xades:Identifier";
 	public static final String XADES_INCLUDE = "xades:Include";
 	public static final String XADES_INDIVIDUAL_DATA_OBJECTS_TIME_STAMP = "xades:IndividualDataObjectsTimeStamp";
 	public static final String XADES_ISSUER_SERIAL = "xades:IssuerSerial";
 	public static final String XADES_MIME_TYPE = "xades:MimeType";
+	public static final String XADES_OBJECT_REFERENCE = "xades:ObjectReference";
 	public static final String XADES_POSTAL_CODE = "xades:PostalCode";
 	public static final String XADES_QUALIFYING_PROPERTIES = "xades:QualifyingProperties";
 	public static final String XADES_SIG_AND_REFS_TIME_STAMP = "xades:SigAndRefsTimeStamp";
@@ -101,11 +106,11 @@ public abstract class XAdESBuilder {
 	public static final String XADES_SIGNED_DATA_OBJECT_PROPERTIES = "xades:SignedDataObjectProperties";
 	public static final String XADES_SIGNED_PROPERTIES = "xades:SignedProperties";
 	public static final String XADES_SIGNED_SIGNATURE_PROPERTIES = "xades:SignedSignatureProperties";
-	public static final String XADES_UNSIGNED_PROPERTIES = "xades:UnsignedProperties";
-	public static final String XADES_UNSIGNED_SIGNATURE_PROPERTIES = "xades:UnsignedSignatureProperties";
 	public static final String XADES_SIGNER_ROLE = "xades:SignerRole";
 	public static final String XADES_SIGNING_TIME = "xades:SigningTime";
 	public static final String XADES_STATE_OR_PROVINCE = "xades:StateOrProvince";
+	public static final String XADES_UNSIGNED_PROPERTIES = "xades:UnsignedProperties";
+	public static final String XADES_UNSIGNED_SIGNATURE_PROPERTIES = "xades:UnsignedSignatureProperties";
 
 	public static final String XADES141_ARCHIVE_TIME_STAMP = "xades141:ArchiveTimeStamp";
 
@@ -118,7 +123,7 @@ public abstract class XAdESBuilder {
 	public static final String TYPE = "Type";
 	public static final String URI = "URI";
 	public static final String MIME_TYPE = "MimeType";
-
+	public static final String ENCODING = "Encoding";
 	public static final String XMLNS_DS = "xmlns:ds";
 	public static final String XMLNS_XADES = "xmlns:xades";
 

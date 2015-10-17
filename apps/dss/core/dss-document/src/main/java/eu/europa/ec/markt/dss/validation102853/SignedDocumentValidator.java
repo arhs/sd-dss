@@ -1410,23 +1410,27 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 
 	private void dealWithCertifiedRole(AdvancedSignature signature, XmlSignature xmlSignature) {
 
-		CertifiedRole certifiedRole = null;
+		List<CertifiedRole> certifiedRoleList = null;
 		try {
-			certifiedRole = signature.getCertifiedSignerRoles();
+			certifiedRoleList = signature.getCertifiedSignerRoles();
 		} catch (final Exception e) {
 
 			LOG.warn("Error(s) occurred when dealing with certified roles!", e);
 			addErrorMessage(xmlSignature, e);
 		}
-		if (certifiedRole != null) {
+		if (certifiedRoleList != null) {
 
-			final List<String> certifiedRoleList = certifiedRole.getRoleList();
-			for (String certifiedRoleValue : certifiedRoleList) {
+			for (final CertifiedRole certifiedRole : certifiedRoleList) {
 
 				final XmlCertifiedRolesType xmlCertifiedRolesType = DIAGNOSTIC_DATA_OBJECT_FACTORY.createXmlCertifiedRolesType();
-				xmlCertifiedRolesType.setCertifiedRole(certifiedRoleValue);
 				xmlCertifiedRolesType.setNotBefore(DSSXMLUtils.createXMLGregorianCalendar(certifiedRole.getNotBefore()));
 				xmlCertifiedRolesType.setNotAfter(DSSXMLUtils.createXMLGregorianCalendar(certifiedRole.getNotAfter()));
+				final List<String> certifiedRoleValueList = certifiedRole.getRoleList();
+				for (String certifiedRoleValue : certifiedRoleValueList) {
+
+					// TODO-Bob (16/10/2015):  multiple certified roles to be handled
+					xmlCertifiedRolesType.setCertifiedRole(certifiedRoleValue);
+				}
 				xmlSignature.getCertifiedRoles().add(xmlCertifiedRolesType);
 				// TODO-Bob (11/10/2015):  Validation of the attribute certificate to be implemented
 			}

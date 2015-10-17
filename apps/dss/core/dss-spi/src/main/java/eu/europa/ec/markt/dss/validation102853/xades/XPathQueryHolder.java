@@ -82,9 +82,10 @@ public class XPathQueryHolder implements Serializable {
 	public String XPATH_SIGNING_CERTIFICATE_CERT_V2 = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SigningCertificateV2/xades:Cert";
 	public String XPATH_CERT_DIGEST = XPATH_SIGNING_CERTIFICATE_CERT + "/xades:CertDigest";
 	public String XPATH_SIGNATURE_POLICY_IDENTIFIER = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SignaturePolicyIdentifier";
-	public String XPATH_SIGNER_ROLE ="/*[self::xades:SignerRole or self::xades:SignerRoleV2]";
+	public String XPATH_SIGNER_ROLE = "/*[self::xades:SignerRole or self::xades:SignerRoleV2]";
 	public String XPATH_CLAIMED_ROLE = XPATH_SIGNED_SIGNATURE_PROPERTIES + XPATH_SIGNER_ROLE + "/xades:ClaimedRoles/xades:ClaimedRole";
-	public String XPATH_CERTIFIED_ROLE = XPATH_SIGNED_SIGNATURE_PROPERTIES + XPATH_SIGNER_ROLE + "/xades:CertifiedRoles/xades:CertifiedRole";///EncapsulatedX509Certificate";
+	public String XPATH_CERTIFIED_ROLE = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SignerRole/xades:CertifiedRoles/xades:CertifiedRole";
+	public String XPATH_CERTIFIED_ROLE_V2 = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SignerRoleV2/xades:CertifiedRolesV2/xades:CertifiedRole/xades:X509AttributeCertificate";
 	public String XPATH_PRODUCTION_PLACE = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/*[self::xades:SignatureProductionPlace or self::xades:SignatureProductionPlaceV2]";
 	public String XPATH__SIGNATURE_POLICY_IMPLIED = "./xades:SignaturePolicyImplied";
 	public String XPATH__POLICY_ID = "./xades:SignaturePolicyId/xades:SigPolicyId/xades:Identifier";

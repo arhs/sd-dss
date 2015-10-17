@@ -372,9 +372,9 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		return constraint.check();
 	}
 
-	private boolean checkCompleteRevocationRefsConstraint(final Conclusion conclusion) {
+	private boolean checkCompleteCertificateRefsConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = validationPolicy.getCompleteRevocationRefsConstraint();
+		final Constraint constraint = validationPolicy.getCompleteCertificateRefsConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -387,9 +387,9 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		return constraint.check();
 	}
 
-	private boolean checkCompleteCertificateRefsConstraint(final Conclusion conclusion) {
+	private boolean checkCompleteRevocationRefsConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = validationPolicy.getCompleteCertificateRefsConstraint();
+		final Constraint constraint = validationPolicy.getCompleteRevocationRefsConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -404,7 +404,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 
 	private boolean checkCertificateValuesConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = validationPolicy.getCompleteRevocationRefsConstraint();
+		final Constraint constraint = validationPolicy.getCertificateValuesConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -419,7 +419,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 
 	private boolean checkRevocationValuesConstraint(final Conclusion conclusion) {
 
-		final Constraint constraint = validationPolicy.getCompleteRevocationRefsConstraint();
+		final Constraint constraint = validationPolicy.getRevocationValuesConstraint();
 		if (constraint == null) {
 			return true;
 		}
@@ -873,10 +873,16 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		final XmlNode xmlNode = constraint.create(subProcessXmlNode, BBB_SAV_IACV);
 
 		final XmlDom certifiedRolesXmlDom = signatureContext.getElement("./CertifiedRoles");
-		final Date notBefore = certifiedRolesXmlDom.getTimeValue(XP_NOT_BEFORE);
-		final Date notAfter = certifiedRolesXmlDom.getTimeValue(XP_NOT_AFTER);
+		Date notBefore = null;
+		Date notAfter = null;
 
-		boolean valid = currentTime.after(notBefore) && currentTime.before(notAfter);
+		boolean valid = false;
+		if (certifiedRolesXmlDom != null) {
+
+			notBefore = certifiedRolesXmlDom.getTimeValue(XP_NOT_BEFORE);
+			notAfter = certifiedRolesXmlDom.getTimeValue(XP_NOT_AFTER);
+			valid = currentTime.after(notBefore) && currentTime.before(notAfter);
+		}
 		constraint.setExpectedValue(TRUE);
 		constraint.setValue(valid);
 		constraint.setIndications(INVALID, SIG_CONSTRAINTS_FAILURE, BBB_SAV_IACV_ANS);

@@ -222,13 +222,8 @@ public class EtsiValidationPolicy extends ValidationPolicy implements AttributeN
 	@Override
 	public Constraint getSignerLocationConstraint() {
 
-		final String level = getValue(XP_ROOT + "/MainSignature/MandatedSignedQProperties/SignerLocation/@Level");
-		if (DSSUtils.isNotBlank(level)) {
-
-			final Constraint constraint = new Constraint(level);
-			return constraint;
-		}
-		return null;
+		final String xpRoot = "/MainSignature/MandatedSignedQProperties/SignerLocation";
+		return getBasicConstraint(xpRoot, true);
 	}
 
 	@Override

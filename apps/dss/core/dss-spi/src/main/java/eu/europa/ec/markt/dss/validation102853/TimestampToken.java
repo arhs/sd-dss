@@ -216,9 +216,9 @@ public class TimestampToken extends Token {
 			messageImprintIntact = Arrays.equals(computedDigest, timestampDigest);
 			if (!messageImprintIntact) {
 
-				LOG.error("Extracted data from the document: {}", DSSUtils.encodeHexString(data, 200));
-				LOG.error("Computed digest ({}) on the extracted data from the document : {}", digestAlgorithm, DSSUtils.encodeHexString(computedDigest));
-				LOG.error("Digest present in TimestampToken: {}", DSSUtils.encodeHexString(timestampDigest));
+				LOG.error("Extracted data from the document: {}", DSSUtils.base64Encode(data));//, 200));
+				LOG.error("Computed digest ({}) on the extracted data from the document : {}", digestAlgorithm, DSSUtils.base64Encode(computedDigest));
+				LOG.error("Digest present in TimestampToken: {}", DSSUtils.base64Encode(timestampDigest));
 				LOG.error("Digest in TimestampToken matches digest of extracted data from document: {}", messageImprintIntact);
 			}
 		} catch (DSSException e) {
@@ -376,19 +376,19 @@ public class TimestampToken extends Token {
 	/**
 	 * Used only with XAdES timestamps.
 	 *
-	 * @param hashCode the hash code of the DOM element containing the timestamp
+	 * @return the hash code of the DOM element containing the timestamp
 	 */
-	public void setHashCode(final int hashCode) {
-		this.hashCode = hashCode;
+	public int getHashCode() {
+		return hashCode;
 	}
 
 	/**
 	 * Used only with XAdES timestamps.
 	 *
-	 * @return the hash code of the DOM element containing the timestamp
+	 * @param hashCode the hash code of the DOM element containing the timestamp
 	 */
-	public int getHashCode() {
-		return hashCode;
+	public void setHashCode(final int hashCode) {
+		this.hashCode = hashCode;
 	}
 
 	@Override

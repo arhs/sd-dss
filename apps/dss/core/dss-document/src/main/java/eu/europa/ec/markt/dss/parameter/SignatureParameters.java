@@ -53,33 +53,27 @@ public class SignatureParameters implements Serializable {
 	 * This variable is used to ensure the uniqueness of the signature in the same document.
 	 */
 	protected static int signatureCounter = 0;
-
+	ProfileParameters context;
 	/**
 	 * This parameter is used in one shot signature process. Cannot be used with 3-steps signature process.
 	 */
 	private SignatureTokenConnection signingToken;
-
 	/**
 	 * This parameter is used in one shot signature process. Cannot be used with 3-steps signature process.
 	 */
 	private DSSPrivateKeyEntry privateKeyEntry;
-
 	/**
 	 * This field contains the signing certificate.
 	 */
 	private X509Certificate signingCertificate;
-
 	/**
 	 * This variable indicates if it is possible to sign with an expired certificate.
 	 */
 	private boolean signWithExpiredCertificate = false;
-
 	/**
 	 * This field contains the {@code List} of chain of certificates. It includes the signing certificate.
 	 */
 	private List<ChainCertificate> certificateChain = new ArrayList<ChainCertificate>();
-
-	ProfileParameters context;
 	private SignatureLevel signatureLevel;
 	private SignaturePackaging signaturePackaging;
 
@@ -140,15 +134,14 @@ public class SignatureParameters implements Serializable {
 
 	private XPathQueryHolder toCountersignXPathQueryHolder = new XPathQueryHolder();
 	private String toCounterSignSignatureValueId;
-
-	public SignatureParameters() {
-
-	}
-
 	/**
 	 * The document to be signed
 	 */
 	private DSSDocument detachedContent;
+
+	public SignatureParameters() {
+
+	}
 
 	// TODO-Bob (11/09/2014):  More then one document
 	//	/**
@@ -184,8 +177,9 @@ public class SignatureParameters implements Serializable {
 		signingToken = source.signingToken;
 		signingCertificate = source.signingCertificate;
 		signWithExpiredCertificate = source.signWithExpiredCertificate;
-		contentTimestamps = source.getContentTimestamps();
+		contentTimestamps = source.contentTimestamps;
 		toCounterSignSignatureId = source.getToCounterSignSignatureId();
+		contentTimestampParameters = source.contentTimestampParameters;
 		signatureTimestampParameters = source.signatureTimestampParameters;
 		archiveTimestampParameters = source.archiveTimestampParameters;
 		toCountersignXPathQueryHolder = source.toCountersignXPathQueryHolder;
@@ -234,15 +228,6 @@ public class SignatureParameters implements Serializable {
 	}
 
 	/**
-	 * This method returns the document to sign. In the case of the DETACHED signature this is the detached document.
-	 *
-	 * @return
-	 */
-	public DSSDocument getDetachedContent() {
-		return detachedContent;
-	}
-
-	/**
 	 * When signing this method is internally invoked by the {@code AbstractSignatureService} and the related variable {@code detachedContent} is overwritten by the service
 	 * parameter. In the case of the DETACHED signature this is the detached document. In the case of ASiC-S this is the document to be signed.<p />
 	 * When extending this method must be invoked to indicate the {@code detachedContent}.
@@ -253,6 +238,15 @@ public class SignatureParameters implements Serializable {
 	@Deprecated
 	public void setOriginalDocument(final DSSDocument document) {
 		this.detachedContent = document;
+	}
+
+	/**
+	 * This method returns the document to sign. In the case of the DETACHED signature this is the detached document.
+	 *
+	 * @return
+	 */
+	public DSSDocument getDetachedContent() {
+		return detachedContent;
 	}
 
 	/**
@@ -373,6 +367,28 @@ public class SignatureParameters implements Serializable {
 	}
 
 	/**
+	 * This method sets the list of certificates which constitute the chain. If the certificate is already present in the array then it is ignored.
+	 *
+	 * @param certificateChainArray the array containing all certificates composing the chain
+	 */
+	public void setCertificateChain(final X509Certificate... certificateChainArray) {
+
+		if (certificateChainArray == null || certificateChainArray.length == 0) {
+			certificateChain.clear();
+		}
+		for (final X509Certificate certificate : certificateChainArray) {
+
+			if (certificate != null) {
+
+				final ChainCertificate chainCertificate = new ChainCertificate(certificate, false);
+				if (!certificateChain.contains(chainCertificate)) {
+					certificateChain.add(chainCertificate);
+				}
+			}
+		}
+	}
+
+	/**
 	 * Clears the certificate chain
 	 *
 	 * @return the value
@@ -396,25 +412,12 @@ public class SignatureParameters implements Serializable {
 	}
 
 	/**
-	 * This method sets the list of certificates which constitute the chain. If the certificate is already present in the array then it is ignored.
+	 * Returns the private key entry
 	 *
-	 * @param certificateChainArray the array containing all certificates composing the chain
+	 * @return the value
 	 */
-	public void setCertificateChain(final X509Certificate... certificateChainArray) {
-
-		if (certificateChainArray == null || certificateChainArray.length == 0) {
-			certificateChain.clear();
-		}
-		for (final X509Certificate certificate : certificateChainArray) {
-
-			if (certificate != null) {
-
-				final ChainCertificate chainCertificate = new ChainCertificate(certificate, false);
-				if (!certificateChain.contains(chainCertificate)) {
-					certificateChain.add(chainCertificate);
-				}
-			}
-		}
+	public DSSPrivateKeyEntry getPrivateKeyEntry() {
+		return privateKeyEntry;
 	}
 
 	/**
@@ -433,15 +436,6 @@ public class SignatureParameters implements Serializable {
 		final String encryptionAlgorithmName = this.signingCertificate.getPublicKey().getAlgorithm();
 		this.encryptionAlgorithm = EncryptionAlgorithm.forName(encryptionAlgorithmName);
 		this.signatureAlgorithm = SignatureAlgorithm.getAlgorithm(this.encryptionAlgorithm, this.digestAlgorithm);
-	}
-
-	/**
-	 * Returns the private key entry
-	 *
-	 * @return the value
-	 */
-	public DSSPrivateKeyEntry getPrivateKeyEntry() {
-		return privateKeyEntry;
 	}
 
 	/**
@@ -508,7 +502,6 @@ public class SignatureParameters implements Serializable {
 	}
 
 
-
 	public DigestAlgorithm getSignedPropertiesDigestAlgorithm() {
 		return signedPropertiesDigestAlgorithm;
 	}
@@ -569,6 +562,13 @@ public class SignatureParameters implements Serializable {
 	}
 
 	/**
+	 * @return the encryption algorithm. It's determined by the privateKeyEntry and is null until the privateKeyEntry is set.
+	 */
+	public EncryptionAlgorithm getEncryptionAlgorithm() {
+		return encryptionAlgorithm;
+	}
+
+	/**
 	 * This setter should be used only when dealing with web services (or when signing in three steps). Usually the encryption algorithm is automatically extrapolated from the
 	 * private key.
 	 *
@@ -581,13 +581,6 @@ public class SignatureParameters implements Serializable {
 
 			signatureAlgorithm = SignatureAlgorithm.getAlgorithm(this.encryptionAlgorithm, this.digestAlgorithm);
 		}
-	}
-
-	/**
-	 * @return the encryption algorithm. It's determined by the privateKeyEntry and is null until the privateKeyEntry is set.
-	 */
-	public EncryptionAlgorithm getEncryptionAlgorithm() {
-		return encryptionAlgorithm;
 	}
 
 	/**
@@ -650,9 +643,6 @@ public class SignatureParameters implements Serializable {
 	}
 
 	public TimestampParameters getSignatureTimestampParameters() {
-		if (signatureTimestampParameters == null) {
-			signatureTimestampParameters = new TimestampParameters();
-		}
 		return signatureTimestampParameters;
 	}
 
@@ -661,9 +651,6 @@ public class SignatureParameters implements Serializable {
 	}
 
 	public TimestampParameters getArchiveTimestampParameters() {
-		if (archiveTimestampParameters == null) {
-			archiveTimestampParameters = new TimestampParameters();
-		}
 		return archiveTimestampParameters;
 	}
 
@@ -672,9 +659,6 @@ public class SignatureParameters implements Serializable {
 	}
 
 	public TimestampParameters getContentTimestampParameters() {
-		if (contentTimestampParameters == null) {
-			contentTimestampParameters = new TimestampParameters();
-		}
 		return contentTimestampParameters;
 	}
 

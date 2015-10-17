@@ -306,7 +306,6 @@ public final class DSSXMLUtils {
 			final NodeList evaluated = (NodeList) expr.evaluate(xmlNode, XPathConstants.NODESET);
 			return evaluated;
 		} catch (XPathExpressionException e) {
-
 			throw new DSSException(e);
 		}
 	}

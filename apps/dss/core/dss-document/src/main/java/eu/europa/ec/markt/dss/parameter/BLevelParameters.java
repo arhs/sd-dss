@@ -28,7 +28,6 @@ import java.util.List;
 
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
-import eu.europa.ec.markt.dss.exception.DSSNotYetImplementedMethodException;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
 
 public class BLevelParameters implements Serializable {
@@ -53,7 +52,7 @@ public class BLevelParameters implements Serializable {
 	private DigestAlgorithm signingCertificateDigestMethod = DigestAlgorithm.SHA1;
 
 	private List<String> claimedSignerRoles;
-	private List<String> certifiedSignerRoles;
+	private List<CertifiedRole> certifiedSignerRoles;
 
 	private Policy signaturePolicy;
 
@@ -61,7 +60,7 @@ public class BLevelParameters implements Serializable {
 	private String contentIdentifierPrefix;
 	private String contentIdentifierSuffix;
 
-	private List<String> commitmentTypeIndication;
+	private List<CommitmentTypeIndication> commitmentTypeIndication;
 	private SignerLocation signerLocation;
 	private String contentHintsType;
 	private String contentHintsDescription;
@@ -92,7 +91,7 @@ public class BLevelParameters implements Serializable {
 			this.claimedSignerRoles = new ArrayList<String>(source.claimedSignerRoles);
 		}
 		if (source.certifiedSignerRoles != null) {
-			this.certifiedSignerRoles = new ArrayList<String>(source.certifiedSignerRoles);
+			this.certifiedSignerRoles = new ArrayList<CertifiedRole>(source.certifiedSignerRoles);
 		}
 
 		this.contentHintsType = source.contentHintsType;
@@ -102,7 +101,7 @@ public class BLevelParameters implements Serializable {
 		this.contentIdentifierSuffix = source.contentIdentifierSuffix;
 
 		if (source.commitmentTypeIndication != null) {
-			this.commitmentTypeIndication = new ArrayList<String>(source.commitmentTypeIndication);
+			this.commitmentTypeIndication = new ArrayList<CommitmentTypeIndication>(source.commitmentTypeIndication);
 		}
 		if (source.signerLocation != null) {
 			this.signerLocation = new SignerLocation(source.signerLocation);
@@ -188,6 +187,170 @@ public class BLevelParameters implements Serializable {
 
 	public void setContentHintsDescription(String contentHintsDescription) {
 		this.contentHintsDescription = contentHintsDescription;
+	}
+
+	/**
+	 * Get the signing date
+	 *
+	 * @return the value
+	 */
+	public Date getSigningDate() {
+		return signingDate;
+	}
+
+	/**
+	 * Set the signing date
+	 *
+	 * @param signingDate the value
+	 */
+	public void setSigningDate(final Date signingDate) {
+
+		this.signingDate = signingDate;
+	}
+
+	/**
+	 * See {@link #setSigningCertificateDigestMethod(DigestAlgorithm).
+	 *
+	 * @return
+	 */
+	public DigestAlgorithm getSigningCertificateDigestMethod() {
+		return signingCertificateDigestMethod;
+	}
+
+	/**
+	 * This property is a part of the standard:<br>
+	 * 7.2.2 The SigningCertificate element (101 903 V1.4.2 (2010-12) XAdES)<br>
+	 * The digest method indicates the digest algorithm to be used to calculate the CertDigest element that contains the
+	 * digest for each certificate referenced in the sequence.
+	 *
+	 * @param signingCertificateDigestMethod
+	 */
+	public void setSigningCertificateDigestMethod(final DigestAlgorithm signingCertificateDigestMethod) {
+		this.signingCertificateDigestMethod = signingCertificateDigestMethod;
+	}
+
+	/**
+	 * Get claimed role
+	 *
+	 * @return the value
+	 */
+	public List<String> getClaimedSignerRoles() {
+		return claimedSignerRoles;
+	}
+
+	/**
+	 * Adds a claimed signer role
+	 *
+	 * @param claimedSignerRole the value
+	 */
+	public void addClaimedSignerRole(final String claimedSignerRole) {
+
+		final boolean empty = DSSUtils.isEmpty(claimedSignerRole);
+		if (empty) {
+
+			throw new DSSNullException(String.class, "claimedSignerRole");
+		}
+		if (claimedSignerRoles == null) {
+
+			claimedSignerRoles = new ArrayList<String>();
+		}
+		claimedSignerRoles.add(claimedSignerRole);
+	}
+
+	public List<CertifiedRole> getCertifiedSignerRoles() {
+		return certifiedSignerRoles;
+	}
+
+	/**
+	 * Adds a certified signer role (attribute certificate)
+	 *
+	 * @param attributeCertificateBase64Encoded {@code String}
+	 * @param encoding                          {@code String} example: Encoding="http://uri.etsi.org/01903/v1.2.2#DER"
+	 */
+	public void addCertifiedSignerRole(final String attributeCertificateBase64Encoded, String encoding) {
+
+		if (certifiedSignerRoles == null) {
+			certifiedSignerRoles = new ArrayList<CertifiedRole>();
+		}
+		certifiedSignerRoles.add(new CertifiedRole(attributeCertificateBase64Encoded, encoding));
+	}
+
+	/**
+	 * ETSI TS 101 733 V2.2.1 (2013-04)
+	 * <p/>
+	 * 5.11.1 commitment-type-indication Attribute
+	 * There may be situations where a signer wants to explicitly indicate to a verifier that by signing the data, it illustrates a
+	 * type of commitment on behalf of the signer. The commitment-type-indication attribute conveys such
+	 * information.
+	 */
+	public List<CommitmentTypeIndication> getCommitmentTypeIndications() {
+		return commitmentTypeIndication;
+	}
+
+	public void setCommitmentTypeIndications(final List<CommitmentTypeIndication> commitmentTypeIndication) {
+		this.commitmentTypeIndication = commitmentTypeIndication;
+	}
+
+	/**
+	 * ETSI TS 101 733 V2.2.1 (2013-04)
+	 * <p/>
+	 * 5.10.2 content-identifier Attribute
+	 * The content-identifier attribute provides an identifier for the signed content, for use when a reference may be
+	 * later required to that content; for example, in the content-reference attribute in other signed data sent later. The
+	 * content-identifier shall be a signed attribute.
+	 * content-identifier attribute type values for the ES have an ASN.1 type ContentIdentifier, as defined in
+	 * ESS (RFC 2634 [5]).
+	 * <p/>
+	 * The minimal content-identifier attribute should contain a concatenation of user-specific identification
+	 * information (such as a user name or public keying material identification information), a GeneralizedTime string,
+	 * and a random number.
+	 *
+	 * @return
+	 */
+	public String getContentIdentifierPrefix() {
+		return contentIdentifierPrefix;
+	}
+
+	/**
+	 * @param contentIdentifierPrefix
+	 * @see #getContentIdentifierPrefix()
+	 */
+	public void setContentIdentifierPrefix(String contentIdentifierPrefix) {
+		this.contentIdentifierPrefix = contentIdentifierPrefix;
+	}
+
+	/**
+	 * ETSI TS 101 733 V2.2.1 (2013-04)
+	 * <p/>
+	 * 5.11.2 signer-location Attribute
+	 * The signer-location attribute specifies a mnemonic for an address associated with the signer at a particular
+	 * geographical (e.g. city) location. The mnemonic is registered in the country in which the signer is located and is used in
+	 * the provision of the Public Telegram Service (according to Recommendation ITU-T F.1 [11]).
+	 * The signer-location attribute shall be a signed attribute.
+	 * <p/>
+	 * The following object identifier identifies the signer-location attribute:
+	 * id-aa-ets-signerLocation OBJECT IDENTIFIER ::= { iso(1) member-body(2)
+	 * us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-aa(2) 17}
+	 * Signer-location attribute values have ASN.1 type SignerLocation:
+	 * SignerLocation ::= SEQUENCE { -- at least one of the following shall be present:
+	 * countryName [0] DirectoryString OPTIONAL,
+	 * -- As used to name a Country in X.500
+	 * localityName [1] DirectoryString OPTIONAL,
+	 * -- As used to name a locality in X.500
+	 * postalAdddress [2] PostalAddress OPTIONAL }
+	 * PostalAddress ::= SEQUENCE SIZE(1..6) OF DirectoryString
+	 *
+	 * @return the location
+	 */
+	public SignerLocation getSignerLocation() {
+		return signerLocation;
+	}
+
+	/**
+	 * @param signerLocation the location to set
+	 */
+	public void setSignerLocation(final SignerLocation signerLocation) {
+		this.signerLocation = signerLocation;
 	}
 
 	/**
@@ -305,9 +468,6 @@ public class BLevelParameters implements Serializable {
 
 		private byte[] digestValue;
 
-		public Policy() {
-		}
-
 		public Policy(final Policy policy) {
 
 			id = policy.id;
@@ -368,174 +528,86 @@ public class BLevelParameters implements Serializable {
 		public void setDigestValue(final byte[] digestValue) {
 			this.digestValue = digestValue;
 		}
-
 	}
 
-	/**
-	 * Set the signing date
-	 *
-	 * @param signingDate the value
-	 */
-	public void setSigningDate(final Date signingDate) {
+	public static class CertifiedRole implements Serializable {
 
-		this.signingDate = signingDate;
-	}
+		protected String attributeCertificateBase64Encoded;
+		protected String encoding;
 
-	/**
-	 * Get the signing date
-	 *
-	 * @return the value
-	 */
-	public Date getSigningDate() {
-		return signingDate;
-	}
+		public CertifiedRole(final String attributeCertificateBase64Encoded, final String encoding) {
 
-	/**
-	 * This property is a part of the standard:<br>
-	 * 7.2.2 The SigningCertificate element (101 903 V1.4.2 (2010-12) XAdES)<br>
-	 * The digest method indicates the digest algorithm to be used to calculate the CertDigest element that contains the
-	 * digest for each certificate referenced in the sequence.
-	 *
-	 * @param signingCertificateDigestMethod
-	 */
-	public void setSigningCertificateDigestMethod(final DigestAlgorithm signingCertificateDigestMethod) {
-		this.signingCertificateDigestMethod = signingCertificateDigestMethod;
-	}
-
-	/**
-	 * See {@link #setSigningCertificateDigestMethod(DigestAlgorithm).
-	 *
-	 * @return
-	 */
-	public DigestAlgorithm getSigningCertificateDigestMethod() {
-		return signingCertificateDigestMethod;
-	}
-
-	/**
-	 * Get claimed role
-	 *
-	 * @return the value
-	 */
-	public List<String> getClaimedSignerRoles() {
-		return claimedSignerRoles;
-	}
-
-	/**
-	 * Adds a claimed signer role
-	 *
-	 * @param claimedSignerRole the value
-	 */
-	public void addClaimedSignerRole(final String claimedSignerRole) {
-
-		final boolean empty = DSSUtils.isEmpty(claimedSignerRole);
-		if (empty) {
-
-			throw new DSSNullException(String.class, "claimedSignerRole");
+			this.attributeCertificateBase64Encoded = attributeCertificateBase64Encoded;
+			this.encoding = encoding;
 		}
-		if (claimedSignerRoles == null) {
 
-			claimedSignerRoles = new ArrayList<String>();
+		public String getAttributeCertificateBase64Encoded() {
+			return attributeCertificateBase64Encoded;
 		}
-		claimedSignerRoles.add(claimedSignerRole);
+
+		public void setAttributeCertificateBase64Encoded(final String attributeCertificateBase64Encoded) {
+			this.attributeCertificateBase64Encoded = attributeCertificateBase64Encoded;
+		}
+
+		public String getEncoding() {
+			return encoding;
+		}
+
+		public void setEncoding(final String encoding) {
+			this.encoding = encoding;
+		}
 	}
 
-	public List<String> getCertifiedSignerRoles() {
-		return certifiedSignerRoles;
+	public static class CommitmentTypeIndication {
+
+		protected String identifier;
+		protected String description;
+		protected List<String> documentationReferences;
+
+		protected List<String> objectReferences;
+
+		public CommitmentTypeIndication(final String identifier) {
+			this.identifier = identifier;
+		}
+
+		public String getIdentifier() {
+			return identifier;
+		}
+
+		public void setIdentifier(final String identifier) {
+			this.identifier = identifier;
+		}
+
+		public String getDescription() {
+			return description;
+		}
+
+		public void setDescription(final String description) {
+			this.description = description;
+		}
+
+		public void addDocumentationReference(final String documentationReference) {
+
+			if (documentationReferences == null) {
+				documentationReferences = new ArrayList<String>();
+			}
+			documentationReferences.add(documentationReference);
+		}
+
+		public List<String> getDocumentationReferences() {
+			return documentationReferences;
+		}
+
+		public void addObjectReference(final String objectReference) {
+
+			if (objectReferences == null) {
+				objectReferences = new ArrayList<String>();
+			}
+			objectReferences.add(objectReference);
+		}
+
+		public List<String> getObjectReferences() {
+			return objectReferences;
+		}
 	}
-
-	/**
-	 * Adds a certified signer role
-	 *
-	 * @param certifiedSignerRole the value
-	 */
-	public void addCertifiedSignerRole(final String certifiedSignerRole) {
-
-		throw new DSSNotYetImplementedMethodException("eu.europa.ec.markt.dss.parameter.BLevelParameters.addCertifiedSignerRole");
-/*
-        if (certifiedSignerRoles == null) {
-
-            certifiedSignerRoles = new ArrayList<String>();
-        }
-        certifiedSignerRoles.add(certifiedSignerRole);
-*/
-	}
-
-	/**
-	 * ETSI TS 101 733 V2.2.1 (2013-04)
-	 * <p/>
-	 * 5.11.1 commitment-type-indication Attribute
-	 * There may be situations where a signer wants to explicitly indicate to a verifier that by signing the data, it illustrates a
-	 * type of commitment on behalf of the signer. The commitment-type-indication attribute conveys such
-	 * information.
-	 */
-	public List<String> getCommitmentTypeIndications() {
-		return commitmentTypeIndication;
-	}
-
-	public void setCommitmentTypeIndications(List<String> commitmentTypeIndication) {
-		this.commitmentTypeIndication = commitmentTypeIndication;
-	}
-
-	/**
-	 * ETSI TS 101 733 V2.2.1 (2013-04)
-	 * <p/>
-	 * 5.10.2 content-identifier Attribute
-	 * The content-identifier attribute provides an identifier for the signed content, for use when a reference may be
-	 * later required to that content; for example, in the content-reference attribute in other signed data sent later. The
-	 * content-identifier shall be a signed attribute.
-	 * content-identifier attribute type values for the ES have an ASN.1 type ContentIdentifier, as defined in
-	 * ESS (RFC 2634 [5]).
-	 * <p/>
-	 * The minimal content-identifier attribute should contain a concatenation of user-specific identification
-	 * information (such as a user name or public keying material identification information), a GeneralizedTime string,
-	 * and a random number.
-	 *
-	 * @return
-	 */
-	public String getContentIdentifierPrefix() {
-		return contentIdentifierPrefix;
-	}
-
-	/**
-	 * @param contentIdentifierPrefix
-	 * @see #getContentIdentifierPrefix()
-	 */
-	public void setContentIdentifierPrefix(String contentIdentifierPrefix) {
-		this.contentIdentifierPrefix = contentIdentifierPrefix;
-	}
-
-	/**
-	 * ETSI TS 101 733 V2.2.1 (2013-04)
-	 * <p/>
-	 * 5.11.2 signer-location Attribute
-	 * The signer-location attribute specifies a mnemonic for an address associated with the signer at a particular
-	 * geographical (e.g. city) location. The mnemonic is registered in the country in which the signer is located and is used in
-	 * the provision of the Public Telegram Service (according to Recommendation ITU-T F.1 [11]).
-	 * The signer-location attribute shall be a signed attribute.
-	 * <p/>
-	 * The following object identifier identifies the signer-location attribute:
-	 * id-aa-ets-signerLocation OBJECT IDENTIFIER ::= { iso(1) member-body(2)
-	 * us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-aa(2) 17}
-	 * Signer-location attribute values have ASN.1 type SignerLocation:
-	 * SignerLocation ::= SEQUENCE { -- at least one of the following shall be present:
-	 * countryName [0] DirectoryString OPTIONAL,
-	 * -- As used to name a Country in X.500
-	 * localityName [1] DirectoryString OPTIONAL,
-	 * -- As used to name a locality in X.500
-	 * postalAdddress [2] PostalAddress OPTIONAL }
-	 * PostalAddress ::= SEQUENCE SIZE(1..6) OF DirectoryString
-	 *
-	 * @return the location
-	 */
-	public SignerLocation getSignerLocation() {
-		return signerLocation;
-	}
-
-	/**
-	 * @param signerLocation the location to set
-	 */
-	public void setSignerLocation(final SignerLocation signerLocation) {
-		this.signerLocation = signerLocation;
-	}
-
 }

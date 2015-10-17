@@ -131,6 +131,7 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 			final Element objectDom = getObjectElement(reference);
 			setObjectId(reference, objectDom);
 			setObjectMimeType(reference, objectDom);
+			setObjectEncoding(reference, objectDom);
 		}
 	}
 
@@ -168,6 +169,14 @@ class EnvelopingSignatureBuilder extends SignatureBuilder {
 		final String objectMimeType = reference.getObjectMimeType();
 		if (DSSUtils.isNotEmpty(objectMimeType)) {
 			objectDom.setAttribute(MIME_TYPE, objectMimeType);
+		}
+	}
+
+	private void setObjectEncoding(final DSSReference reference, final Element objectDom) {
+
+		final String objectEncoding = reference.getObjectEncoding();
+		if (DSSUtils.isNotEmpty(objectEncoding)) {
+			objectDom.setAttribute(ENCODING, objectEncoding);
 		}
 	}
 

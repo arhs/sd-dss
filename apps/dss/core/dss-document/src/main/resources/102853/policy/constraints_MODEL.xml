@@ -113,7 +113,7 @@
 				<Identifier>1.2.840.113549.1.9.16.6.5</Identifier>
 				<Identifier>1.2.840.113549.1.9.16.6.6</Identifier>
 			</CommitmentTypeIndication>
-			<SignerLocation>true</SignerLocation>
+			<SignerLocation Level="FAIL">*</SignerLocation>
 
 			<CertifiedRoles Level="FAIL">
 				<Role>uri:etsi.pades.plugtest.2015.participants</Role>
@@ -124,15 +124,16 @@
 				<Type>ALL_DATA_OBJECTS_TIMESTAMP</Type>
 			</ContentTimestamp>
 
-			<CompleteCertificateRefs Level="FAIL"/>
-			<CompleteRevocationRefs Level="FAIL"/>
-			<CertificateValues Level="FAIL"/>
-			<RevocationValues Level="FAIL"/>
 		</MandatedSignedQProperties>
 		<MandatedUnsignedQProperties>
 			<CounterSignature Level="FAIL" Min="1" Max="1">false</CounterSignature>
 			<SignatureTimestamp Level="FAIL" Min="1" Max="1"/>
 			<ValidationDataTimestamp Level="FAIL" Min="1" Max="1"/>
+			<CompleteCertificateRefs Level="FAIL"/>
+			<CompleteRevocationRefs Level="FAIL"/>
+			<CertificateValues Level="FAIL"/>
+			<RevocationValues Level="FAIL"/>
+			<ArchiveTimestamp Level="FAIL" Min="1" Max="1"/>
 		</MandatedUnsignedQProperties>
 		<Manifest Level="FAIL">
 			<Reference Level="FAIL" Min="1" Max="1"/>
