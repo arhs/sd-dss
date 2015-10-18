@@ -367,6 +367,20 @@ public class SignatureParameters implements Serializable {
 	}
 
 	/**
+	 * Set the certificate chain
+	 *
+	 * @param certificateChain the {@code List} of {@code ChainCertificate}s
+	 */
+	public void setCertificateChain(final List<ChainCertificate> certificateChain) {
+
+		if (certificateChain != null) {
+			this.certificateChain = certificateChain;
+		} else {
+			this.certificateChain.clear();
+		}
+	}
+
+	/**
 	 * This method sets the list of certificates which constitute the chain. If the certificate is already present in the array then it is ignored.
 	 *
 	 * @param certificateChainArray the array containing all certificates composing the chain
@@ -398,20 +412,6 @@ public class SignatureParameters implements Serializable {
 	}
 
 	/**
-	 * Set the certificate chain
-	 *
-	 * @param certificateChain the {@code List} of {@code ChainCertificate}s
-	 */
-	public void setCertificateChain(final List<ChainCertificate> certificateChain) {
-
-		if (certificateChain != null) {
-			this.certificateChain = certificateChain;
-		} else {
-			this.certificateChain.clear();
-		}
-	}
-
-	/**
 	 * Returns the private key entry
 	 *
 	 * @return the value
@@ -423,8 +423,9 @@ public class SignatureParameters implements Serializable {
 	/**
 	 * This method sets the private key entry used to create the signature. Note that the certificate chain is reset, the encryption algorithm is set and the signature algorithm
 	 * is updated.
+	 * Note: The private key connot be extracted automatically from the {@code SignatureTokenConnection} because the latter can contain more then 01.
 	 *
-	 * @param privateKeyEntry the private key entry used to sign?
+	 * @param privateKeyEntry {@code DSSPrivateKeyEntry} representing the private key entry to be used to sign
 	 */
 	public void setPrivateKeyEntry(final DSSPrivateKeyEntry privateKeyEntry) {
 

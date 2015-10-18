@@ -149,10 +149,10 @@ public class XAdESService extends AbstractSignatureService {
 		throw new DSSException("Cannot extend to " + parameters.getSignatureLevel().name());
 	}
 
-	public DSSDocument counterSignDocument(final DSSDocument toCounterSignDocument, final SignatureParameters parameters) throws DSSException {
+	public DSSDocument counterSign(final DSSDocument toCounterSignature, final SignatureParameters parameters) throws DSSException {
 
-		if (toCounterSignDocument == null) {
-			throw new DSSNullException(DSSDocument.class, "toCounterSignDocument");
+		if (toCounterSignature == null) {
+			throw new DSSNullException(DSSDocument.class, "toCounterSignature");
 		}
 		if (parameters == null) {
 			throw new DSSNullException(SignatureParameters.class);
@@ -168,7 +168,7 @@ public class XAdESService extends AbstractSignatureService {
 		if (DSSUtils.isBlank(toCounterSignSignatureId)) {
 			throw new DSSException("There is no provided signature id to countersign!");
 		}
-		final XAdESSignature xadesSignature = getToCountersignSignature(toCounterSignDocument, toCounterSignSignatureId);
+		final XAdESSignature xadesSignature = getToCountersignSignature(toCounterSignature, toCounterSignSignatureId);
 		if (xadesSignature == null) {
 			throw new DSSException("The signature to countersign not found!");
 		}
@@ -182,7 +182,7 @@ public class XAdESService extends AbstractSignatureService {
 		}
 		parameters.setToCounterSignSignatureValueId(signatureValueId);
 
-		final CounterSignatureBuilder counterSignatureBuilder = new CounterSignatureBuilder(toCounterSignDocument, xadesSignature, parameters, cryptographicSourceProvider);
+		final CounterSignatureBuilder counterSignatureBuilder = new CounterSignatureBuilder(toCounterSignature, xadesSignature, parameters, cryptographicSourceProvider);
 		final byte[] dataToSign = counterSignatureBuilder.build();
 
 		final DigestAlgorithm digestAlgorithm = parameters.getDigestAlgorithm();
@@ -198,20 +198,20 @@ public class XAdESService extends AbstractSignatureService {
 		return counterSignedDocument;
 	}
 
-	private XAdESSignature getToCountersignSignature(final DSSDocument toCounterSignDocument, final String toCounterSignSignatureId) {
+	private XAdESSignature getToCountersignSignature(final DSSDocument toCounterSignature, final String toCounterSignSignatureId) {
 
-		final SignedDocumentValidator validator = SignedDocumentValidator.fromDocument(toCounterSignDocument);
+		final SignedDocumentValidator validator = SignedDocumentValidator.fromDocument(toCounterSignature);
 		if (!(validator instanceof XMLDocumentValidator)) {
 			throw new DSSException("Incompatible signature form!");
 		}
-		final List<AdvancedSignature> signatures = validator.getSignatures();
+		final List<AdvancedSignature> advancedSignatureList = validator.getSignatures();
 		XAdESSignature xadesSignature = null;
-		for (final AdvancedSignature signature_ : signatures) {
+		for (final AdvancedSignature advancedSignature : advancedSignatureList) {
 
-			final String id = signature_.getId();
+			final String id = advancedSignature.getId();
 			if (toCounterSignSignatureId.equals(id)) {
 
-				xadesSignature = (XAdESSignature) signature_;
+				xadesSignature = (XAdESSignature) advancedSignature;
 				break;
 			}
 		}
