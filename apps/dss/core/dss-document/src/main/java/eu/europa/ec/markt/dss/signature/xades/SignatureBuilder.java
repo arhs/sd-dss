@@ -37,13 +37,12 @@ import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.EncryptionAlgorithm;
 import eu.europa.ec.markt.dss.SignatureAlgorithm;
-import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.parameter.BLevelParameters;
 import eu.europa.ec.markt.dss.parameter.ChainCertificate;
 import eu.europa.ec.markt.dss.parameter.DSSReference;
 import eu.europa.ec.markt.dss.parameter.DSSTransform;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
+import eu.europa.ec.markt.dss.signature.BLevelParameters;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.DSSSignatureUtils;
 import eu.europa.ec.markt.dss.signature.InMemoryDocument;
@@ -111,10 +110,9 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 	 * @param detachedDocument    {@code DSSDocument} representing the original document to sign.
 	 * @param certificateVerifier {@code CryptographicSourceProvider}
 	 */
-	public SignatureBuilder(final SignatureParameters params, final DSSDocument detachedDocument, final CertificateVerifier certificateVerifier) {
+	protected SignatureBuilder(final SignatureParameters params, final DSSDocument detachedDocument, final CertificateVerifier certificateVerifier) {
 
-		super(certificateVerifier);
-		this.params = params;
+		super(params, certificateVerifier);
 		this.detachedDocument = detachedDocument;
 	}
 
@@ -562,7 +560,7 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 	 */
 	private void incorporateSigningCertificate() {
 
-		final Element signingCertificateDom = DSSXMLUtils.addElement(documentDom, signedSignaturePropertiesDom, XAdES, XAdESNamespaces.getXADES_SIGNING_CERTIFICATE());
+		final Element signingCertificateDom = DSSXMLUtils.addElement(documentDom, signedSignaturePropertiesDom, XAdES, xPathQueryHolder.XADES_SIGNING_CERTIFICATE);
 
 		final List<X509Certificate> certificates = new ArrayList<X509Certificate>();
 		final List<ChainCertificate> certificateChain = params.getCertificateChain();
@@ -657,7 +655,7 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		final List<BLevelParameters.CertifiedRole> certifiedSignerRoles = params.bLevel().getCertifiedSignerRoles();
 		if (claimedSignerRoles != null || certifiedSignerRoles != null) {
 
-			final Element signerRoleDom = DSSXMLUtils.addElement(documentDom, signedSignaturePropertiesDom, XAdES, XADES_SIGNER_ROLE);
+			final Element signerRoleDom = DSSXMLUtils.addElement(documentDom, signedSignaturePropertiesDom, XAdES, xPathQueryHolder.XADES_SIGNER_ROLE);
 
 			if (claimedSignerRoles != null && !claimedSignerRoles.isEmpty()) {
 
@@ -667,11 +665,10 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 
 			if (certifiedSignerRoles != null && !certifiedSignerRoles.isEmpty()) {
 
-				final Element certifiedRolesDom = DSSXMLUtils.addElement(documentDom, signerRoleDom, XAdES, XADES_CERTIFIED_ROLES);
-				addCertifiedRoles(certifiedSignerRoles, certifiedRolesDom);
+				final Element certifiedRolesDom = DSSXMLUtils.addElement(documentDom, signerRoleDom, XAdES, xPathQueryHolder.XADES_CERTIFIED_ROLES);
+				xPathQueryHolder.addCertifiedRoles(documentDom, certifiedSignerRoles, certifiedRolesDom);
 			}
 		}
-
 	}
 
 	private void addClaimedRoles(final List<String> claimedRoleList, final Element rolesDom) {
@@ -683,37 +680,31 @@ public abstract class SignatureBuilder extends XAdESBuilder {
 		}
 	}
 
-	private void addCertifiedRoles(final List<BLevelParameters.CertifiedRole> certifiedRoleList, final Element rolesDom) {
-
-		for (final BLevelParameters.CertifiedRole certifiedRole : certifiedRoleList) {
-
-			final Element roleDom = DSSXMLUtils.addElement(documentDom, rolesDom, XAdES, XADES_CERTIFIED_ROLE);
-			DSSXMLUtils.setTextNode(documentDom, roleDom, certifiedRole.getAttributeCertificateBase64Encoded());
-			roleDom.setAttribute(ENCODING, certifiedRole.getEncoding());
-
-		}
-	}
-
 	private void incorporateSignatureProductionPlace() {
 
 		final BLevelParameters.SignerLocation signatureProductionPlace = params.bLevel().getSignerLocation();
 		if (signatureProductionPlace != null) {
 
-			final Element signatureProductionPlaceDom = DSSXMLUtils.addElement(documentDom, signedSignaturePropertiesDom, XAdES, XADES_SIGNATURE_PRODUCTION_PLACE);
+			final Element signatureProductionPlaceDom = DSSXMLUtils.addElement(documentDom, signedSignaturePropertiesDom, XAdES, xPathQueryHolder.XADES_SIGNATURE_PRODUCTION_PLACE);
 
 			final String city = signatureProductionPlace.getCity();
 			if (city != null) {
 				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_CITY, city);
 			}
 
-			final String postalCode = signatureProductionPlace.getPostalCode();
-			if (postalCode != null) {
-				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_POSTAL_CODE, postalCode);
+			final String streetAddress = signatureProductionPlace.getStreetAddress();
+			if (streetAddress != null) {
+				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_STREET_ADDRESS, streetAddress);
 			}
 
 			final String stateOrProvince = signatureProductionPlace.getStateOrProvince();
 			if (stateOrProvince != null) {
 				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_STATE_OR_PROVINCE, stateOrProvince);
+			}
+
+			final String postalCode = signatureProductionPlace.getPostalCode();
+			if (postalCode != null) {
+				DSSXMLUtils.addTextElement(documentDom, signatureProductionPlaceDom, XAdES, XADES_POSTAL_CODE, postalCode);
 			}
 
 			final String country = signatureProductionPlace.getCountry();

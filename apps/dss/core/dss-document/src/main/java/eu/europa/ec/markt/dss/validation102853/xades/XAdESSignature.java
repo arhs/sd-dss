@@ -111,6 +111,7 @@ import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XML
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIGNATURE_TIME_STAMP;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIG_AND_REFS_TIME_STAMP;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XPATH__CERT;
+import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XPATH__CERT_REFS;
 
 /**
  * Parse an XAdES signature structure. Note that for each signature to be validated a new instance of this object must be created.
@@ -506,7 +507,9 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 						final String issuerSerialV2 = DSSXMLUtils.getValue(element, xPathQueryHolder.XPATH__X509_ISSUER_SERIAL_V2);
 						final byte[] issuerSerialV2Bytes = DSSUtils.base64Decode(issuerSerialV2);
 						final ASN1Sequence asn1Sequence = ASN1Sequence.getInstance(issuerSerialV2Bytes);
-						System.out.println("*********:" + asn1Sequence.toString());
+						if (asn1Sequence != null) {
+							LOG.warn("*** The validation of the IssuerSerialV2 is not implemented:" + asn1Sequence.toString());
+						}
 					}
 					certificateValidity.setDigestEqual(true);
 					// The certificate was identified
@@ -1294,13 +1297,11 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				try {
 
 					final PublicKey publicKey = certificateValidity.getPublicKey();
-					//					coreValidity = santuarioSignature.checkSignatureValue(publicKey);
 					final org.apache.xml.security.algorithms.SignatureAlgorithm signatureAlgorithm = signedInfo.getSignatureAlgorithm();
 					if (LOG.isDebugEnabled()) {
 						LOG.debug("signatureMethodURI = " + signatureAlgorithm.getAlgorithmURI());
 						LOG.debug("jceSigAlgorithm    = " + signatureAlgorithm.getJCEAlgorithmString());
 						LOG.debug("jceSigProvider     = " + signatureAlgorithm.getJCEProviderName());
-						LOG.debug("PublicKey = " + publicKey);
 					}
 					signatureAlgorithm.initVerify(publicKey);
 
@@ -1598,32 +1599,44 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	@Override
 	public List<CertificateRef> getCertificateRefs() {
 
-		final Element signingCertEl = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_CERT_REFS);
-		if (signingCertEl == null) {
+		Element completeCertificateRefsEl = DSSXMLUtils.getElement(signatureElement, xPathQueryHolder.XPATH_COMPLETE_CERTIFICATE_REFS);
+		if (completeCertificateRefsEl == null) {
 			return null;
 		}
+		final Element certRefsEl = DSSXMLUtils.getElement(completeCertificateRefsEl, XPATH__CERT_REFS);
+		if (certRefsEl != null) {
+			completeCertificateRefsEl = certRefsEl;
+		}
 		final List<CertificateRef> certificateRefList = new ArrayList<CertificateRef>();
-		final NodeList certificateRefNodeList = DSSXMLUtils.getNodeList(signingCertEl, XPATH__CERT);
+		final NodeList certificateRefNodeList = DSSXMLUtils.getNodeList(completeCertificateRefsEl, XPATH__CERT);
 		for (int ii = 0; ii < certificateRefNodeList.getLength(); ii++) {
 
-			final Element certId = (Element) certificateRefNodeList.item(ii);
-			final Element issuerNameEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__X509_ISSUER_NAME);
-			final Element issuerSerialEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__X509_SERIAL_NUMBER);
-			final Element digestAlgorithmEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__CERT_DIGEST_DIGEST_METHOD);
-			final Element digestValueEl = DSSXMLUtils.getElement(certId, xPathQueryHolder.XPATH__CERT_DIGEST_DIGEST_VALUE);
+			final Element certElement = (Element) certificateRefNodeList.item(ii);
+			final Element digestAlgorithmEl = DSSXMLUtils.getElement(certElement, xPathQueryHolder.XPATH__CERT_DIGEST_DIGEST_METHOD);
+			final Element digestValueEl = DSSXMLUtils.getElement(certElement, xPathQueryHolder.XPATH__CERT_DIGEST_DIGEST_VALUE);
 
-			final CertificateRef genericCertId = new CertificateRef();
+			final Element issuerNameEl = DSSXMLUtils.getElement(certElement, xPathQueryHolder.XPATH__X509_ISSUER_NAME);
+			final Element issuerSerialEl = DSSXMLUtils.getElement(certElement, xPathQueryHolder.XPATH__X509_SERIAL_NUMBER);
+
+			final String issuerSerialV2 = DSSXMLUtils.getValue(certElement, xPathQueryHolder.XPATH__X509_ISSUER_SERIAL_V2);
+
+			final CertificateRef certificateRef = new CertificateRef();
 			if (issuerNameEl != null && issuerSerialEl != null) {
 
-				genericCertId.setIssuerName(issuerNameEl.getTextContent());
-				genericCertId.setIssuerSerial(issuerSerialEl.getTextContent());
+				certificateRef.setIssuerName(issuerNameEl.getTextContent());
+				certificateRef.setIssuerSerial(issuerSerialEl.getTextContent());
 			}
 
-			final String xmlName = digestAlgorithmEl.getAttribute(XMLE_ALGORITHM);
-			genericCertId.setDigestAlgorithm(DigestAlgorithm.forXML(xmlName).getName());
+			if (DSSUtils.isNotBlank(issuerSerialV2)) {
 
-			genericCertId.setDigestValue(DSSUtils.base64Decode(digestValueEl.getTextContent()));
-			certificateRefList.add(genericCertId);
+				final byte[] issuerSerialV2Bytes = DSSUtils.base64Decode(issuerSerialV2);
+				certificateRef.setIssuerSerialV2(issuerSerialV2Bytes);
+			}
+			final String xmlName = digestAlgorithmEl.getAttribute(XMLE_ALGORITHM);
+			certificateRef.setDigestAlgorithm(DigestAlgorithm.forXML(xmlName).getName());
+
+			certificateRef.setDigestValue(DSSUtils.base64Decode(digestValueEl.getTextContent()));
+			certificateRefList.add(certificateRef);
 		}
 		return certificateRefList;
 	}

@@ -20,7 +20,6 @@
 
 package eu.europa.ec.markt.dss.signature.xades;
 
-import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
@@ -62,8 +61,6 @@ public abstract class XAdESBuilder {
 	public static final String DS_TRANSFORMS = "ds:Transforms";
 	public static final String DS_X509_CERTIFICATE = "ds:X509Certificate";
 	public static final String DS_X509_DATA = "ds:X509Data";
-	public static final String DS_X509_ISSUER_NAME = "ds:X509IssuerName";
-	public static final String DS_X509_SERIAL_NUMBER = "ds:X509SerialNumber";
 	public static final String DS_XPATH = "ds:XPath";
 
 	public static final String XADES_ALL_DATA_OBJECTS_TIME_STAMP = "xades:AllDataObjectsTimeStamp";
@@ -71,8 +68,6 @@ public abstract class XAdESBuilder {
 	public static final String XADES_CERT = "xades:Cert";
 	public static final String XADES_CERT_DIGEST = "xades:CertDigest";
 	public static final String XADES_CERTIFICATE_VALUES = "xades:CertificateValues";
-	public static final String XADES_CERTIFIED_ROLE = "xades:CertifiedRole";
-	public static final String XADES_CERTIFIED_ROLES = "xades:CertifiedRoles";
 	public static final String XADES_CITY = "xades:City";
 	public static final String XADES_CLAIMED_ROLE = "xades:ClaimedRole";
 	public static final String XADES_CLAIMED_ROLES = "xades:ClaimedRoles";
@@ -90,7 +85,6 @@ public abstract class XAdESBuilder {
 	public static final String XADES_IDENTIFIER = "xades:Identifier";
 	public static final String XADES_INCLUDE = "xades:Include";
 	public static final String XADES_INDIVIDUAL_DATA_OBJECTS_TIME_STAMP = "xades:IndividualDataObjectsTimeStamp";
-	public static final String XADES_ISSUER_SERIAL = "xades:IssuerSerial";
 	public static final String XADES_MIME_TYPE = "xades:MimeType";
 	public static final String XADES_OBJECT_REFERENCE = "xades:ObjectReference";
 	public static final String XADES_POSTAL_CODE = "xades:PostalCode";
@@ -101,14 +95,13 @@ public abstract class XAdESBuilder {
 	public static final String XADES_SIGNATURE_POLICY_ID = "xades:SignaturePolicyId";
 	public static final String XADES_SIGNATURE_POLICY_IDENTIFIER = "xades:SignaturePolicyIdentifier";
 	public static final String XADES_SIGNATURE_POLICY_IMPLIED = "xades:SignaturePolicyImplied";
-	public static final String XADES_SIGNATURE_PRODUCTION_PLACE = "xades:SignatureProductionPlace";
 	public static final String XADES_SIGNATURE_TIME_STAMP = "xades:SignatureTimeStamp";
 	public static final String XADES_SIGNED_DATA_OBJECT_PROPERTIES = "xades:SignedDataObjectProperties";
 	public static final String XADES_SIGNED_PROPERTIES = "xades:SignedProperties";
 	public static final String XADES_SIGNED_SIGNATURE_PROPERTIES = "xades:SignedSignatureProperties";
-	public static final String XADES_SIGNER_ROLE = "xades:SignerRole";
 	public static final String XADES_SIGNING_TIME = "xades:SigningTime";
 	public static final String XADES_STATE_OR_PROVINCE = "xades:StateOrProvince";
+	public static final String XADES_STREET_ADDRESS = "xades:StreetAddress";
 	public static final String XADES_UNSIGNED_PROPERTIES = "xades:UnsignedProperties";
 	public static final String XADES_UNSIGNED_SIGNATURE_PROPERTIES = "xades:UnsignedSignatureProperties";
 
@@ -135,8 +128,9 @@ public abstract class XAdESBuilder {
 
 	/**
 	 * This variable holds the {@code XPathQueryHolder} which contains all constants and queries needed to cope with the default signature schema.
+	 * To change the default XPathQueryHolder use {@code setXPathQueryHolder()}
 	 */
-	protected final XPathQueryHolder xPathQueryHolder = new XPathQueryHolder();
+	protected XPathQueryHolder xPathQueryHolder;
 
 	/*
 	 * This variable is a reference to the set of parameters relating to the structure and process of the creation or
@@ -157,10 +151,16 @@ public abstract class XAdESBuilder {
 	/**
 	 * The default constructor.
 	 *
+	 * @param params
 	 * @param certificateVerifier {@code CertificateVerifier}
 	 */
-	public XAdESBuilder(final CertificateVerifier certificateVerifier) {
+	protected XAdESBuilder(SignatureParameters params, final CertificateVerifier certificateVerifier) {
 		this.certificateVerifier = certificateVerifier;
+		this.params = params;
+		if (params.getXPathQueryHolder() == null) {
+			params.setXPathQueryHolder(new XPathQueryHolder());
+		}
+		this.xPathQueryHolder = params.getXPathQueryHolder();
 	}
 
 	/**
@@ -233,16 +233,16 @@ public abstract class XAdESBuilder {
 			final InMemoryDocument inMemoryCertificate = new InMemoryDocument(DSSUtils.getEncoded(certificate));
 			incorporateDigestValue(certDigestDom, signingCertificateDigestMethod, inMemoryCertificate);
 
-			final Element issuerSerialDom = DSSXMLUtils.addElement(documentDom, certDom, XAdES, XADES_ISSUER_SERIAL);
-
-			final Element x509IssuerNameDom = DSSXMLUtils.addElement(documentDom, issuerSerialDom, XMLNS, DS_X509_ISSUER_NAME);
-			final String issuerX500PrincipalName = DSSUtils.getIssuerX500PrincipalName(certificate);
-			DSSXMLUtils.setTextNode(documentDom, x509IssuerNameDom, issuerX500PrincipalName);
-
-			final Element x509SerialNumberDom = DSSXMLUtils.addElement(documentDom, issuerSerialDom, XMLNS, DS_X509_SERIAL_NUMBER);
-			final BigInteger serialNumber = certificate.getSerialNumber();
-			final String serialNumberString = new String(serialNumber.toString());
-			DSSXMLUtils.setTextNode(documentDom, x509SerialNumberDom, serialNumberString);
+			xPathQueryHolder.incorporateIssuerSerial(documentDom, certificate, certDom);
 		}
+	}
+
+	/**
+	 * This method sets the {@code XPathQueryHolder} (related to the signature schemas) to be used when creating a XAdES signature.
+	 *
+	 * @param xPathQueryHolder {@code XPathQueryHolder}
+	 */
+	public void setXPathQueryHolder(final XPathQueryHolder xPathQueryHolder) {
+		this.xPathQueryHolder = xPathQueryHolder;
 	}
 }

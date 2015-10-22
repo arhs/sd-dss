@@ -56,12 +56,12 @@ import eu.europa.ec.markt.dss.validation102853.xades.XMLDocumentValidator;
  */
 public class XAdESService extends AbstractSignatureService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(XAdESService.class);
+
 	static {
 
 		Init.init();
 	}
-
-	private static final Logger LOG = LoggerFactory.getLogger(XAdESService.class);
 
 	/**
 	 * This is the constructor to create an instance of the {@code XAdESService}. A certificate verifier must be provided.
@@ -88,8 +88,17 @@ public class XAdESService extends AbstractSignatureService {
 	@Override
 	public DSSDocument signDocument(final DSSDocument toSignDocument, final SignatureParameters parameters, final byte[] signatureValue) throws DSSException {
 
+		if (toSignDocument == null) {
+			throw new DSSNullException(DSSDocument.class);
+		}
+		if (parameters == null) {
+			throw new DSSNullException(SignatureParameters.class);
+		}
 		if (parameters.getSignatureLevel() == null) {
 			throw new DSSNullException(SignatureLevel.class);
+		}
+		if (signatureValue == null) {
+			throw new DSSNullException(byte[].class, "signatureValue");
 		}
 		assertSigningDateInCertificateValidityRange(parameters);
 		parameters.getContext().setOperationKind(Operation.SIGNING);
@@ -232,37 +241,37 @@ public class XAdESService extends AbstractSignatureService {
 				return null;
 			case XAdES_BASELINE_T:
 
-				final XAdESLevelBaselineT extensionT = new XAdESLevelBaselineT(cryptographicSourceProvider);
+				final XAdESLevelBaselineT extensionT = new XAdESLevelBaselineT(parameters, cryptographicSourceProvider);
 				extensionT.setTspSource(tspSource);
 				return extensionT;
 			case XAdES_C:
 
-				final XAdESLevelC extensionC = new XAdESLevelC(cryptographicSourceProvider);
+				final XAdESLevelC extensionC = new XAdESLevelC(parameters, cryptographicSourceProvider);
 				extensionC.setTspSource(tspSource);
 				return extensionC;
 			case XAdES_X:
 
-				final XAdESLevelX extensionX = new XAdESLevelX(cryptographicSourceProvider);
+				final XAdESLevelX extensionX = new XAdESLevelX(parameters, cryptographicSourceProvider);
 				extensionX.setTspSource(tspSource);
 				return extensionX;
 			case XAdES_XL:
 
-				final XAdESLevelXL extensionXL = new XAdESLevelXL(cryptographicSourceProvider);
+				final XAdESLevelXL extensionXL = new XAdESLevelXL(parameters, cryptographicSourceProvider);
 				extensionXL.setTspSource(tspSource);
 				return extensionXL;
 			case XAdES_A:
 
-				final XAdESLevelA extensionA = new XAdESLevelA(cryptographicSourceProvider);
+				final XAdESLevelA extensionA = new XAdESLevelA(parameters, cryptographicSourceProvider);
 				extensionA.setTspSource(tspSource);
 				return extensionA;
 			case XAdES_BASELINE_LT:
 
-				final XAdESLevelBaselineLT extensionLT = new XAdESLevelBaselineLT(cryptographicSourceProvider);
+				final XAdESLevelBaselineLT extensionLT = new XAdESLevelBaselineLT(parameters, cryptographicSourceProvider);
 				extensionLT.setTspSource(tspSource);
 				return extensionLT;
 			case XAdES_BASELINE_LTA:
 
-				final XAdESLevelBaselineLTA extensionLTA = new XAdESLevelBaselineLTA(cryptographicSourceProvider);
+				final XAdESLevelBaselineLTA extensionLTA = new XAdESLevelBaselineLTA(parameters, cryptographicSourceProvider);
 				extensionLTA.setTspSource(tspSource);
 				return extensionLTA;
 			default:

@@ -26,6 +26,7 @@ import org.w3c.dom.NodeList;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.xades.XAdESSignature;
 
@@ -66,8 +67,13 @@ public abstract class ExtensionBuilder extends XAdESBuilder {
 	 */
 	protected Element signedDataObjectPropertiesDom;
 
-	protected ExtensionBuilder(final CertificateVerifier certificateVerifier) {
-		super(certificateVerifier);
+	/**
+	 *
+	 * @param parameters
+	 * @param certificateVerifier
+	 */
+	protected ExtensionBuilder(final SignatureParameters parameters, final CertificateVerifier certificateVerifier) {
+		super(parameters, certificateVerifier);
 	}
 
 	/**

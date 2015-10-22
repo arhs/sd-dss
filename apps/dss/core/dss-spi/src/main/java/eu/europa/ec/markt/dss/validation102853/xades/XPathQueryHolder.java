@@ -1,8 +1,20 @@
 package eu.europa.ec.markt.dss.validation102853.xades;
 
 import java.io.Serializable;
+import java.math.BigInteger;
+import java.security.cert.X509Certificate;
+import java.util.List;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import eu.europa.ec.markt.dss.DSSUtils;
+import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
+import eu.europa.ec.markt.dss.signature.BLevelParameters;
+
+import static eu.europa.ec.markt.dss.XAdESNamespaces.XAdES;
+import static javax.xml.crypto.dsig.XMLSignature.XMLNS;
 
 /**
  * This class hold all XPath queries schema-dependent. It was created to cope with old signatures bases on http://uri.etsi.org/01903/v1.1.1.
@@ -14,22 +26,20 @@ import eu.europa.ec.markt.dss.XAdESNamespaces;
  */
 public class XPathQueryHolder implements Serializable {
 
+	public static final String ENCODING = "Encoding";
+
 	public static final String XMLE_SIGNATURE = "Signature";
 	public static final String XMLE_ALGORITHM = "Algorithm";
-
 	public static final String XMLE_KEYINFO = "KeyInfo";
 	public static final String XMLE_X509DATA = "X509Data";
 	public static final String XMLE_X509CERTIFICATE = "X509Certificate";
-
 	public static final String XMLE_TRANSFORM = "Transform";
 	public static final String XMLE_CITY = "City";
 	public static final String XMLE_STATE_OR_PROVINCE = "StateOrProvince";
 	public static final String XMLE_STREET_ADDRESS = "StreetAddress";
-
 	public static final String XMLE_POSTAL_CODE = "PostalCode";
 	public static final String XMLE_COUNTRY_NAME = "CountryName";
 	public static final String XMLE_QUALIFYING_PROPERTIES = "QualifyingProperties";
-
 	public static final String XMLE_UNSIGNED_PROPERTIES = "UnsignedProperties";
 	public static final String XMLE_UNSIGNED_SIGNATURE_PROPERTIES = "UnsignedSignatureProperties";
 	public static final String XMLE_ARCHIVE_TIME_STAMP = "ArchiveTimeStamp";
@@ -37,8 +47,16 @@ public class XPathQueryHolder implements Serializable {
 	public static final String XMLE_SIGNATURE_TIME_STAMP = "SignatureTimeStamp";
 	public static final String XMLE_REFS_ONLY_TIME_STAMP = "RefsOnlyTimeStamp";
 	public static final String XMLE_SIG_AND_REFS_TIME_STAMP = "SigAndRefsTimeStamp";
+
 	public final static String XPATH_OBJECT = "./ds:Object";
 	public final static String XPATH__CERT = "./xades:Cert";
+	public final static String XPATH__CERT_REFS = "./xades:CertRefs";
+
+	public static final String DS_X509_ISSUER_NAME = "ds:X509IssuerName";
+	public static final String DS_X509_SERIAL_NUMBER = "ds:X509SerialNumber";
+
+	public static final String XADES_CERTIFIED_ROLE = "xades:CertifiedRole";
+
 	public final String XPATH__SIGNATURE = "./ds:Signature";
 	public final String XPATH_SIGNED_INFO = "./ds:SignedInfo";
 	public final String XPATH_SIGNATURE_METHOD = XPATH_SIGNED_INFO + "/ds:SignatureMethod";
@@ -51,8 +69,14 @@ public class XPathQueryHolder implements Serializable {
 	public final String XPATH_KEY_INFO_X509_CERTIFICATE = XPATH_X509_DATA + "/ds:X509Certificate";
 	public final String XPATH__DIGEST_METHOD_ALGORITHM = "./ds:DigestMethod/@Algorithm";
 	public final String XPATH__CANONICALIZATION_METHOD = "./ds:CanonicalizationMethod";
+
 	public String XADES_SIGNED_PROPERTIES = "http://uri.etsi.org/01903#SignedProperties";
 	public String XADES_COUNTERSIGNED_SIGNATURE = "http://uri.etsi.org/01903#CountersignedSignature";
+	public String XADES_SIGNING_CERTIFICATE = "xades:SigningCertificate";
+	public String XADES_ISSUER_SERIAL = "xades:IssuerSerial";
+	public String XADES_SIGNATURE_PRODUCTION_PLACE = "xades:SignatureProductionPlace";
+	public String XADES_SIGNER_ROLE = "xades:SignerRole";
+	public String XADES_CERTIFIED_ROLES = "xades:CertifiedRoles";
 
 	public String XPATH_CV = "/xades:CertificateValues";
 	public String XPATH_EX509C = "/xades:EncapsulatedX509Certificate";
@@ -79,7 +103,7 @@ public class XPathQueryHolder implements Serializable {
 	public String XPATH_COMMITMENT_TYPE_INDICATION = XPATH_SIGNED_DATA_OBJECT_PROPERTIES + "/xades:CommitmentTypeIndication";
 	public String XPATH_SIGNING_TIME = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SigningTime";
 	public String XPATH_SIGNING_CERTIFICATE_CERT = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/*[self::xades:SigningCertificate or self::xades:SigningCertificateV2]/xades:Cert";
-	public String XPATH_SIGNING_CERTIFICATE_CERT_V2 = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SigningCertificateV2/xades:Cert";
+	//	public String XPATH_SIGNING_CERTIFICATE_CERT_V2 = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SigningCertificateV2/xades:Cert";
 	public String XPATH_CERT_DIGEST = XPATH_SIGNING_CERTIFICATE_CERT + "/xades:CertDigest";
 	public String XPATH_SIGNATURE_POLICY_IDENTIFIER = XPATH_SIGNED_SIGNATURE_PROPERTIES + "/xades:SignaturePolicyIdentifier";
 	public String XPATH_SIGNER_ROLE = "/*[self::xades:SignerRole or self::xades:SignerRoleV2]";
@@ -105,7 +129,7 @@ public class XPathQueryHolder implements Serializable {
 	public String XPATH_SIGNATURE_TIMESTAMP = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + "/xades:" + XMLE_SIGNATURE_TIME_STAMP;
 	// Level -T
 	public final String XPATH_COUNT_SIGNATURE_TIMESTAMP = "count(" + XPATH_SIGNATURE_TIMESTAMP + ")";
-	public String XPATH_COMPLETE_CERTIFICATE_REFS = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + "/xades:CompleteCertificateRefs";
+	public String XPATH_COMPLETE_CERTIFICATE_REFS = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + "/*[self::xades:CompleteCertificateRefs or self::xades141:CompleteCertificateRefsV2]";
 	// Level -C
 	public final String XPATH_COUNT_COMPLETE_CERTIFICATE_REFS = "count(" + XPATH_COMPLETE_CERTIFICATE_REFS + ")";
 	public String XPATH_COMPLETE_REVOCATION_REFS = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + "/xades:CompleteRevocationRefs";
@@ -129,6 +153,7 @@ public class XPathQueryHolder implements Serializable {
 	public String XPATH_ARCHIVE_TIMESTAMP_V2 = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + "/xades141:" + XMLE_ARCHIVE_TIME_STAMP_V2;
 	public final String XPATH_COUNT_ARCHIVE_TIMESTAMP_V2 = "count(" + XPATH_ARCHIVE_TIMESTAMP_V2 + ")";
 	public String XPATH_REVOCATION_CRL_REFS = XPATH_COMPLETE_REVOCATION_REFS + "/xades:CRLRefs";
+
 	public String XPATH__CRL_REF = "./xades:CRLRef";
 	public String XPATH__COMPLETE_CERTIFICATE_REFS__CERT_DIGEST = "./xades:CertRefs/xades:Cert/xades:CertDigest";
 	public String XPATH__DAAV_DIGEST_METHOD = "./xades:DigestAlgAndValue/ds:DigestMethod";
@@ -138,7 +163,6 @@ public class XPathQueryHolder implements Serializable {
 	public String XPATH_TSVD_ENCAPSULATED_X509_CERTIFICATE = XPATH_TIME_STAMP_VALIDATION_DATA + XPATH_CV + XPATH_EX509C;
 	public String XPATH_TSVD_ENCAPSULATED_CRL_VALUE = XPATH_TIME_STAMP_VALIDATION_DATA + "/xades:RevocationValues" + XPATH_ECRLV;
 	public String XPATH_TSVD_ENCAPSULATED_OCSP_VALUE = XPATH_TIME_STAMP_VALIDATION_DATA + "/xades:RevocationValues" + XPATH_EOCSPV;
-	public String XPATH_CERT_REFS = XPATH_COMPLETE_CERTIFICATE_REFS + "/xades:CertRefs";
 	public String XPATH_ENCAPSULATED_CRL_VALUE = XPATH_REVOCATION_VALUES + XPATH_ECRLV;
 	public String XPATH_ENCAPSULATED_OCSP_VALUE = XPATH_REVOCATION_VALUES + XPATH_EOCSPV;
 	// Level -B
@@ -156,5 +180,30 @@ public class XPathQueryHolder implements Serializable {
 
 		boolean canUse = XAdESNamespaces.XAdES.equals(namespace);
 		return canUse;
+	}
+
+	public void incorporateIssuerSerial(final Document documentDom, final X509Certificate certificate, final Element certDom) {
+
+		final Element issuerSerialDom = DSSXMLUtils.addElement(documentDom, certDom, XAdES, XADES_ISSUER_SERIAL);
+
+		final Element x509IssuerNameDom = DSSXMLUtils.addElement(documentDom, issuerSerialDom, XMLNS, DS_X509_ISSUER_NAME);
+		final String issuerX500PrincipalName = DSSUtils.getIssuerX500PrincipalName(certificate);
+		DSSXMLUtils.setTextNode(documentDom, x509IssuerNameDom, issuerX500PrincipalName);
+
+		final Element x509SerialNumberDom = DSSXMLUtils.addElement(documentDom, issuerSerialDom, XMLNS, DS_X509_SERIAL_NUMBER);
+		final BigInteger serialNumber = certificate.getSerialNumber();
+		final String serialNumberString = new String(serialNumber.toString());
+		DSSXMLUtils.setTextNode(documentDom, x509SerialNumberDom, serialNumberString);
+	}
+
+	public void addCertifiedRoles(final Document documentDom, final List<BLevelParameters.CertifiedRole> certifiedRoleList, final Element rolesDom) {
+
+		for (final BLevelParameters.CertifiedRole certifiedRole : certifiedRoleList) {
+
+			final Element roleDom = DSSXMLUtils.addElement(documentDom, rolesDom, XAdES, XADES_CERTIFIED_ROLE);
+			DSSXMLUtils.setTextNode(documentDom, roleDom, certifiedRole.getAttributeCertificateBase64Encoded());
+			roleDom.setAttribute(ENCODING, certifiedRole.getEncoding());
+
+		}
 	}
 }

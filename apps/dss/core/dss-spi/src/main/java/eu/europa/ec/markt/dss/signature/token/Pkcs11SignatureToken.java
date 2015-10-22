@@ -156,7 +156,7 @@ public class Pkcs11SignatureToken extends AbstractSignatureTokenConnection {
             The smartCardNameIndex int is added at the end of the smartCard name in order to enable the successive loading of multiple pkcs11 libraries
          */
 		String aPKCS11LibraryFileName = getPkcs11Path();
-		String pkcs11ConfigSettings = "name = SmartCard" + smartCardNameIndex + "\n" + "library = " + aPKCS11LibraryFileName + "\nslotListIndex = " + slotIndex;
+		String pkcs11ConfigSettings = "name=SmartCard" + smartCardNameIndex + "\n" + "library=" + aPKCS11LibraryFileName + "\nslotListIndex=" + slotIndex;
 
 		byte[] pkcs11ConfigBytes = pkcs11ConfigSettings.getBytes();
 		ByteArrayInputStream confStream = new ByteArrayInputStream(pkcs11ConfigBytes);

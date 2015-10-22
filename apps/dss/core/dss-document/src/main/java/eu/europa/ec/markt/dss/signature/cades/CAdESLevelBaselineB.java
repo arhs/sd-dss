@@ -61,8 +61,8 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.OID;
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.parameter.BLevelParameters;
-import eu.europa.ec.markt.dss.parameter.BLevelParameters.Policy;
+import eu.europa.ec.markt.dss.signature.BLevelParameters;
+import eu.europa.ec.markt.dss.signature.BLevelParameters.Policy;
 import eu.europa.ec.markt.dss.parameter.ChainCertificate;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
@@ -296,18 +296,19 @@ public class CAdESLevelBaselineB {
 		// TODO (19/08/2014): commitmentTypeQualifier is not implemented
 		final BLevelParameters bLevelParameters = parameters.bLevel();
 
-		final List<String> commitmentTypeIndications = bLevelParameters.getCommitmentTypeIndications();
-		if (commitmentTypeIndications != null && !commitmentTypeIndications.isEmpty()) {
+		final List<BLevelParameters.CommitmentTypeIndication> commitmentTypeIndicationList = bLevelParameters.getCommitmentTypeIndications();
+		if (commitmentTypeIndicationList != null && !commitmentTypeIndicationList.isEmpty()) {
 
-			final int size = commitmentTypeIndications.size();
-			ASN1Encodable[] asn1Encodables = new ASN1Encodable[size];
-			for (int ii = 0; ii < size; ii++) {
+			final int size = commitmentTypeIndicationList.size();
+			final ASN1Encodable[] asn1Encodables = new ASN1Encodable[size];
+			int ii = 0;
+			for (final BLevelParameters.CommitmentTypeIndication commitmentTypeIndication : commitmentTypeIndicationList) {
 
-				final String commitmentTypeId = commitmentTypeIndications.get(ii);
+				final String commitmentTypeId = commitmentTypeIndication.getIdentifier();
 				final ASN1ObjectIdentifier objectIdentifier = new ASN1ObjectIdentifier(commitmentTypeId);
 				// final CommitmentTypeIndication commitmentTypeIndication = new CommitmentTypeIndication(objectIdentifier);
 				//				final ASN1Primitive asn1Primitive = commitmentTypeIndication.toASN1Primitive();
-				asn1Encodables[ii] = new DERSequence(objectIdentifier);
+				asn1Encodables[ii++] = new DERSequence(objectIdentifier);
 			}
 			final DERSet attrValues = new DERSet(asn1Encodables);
 			final Attribute attribute = new Attribute(id_aa_ets_commitmentType, attrValues);

@@ -31,6 +31,7 @@ import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.EncryptionAlgorithm;
 import eu.europa.ec.markt.dss.SignatureAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSNullException;
+import eu.europa.ec.markt.dss.signature.BLevelParameters;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.ProfileParameters;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
@@ -138,6 +139,7 @@ public class SignatureParameters implements Serializable {
 	 * The document to be signed
 	 */
 	private DSSDocument detachedContent;
+	private eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder XPathQueryHolder;
 
 	public SignatureParameters() {
 
@@ -367,20 +369,6 @@ public class SignatureParameters implements Serializable {
 	}
 
 	/**
-	 * Set the certificate chain
-	 *
-	 * @param certificateChain the {@code List} of {@code ChainCertificate}s
-	 */
-	public void setCertificateChain(final List<ChainCertificate> certificateChain) {
-
-		if (certificateChain != null) {
-			this.certificateChain = certificateChain;
-		} else {
-			this.certificateChain.clear();
-		}
-	}
-
-	/**
 	 * This method sets the list of certificates which constitute the chain. If the certificate is already present in the array then it is ignored.
 	 *
 	 * @param certificateChainArray the array containing all certificates composing the chain
@@ -399,6 +387,20 @@ public class SignatureParameters implements Serializable {
 					certificateChain.add(chainCertificate);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Set the certificate chain
+	 *
+	 * @param certificateChain the {@code List} of {@code ChainCertificate}s
+	 */
+	public void setCertificateChain(final List<ChainCertificate> certificateChain) {
+
+		if (certificateChain != null) {
+			this.certificateChain = certificateChain;
+		} else {
+			this.certificateChain.clear();
 		}
 	}
 
@@ -673,6 +675,19 @@ public class SignatureParameters implements Serializable {
 
 	public void setXPathLocationString(String xPathLocationString) {
 		this.xPathLocationString = xPathLocationString;
+	}
+
+	public XPathQueryHolder getXPathQueryHolder() {
+		return XPathQueryHolder;
+	}
+
+	/**
+	 * This method allows to set the {@code XPathQueryHolder} to be used when creating signatures.
+	 *
+	 * @param XPathQueryHolder {@code XPathQueryHolder} related to the signature schema to be used
+	 */
+	public void setXPathQueryHolder(XPathQueryHolder XPathQueryHolder) {
+		this.XPathQueryHolder = XPathQueryHolder;
 	}
 
 	public XPathQueryHolder getToCountersignXPathQueryHolder() {

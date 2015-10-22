@@ -16,6 +16,8 @@ public class XAdES111XPathQueryHolder extends XPathQueryHolder {
 
 		XADES_SIGNED_PROPERTIES = "http://uri.etsi.org/01903/v1.1.1#SignedProperties";
 
+		XADES_SIGNING_CERTIFICATE = "xades111:SigningCertificate";
+
 		XPATH_QUALIFYING_PROPERTIES = XPATH_OBJECT + "/xades111:QualifyingProperties";
 		XPATH__QUALIFYING_PROPERTIES = "./xades111:QualifyingProperties";
 

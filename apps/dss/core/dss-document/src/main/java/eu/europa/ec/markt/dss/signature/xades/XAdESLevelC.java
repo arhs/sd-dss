@@ -43,6 +43,7 @@ import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.InMemoryDocument;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
@@ -65,11 +66,12 @@ public class XAdESLevelC extends XAdESLevelBaselineT {
 	/**
 	 * The default constructor for XAdESLevelC.
 	 *
-	 * @throws javax.xml.datatype.DatatypeConfigurationException
+	 * @param parameters
+	 * @param certificateVerifier
 	 */
-	public XAdESLevelC(CertificateVerifier certificateVerifier) {
+	public XAdESLevelC(final SignatureParameters parameters, final CertificateVerifier certificateVerifier) {
 
-		super(certificateVerifier);
+		super(parameters, certificateVerifier);
 	}
 
 	private void incorporateCRLRefs(Element completeRevocationRefsDom, final Set<RevocationToken> processedRevocationTokens) throws DSSException {

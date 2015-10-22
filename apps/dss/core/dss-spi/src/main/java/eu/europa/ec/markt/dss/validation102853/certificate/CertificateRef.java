@@ -34,6 +34,7 @@ public class CertificateRef {
     private byte[] digestValue;
     private String issuerName;
     private String issuerSerial;
+	private byte[] IssuerSerialV2;
 
     /**
      * @return
@@ -91,9 +92,18 @@ public class CertificateRef {
         this.issuerSerial = issuerSerial;
     }
 
-    @Override
+	public byte[] getIssuerSerialV2() {
+		return IssuerSerialV2;
+	}
+
+	public void setIssuerSerialV2(byte[] issuerSerialV2) {
+		IssuerSerialV2 = issuerSerialV2;
+	}
+
+	@Override
     public String toString() {
 
-        return "CertificateRef[issuerName=" + issuerName + ",issuerSerial=" + issuerSerial + ",digest=" + DSSUtils.encodeHexString(digestValue) + "]";
+		// TODO-Bob (21/10/2015):  to be updated with V2
+		return "CertificateRef[issuerName=" + issuerName + ",issuerSerial=" + issuerSerial + ",digest=" + DSSUtils.encodeHexString(digestValue) + "]";
     }
 }

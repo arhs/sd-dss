@@ -56,7 +56,6 @@ import eu.europa.ec.markt.dss.validation102853.ValidationContext;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
 import eu.europa.ec.markt.dss.validation102853.xades.XAdESSignature;
 
-import static eu.europa.ec.markt.dss.DigestAlgorithm.MD5;
 import static eu.europa.ec.markt.dss.XAdESNamespaces.XAdES;
 import static eu.europa.ec.markt.dss.XAdESNamespaces.XAdES141;
 import static eu.europa.ec.markt.dss.signature.ProfileParameters.Operation.SIGNING;
@@ -82,10 +81,13 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 
 	/**
 	 * The default constructor for XAdESLevelBaselineT.
+	 *
+	 * @param parameters
+	 * @param certificateVerifier
 	 */
-	public XAdESLevelBaselineT(final CertificateVerifier certificateVerifier) {
+	public XAdESLevelBaselineT(final SignatureParameters parameters, final CertificateVerifier certificateVerifier) {
 
-		super(certificateVerifier);
+		super(parameters, certificateVerifier);
 	}
 
 	private void incorporateC14nMethod(final Element parentDom, final String signedInfoC14nMethod) {
@@ -261,13 +263,16 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 		try {
 
 			Element timeStampDom = null;
-			final TimestampParameters signatureTimestampParameters = params.getSignatureTimestampParameters();
-			DigestAlgorithm timestampDigestAlgorithm = signatureTimestampParameters.getDigestAlgorithm();
+			DigestAlgorithm timestampDigestAlgorithm = DigestAlgorithm.SHA256;
 			switch (timestampType) {
 
 				case SIGNATURE_TIMESTAMP:
 					// <xades:SignatureTimeStamp Id="time-stamp-1dee38c4-8388-40d1-8880-9eeda853fe60">
 					timeStampDom = DSSXMLUtils.addElement(documentDom, unsignedSignaturePropertiesDom, XAdES, XADES_SIGNATURE_TIME_STAMP);
+					final TimestampParameters signatureTimestampParameters = params.getSignatureTimestampParameters();
+					if (signatureTimestampParameters!=null) {
+						timestampDigestAlgorithm = signatureTimestampParameters.getDigestAlgorithm();
+					}
 					break;
 				case VALIDATION_DATA_REFSONLY_TIMESTAMP:
 					// timeStampDom = DSSXMLUtils.addElement(documentDom, unsignedSignaturePropertiesDom, XAdESNamespaces.XAdES, XADES_);
@@ -279,13 +284,24 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 				case ARCHIVE_TIMESTAMP:
 					// <xades141:ArchiveTimeStamp Id="time-stamp-a762ab0e-e05c-4cc8-a804-cf2c4ffb5516">
 					timeStampDom = DSSXMLUtils.addElement(documentDom, unsignedSignaturePropertiesDom, XAdES141, XADES141_ARCHIVE_TIME_STAMP);
-					timestampDigestAlgorithm = params.getArchiveTimestampParameters().getDigestAlgorithm();
+					final TimestampParameters archiveTimestampParameters = params.getArchiveTimestampParameters();
+					if (archiveTimestampParameters!=null) {
+						timestampDigestAlgorithm = archiveTimestampParameters.getDigestAlgorithm();
+					}
 					break;
 				case ALL_DATA_OBJECTS_TIMESTAMP:
 					timeStampDom = DSSXMLUtils.addElement(documentDom, signedDataObjectPropertiesDom, XAdES, XADES_ALL_DATA_OBJECTS_TIME_STAMP);
+					final TimestampParameters contentTimestampParameters = params.getContentTimestampParameters();
+					if (contentTimestampParameters!=null) {
+						timestampDigestAlgorithm = contentTimestampParameters.getDigestAlgorithm();
+					}
 					break;
 				case INDIVIDUAL_DATA_OBJECTS_TIMESTAMP:
 					timeStampDom = DSSXMLUtils.addElement(documentDom, signedDataObjectPropertiesDom, XAdES, XADES_INDIVIDUAL_DATA_OBJECTS_TIME_STAMP);
+					final TimestampParameters contentTimestampParameters_ = params.getContentTimestampParameters();
+					if (contentTimestampParameters_!=null) {
+						timestampDigestAlgorithm = contentTimestampParameters_.getDigestAlgorithm();
+					}
 					break;
 			}
 

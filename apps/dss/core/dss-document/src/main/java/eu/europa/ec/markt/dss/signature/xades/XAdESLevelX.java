@@ -26,6 +26,7 @@ import org.w3c.dom.NodeList;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.parameter.TimestampParameters;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
@@ -44,9 +45,9 @@ public class XAdESLevelX extends XAdESLevelC {
     /**
      * The default constructor for XAdESLevelX.
      */
-    public XAdESLevelX(CertificateVerifier certificateVerifier) {
+    public XAdESLevelX(final SignatureParameters parameters, final CertificateVerifier certificateVerifier) {
 
-        super(certificateVerifier);
+        super(parameters, certificateVerifier);
     }
 
     /**

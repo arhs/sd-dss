@@ -30,6 +30,7 @@ import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.SignatureLevel;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
@@ -52,9 +53,9 @@ public class XAdESLevelXL extends XAdESLevelX {
 	/**
 	 * The default constructor for XAdESLevelXL.
 	 */
-	public XAdESLevelXL(final CertificateVerifier certificateVerifier) {
+	public XAdESLevelXL(final SignatureParameters parameters, final CertificateVerifier certificateVerifier) {
 
-		super(certificateVerifier);
+		super(parameters, certificateVerifier);
 	}
 
 	/**

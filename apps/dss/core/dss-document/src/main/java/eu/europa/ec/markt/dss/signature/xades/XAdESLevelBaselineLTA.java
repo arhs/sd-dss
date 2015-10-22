@@ -33,6 +33,7 @@ import eu.europa.ec.markt.dss.DSSXMLUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.XAdESNamespaces;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.parameter.TimestampParameters;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
@@ -53,9 +54,9 @@ public class XAdESLevelBaselineLTA extends XAdESLevelBaselineLT {
 	/**
 	 * The default constructor for XAdESLevelBaselineLTA.
 	 */
-	public XAdESLevelBaselineLTA(final CertificateVerifier certVerifier) {
+	public XAdESLevelBaselineLTA(final SignatureParameters parameters, final CertificateVerifier certVerifier) {
 
-		super(certVerifier);
+		super(parameters, certVerifier);
 	}
 
 	/**

@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
+import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.parameter.TimestampParameters;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.TimestampType;
@@ -43,9 +44,9 @@ public class XAdESLevelA extends XAdESLevelXL {
 	/**
 	 * The default constructor for XAdESLevelA.
 	 */
-	public XAdESLevelA(CertificateVerifier certificateVerifier) {
+	public XAdESLevelA(final SignatureParameters parameters, final CertificateVerifier certificateVerifier) {
 
-		super(certificateVerifier);
+		super(parameters, certificateVerifier);
 	}
 
 	/**
