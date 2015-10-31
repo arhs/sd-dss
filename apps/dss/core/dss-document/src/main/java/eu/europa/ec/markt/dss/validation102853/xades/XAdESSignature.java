@@ -108,8 +108,10 @@ import eu.europa.ec.markt.dss.validation102853.toolbox.XPointerResourceResolver;
 
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_ALGORITHM;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_REFS_ONLY_TIME_STAMP;
+import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_REFS_ONLY_TIME_STAMP_V2;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIGNATURE_TIME_STAMP;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIG_AND_REFS_TIME_STAMP;
+import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XMLE_SIG_AND_REFS_TIME_STAMP_V2;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XPATH__CERT;
 import static eu.europa.ec.markt.dss.validation102853.xades.XPathQueryHolder.XPATH__CERT_REFS;
 
@@ -660,7 +662,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public List<CertifiedRole> getCertifiedSignerRoles() throws IOException {
+	public List<CertifiedRole> getCertifiedSignerRoles(){
 
 		NodeList nodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_CERTIFIED_ROLE);
 		if (nodeList.getLength() == 0) {
@@ -676,7 +678,12 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			final String textContent = item.getTextContent().trim();
 			final byte[] bytes = DSSUtils.base64Decode(textContent);
 
-			final X509AttributeCertificateHolder x509AttributeCertificateHolder = new X509AttributeCertificateHolder(bytes);
+			final X509AttributeCertificateHolder x509AttributeCertificateHolder;
+			try {
+				x509AttributeCertificateHolder = new X509AttributeCertificateHolder(bytes);
+			} catch (IOException e) {
+				throw new DSSException(e);
+			}
 			final CertifiedRole certifiedRole = new CertifiedRole();
 			certifiedRole.setNotBefore(x509AttributeCertificateHolder.getNotBefore());
 			certifiedRole.setNotAfter(x509AttributeCertificateHolder.getNotAfter());
@@ -1158,7 +1165,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				}
 				timestampToken.setTimestampedReferences(getSignatureTimestampedReferences());
 				signatureTimestamps.add(timestampToken);
-			} else if (XMLE_REFS_ONLY_TIME_STAMP.equals(localName)) {
+			} else if (XMLE_REFS_ONLY_TIME_STAMP.equals(localName) || XMLE_REFS_ONLY_TIME_STAMP_V2.equals(localName)) {
 
 				timestampToken = makeTimestampToken((Element) node, TimestampType.VALIDATION_DATA_REFSONLY_TIMESTAMP);
 				if (timestampToken == null) {
@@ -1166,7 +1173,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				}
 				timestampToken.setTimestampedReferences(getTimestampedReferences());
 				refsOnlyTimestamps.add(timestampToken);
-			} else if (XMLE_SIG_AND_REFS_TIME_STAMP.equals(localName)) {
+			} else if (XMLE_SIG_AND_REFS_TIME_STAMP.equals(localName) || XMLE_SIG_AND_REFS_TIME_STAMP_V2.equals(localName)) {
 
 				timestampToken = makeTimestampToken((Element) node, TimestampType.VALIDATION_DATA_TIMESTAMP);
 				if (timestampToken == null) {
@@ -1445,12 +1452,12 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 			StackTraceElement[] stackTrace = e.getStackTrace();
 			final String name = XAdESSignature.class.getName();
 			int lineNumber = 0;
-			for (int ii = 0; ii < stackTrace.length; ii++) {
+			for (StackTraceElement element : stackTrace) {
 
-				final String className = stackTrace[ii].getClassName();
+				final String className = element.getClassName();
 				if (className.equals(name)) {
 
-					lineNumber = stackTrace[ii].getLineNumber();
+					lineNumber = element.getLineNumber();
 					break;
 				}
 			}
@@ -1658,9 +1665,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 				final String xmlName = digestAlgorithmEl.getAttribute(XMLE_ALGORITHM);
 				final DigestAlgorithm digestAlgorithm = DigestAlgorithm.forXML(xmlName);
 
-				final CRLRef ref = new CRLRef();
-				ref.setDigestAlgorithm(digestAlgorithm);
-				ref.setDigestValue(DSSUtils.base64Decode(digestValueEl.getTextContent()));
+				final CRLRef ref = new CRLRef(digestAlgorithm, DSSUtils.base64Decode(digestValueEl.getTextContent()));
 				crlRefList.add(ref);
 			}
 		}

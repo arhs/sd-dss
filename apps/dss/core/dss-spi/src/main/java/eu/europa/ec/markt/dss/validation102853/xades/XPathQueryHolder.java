@@ -46,7 +46,9 @@ public class XPathQueryHolder implements Serializable {
 	public static final String XMLE_ARCHIVE_TIME_STAMP_V2 = "ArchiveTimeStampV2";
 	public static final String XMLE_SIGNATURE_TIME_STAMP = "SignatureTimeStamp";
 	public static final String XMLE_REFS_ONLY_TIME_STAMP = "RefsOnlyTimeStamp";
+	public static final String XMLE_REFS_ONLY_TIME_STAMP_V2 = "RefsOnlyTimeStampV2";
 	public static final String XMLE_SIG_AND_REFS_TIME_STAMP = "SigAndRefsTimeStamp";
+	public static final String XMLE_SIG_AND_REFS_TIME_STAMP_V2 = "SigAndRefsTimeStampV2";
 
 	public final static String XPATH_OBJECT = "./ds:Object";
 	public final static String XPATH__CERT = "./xades:Cert";
@@ -135,7 +137,7 @@ public class XPathQueryHolder implements Serializable {
 	public String XPATH_COMPLETE_REVOCATION_REFS = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + "/xades:CompleteRevocationRefs";
 	public final String XPATH_COUNT_COMPLETE_REVOCATION_REFS = "count(" + XPATH_COMPLETE_REVOCATION_REFS + ")";
 	public String XPATH_OCSP_REFS = XPATH_COMPLETE_REVOCATION_REFS + "/xades:OCSPRefs";
-	public String XPATH_SIG_AND_REFS_TIMESTAMP = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + "/xades:" + XMLE_SIG_AND_REFS_TIME_STAMP;
+	public String XPATH_SIG_AND_REFS_TIMESTAMP = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + "/*[self::xades:SigAndRefsTimeStamp or self::xades141:SigAndRefsTimeStampV2]";
 	// Level -X
 	public final String XPATH_COUNT_SIG_AND_REFS_TIMESTAMP = "count(" + XPATH_SIG_AND_REFS_TIMESTAMP + ")";
 	public String XPATH_CERTIFICATE_VALUES = XPATH_UNSIGNED_SIGNATURE_PROPERTIES + XPATH_CV;

@@ -86,7 +86,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
-import eu.europa.ec.markt.dss.exception.DSSNullException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.utils.XsdResourceResolver;
 
@@ -1022,9 +1021,8 @@ public final class DSSXMLUtils {
 	 * @param namespace  the namespace to take into account
 	 * @param tagName    the tagName of the element to find
 	 * @return the {@code Element} or {@code null} when not found
-	 * //	 * @throws DSSNullException
 	 */
-	public static Element getElementById(Document currentDom, String elementId, String namespace, String tagName) /*throws DSSNullException*/ {
+	public static Element getElementById(Document currentDom, String elementId, String namespace, String tagName) {
 
 		NodeList nodes = currentDom.getElementsByTagNameNS(namespace, tagName);
 
@@ -1042,16 +1040,14 @@ public final class DSSXMLUtils {
 	}
 
 	/**
-	 * This method retrieves an element based on its {@code elementId}, {@code namespace} and {@code tagName}. If more than one element has an ID attribute with that value, what
-	 * is
-	 * returned is undefined.
+	 * This method retrieves an element based on its {@code elementId}, {@code namespace} and {@code tagName}. If more than one element has an ID attribute with that value then
+	 * what is returned is undefined.
 	 *
 	 * @param currentDom the DOM in which the element has to be retrieved
 	 * @param elementId  the specified ID
 	 * @return the {@code Element} or {@code null} when not found
-	 * @throws DSSNullException
 	 */
-	public static Element getElementById(final Document currentDom, final String elementId) throws DSSNullException {
+	public static Element getElementById(final Document currentDom, final String elementId) {
 
 		final Element element = currentDom.getElementById(elementId);
 		return element;

@@ -46,126 +46,114 @@ import eu.europa.ec.markt.dss.exception.DSSException;
 
 public class CRLRef {
 
-    private X500Name crlIssuer;
-    private Date crlIssuedTime;
-    private BigInteger crlNumber;
-    private DigestAlgorithm digestAlgorithm;
-    private byte[] digestValue;
+	private X500Name crlIssuer;
+	private Date crlIssuedTime;
+	private BigInteger crlNumber;
+	private DigestAlgorithm digestAlgorithm;
+	private byte[] digestValue;
 
-    /**
-     * The default constructor for CRLRef.
-     */
-    public CRLRef() {
-    }
+	/**
+	 * The default constructor for CRLRef.
+	 */
+	public CRLRef(DigestAlgorithm digestAlgorithm, byte[] digestValue) {
+		this.digestAlgorithm = digestAlgorithm;
+		this.digestValue = digestValue;
+	}
 
-    /**
-     * The default constructor for CRLRef.
-     *
-     * @param cmsRef
-     * @throws ParseException
-     */
-    public CRLRef(CrlValidatedID cmsRef) {
-        try {
+	/**
+	 * The default constructor for CRLRef.
+	 *
+	 * @param cmsRef
+	 * @throws ParseException
+	 */
+	public CRLRef(CrlValidatedID cmsRef) {
+		try {
 
-            final CrlIdentifier crlIdentifier = cmsRef.getCrlIdentifier();
-            if (crlIdentifier != null) {
-                crlIssuer = crlIdentifier.getCrlIssuer();
-                crlIssuedTime = crlIdentifier.getCrlIssuedTime().getDate();
-                crlNumber = crlIdentifier.getCrlNumber();
-            }
-            final OtherHash crlHash = cmsRef.getCrlHash();
+			final CrlIdentifier crlIdentifier = cmsRef.getCrlIdentifier();
+			if (crlIdentifier != null) {
+				crlIssuer = crlIdentifier.getCrlIssuer();
+				crlIssuedTime = crlIdentifier.getCrlIssuedTime().getDate();
+				crlNumber = crlIdentifier.getCrlNumber();
+			}
+			final OtherHash crlHash = cmsRef.getCrlHash();
 
-            digestAlgorithm = DigestAlgorithm.forOID(crlHash.getHashAlgorithm().getAlgorithm());
-            digestValue = crlHash.getHashValue();
-        } catch (ParseException ex) {
-            throw new DSSException(ex);
-        }
-    }
+			digestAlgorithm = DigestAlgorithm.forOID(crlHash.getHashAlgorithm().getAlgorithm());
+			digestValue = crlHash.getHashValue();
+		} catch (ParseException ex) {
+			throw new DSSException(ex);
+		}
+	}
 
-    /**
-     * @param crl
-     * @return
-     */
-    public boolean match(X509CRL crl) {
-        try {
-            MessageDigest digest = DSSUtils.getMessageDigest(digestAlgorithm);
-            byte[] computedValue = digest.digest(crl.getEncoded());
-            return Arrays.equals(digestValue, computedValue);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new DSSException("Maybe BouncyCastle provider is not installed ?", ex);
-        } catch (CRLException ex) {
-            throw new DSSException(ex);
-        }
-    }
+	/**
+	 * @param crl
+	 * @return
+	 */
+	public boolean match(X509CRL crl) {
+		try {
+			MessageDigest digest = DSSUtils.getMessageDigest(digestAlgorithm);
+			byte[] computedValue = digest.digest(crl.getEncoded());
+			return Arrays.equals(digestValue, computedValue);
+		} catch (NoSuchAlgorithmException ex) {
+			throw new DSSException("Maybe BouncyCastle provider is not installed ?", ex);
+		} catch (CRLException ex) {
+			throw new DSSException(ex);
+		}
+	}
 
-    /**
-     * @return
-     */
-    public X500Name getCrlIssuer() {
-        return crlIssuer;
-    }
+	/**
+	 * @return
+	 */
+	public X500Name getCrlIssuer() {
+		return crlIssuer;
+	}
 
-    /**
-     * @param crlIssuer
-     */
-    public void setCrlIssuer(X500Name crlIssuer) {
-        this.crlIssuer = crlIssuer;
-    }
+	/**
+	 * @param crlIssuer
+	 */
+	public void setCrlIssuer(X500Name crlIssuer) {
+		this.crlIssuer = crlIssuer;
+	}
 
-    /**
-     * @return
-     */
-    public Date getCrlIssuedTime() {
-        return crlIssuedTime;
-    }
+	/**
+	 * @return
+	 */
+	public Date getCrlIssuedTime() {
+		return crlIssuedTime;
+	}
 
-    /**
-     * @param crlIssuedTime
-     */
-    public void setCrlIssuedTime(Date crlIssuedTime) {
-        this.crlIssuedTime = crlIssuedTime;
-    }
+	/**
+	 * @param crlIssuedTime
+	 */
+	public void setCrlIssuedTime(Date crlIssuedTime) {
+		this.crlIssuedTime = crlIssuedTime;
+	}
 
-    /**
-     * @return
-     */
-    public BigInteger getCrlNumber() {
-        return crlNumber;
-    }
+	/**
+	 * @return
+	 */
+	public BigInteger getCrlNumber() {
+		return crlNumber;
+	}
 
-    /**
-     * @param crlNumber
-     */
-    public void setCrlNumber(BigInteger crlNumber) {
-        this.crlNumber = crlNumber;
-    }
+	/**
+	 * @param crlNumber
+	 */
+	public void setCrlNumber(BigInteger crlNumber) {
+		this.crlNumber = crlNumber;
+	}
 
-    /**
-     * @return
-     */
-    public DigestAlgorithm getDigestAlgorithm() {
-        return digestAlgorithm;
-    }
+	/**
+	 * @return
+	 */
+	public DigestAlgorithm getDigestAlgorithm() {
+		return digestAlgorithm;
+	}
 
-    /**
-     * @param digestAlgorithm
-     */
-    public void setDigestAlgorithm(DigestAlgorithm digestAlgorithm) {
-        this.digestAlgorithm = digestAlgorithm;
-    }
-
-    /**
-     * @return
-     */
-    public byte[] getDigestValue() {
-        return digestValue;
-    }
-
-    /**
-     * @param digestValue
-     */
-    public void setDigestValue(byte[] digestValue) {
-        this.digestValue = digestValue;
-    }
+	/**
+	 * @return
+	 */
+	public byte[] getDigestValue() {
+		return digestValue;
+	}
 
 }

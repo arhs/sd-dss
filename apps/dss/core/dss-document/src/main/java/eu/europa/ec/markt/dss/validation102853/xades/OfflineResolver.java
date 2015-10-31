@@ -16,6 +16,7 @@
  */
 package eu.europa.ec.markt.dss.validation102853.xades;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -121,9 +122,9 @@ public class OfflineResolver extends ResourceResolverSpi {
 
 	private String decodeUrl(String documentUri) {
 		try {
-			documentUri = URLDecoder.decode(documentUri, "UTF-8");
+			return URLDecoder.decode(documentUri, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
+			LOG.error(e.getMessage(), e);
 		}
 		return documentUri;
 	}
@@ -144,10 +145,9 @@ public class OfflineResolver extends ResourceResolverSpi {
 			// TODO-Bob (05/09/2014):  There is an error concerning the input streams base64 encoded. Some extra bytes are added within the santuario which breaks the HASH.
 			// TODO-Vin (05/09/2014): Can you create an isolated test-case JIRA DSS-?
 			InputStream inputStream = document.openStream();
-			//
 			final byte[] bytes = DSSUtils.toByteArray(inputStream);
 			//				System.out.println("####: " + DSSUtils.base64Encode(bytes));
-			inputStream = DSSUtils.toInputStream(bytes);
+			inputStream = new ByteArrayInputStream(bytes);
 			//
 			final XMLSignatureInput result = new XMLSignatureInput(inputStream);
 			result.setSourceURI(documentUri);

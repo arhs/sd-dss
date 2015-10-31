@@ -49,8 +49,6 @@ import eu.europa.ec.markt.dss.validation102853.policy.ValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.process.ValidationXPathQueryHolder;
 import eu.europa.ec.markt.dss.validation102853.processes.dss.InvolvedServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.rules.AttributeName;
-import eu.europa.ec.markt.dss.validation102853.rules.NodeName;
-import eu.europa.ec.markt.dss.validation102853.rules.SubIndication;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlDom;
 import eu.europa.ec.markt.dss.validation102853.xml.XmlNode;
 
@@ -60,8 +58,29 @@ import static eu.europa.ec.markt.dss.validation102853.rules.AttributeValue.COUNT
 import static eu.europa.ec.markt.dss.validation102853.rules.Indication.INDETERMINATE;
 import static eu.europa.ec.markt.dss.validation102853.rules.Indication.INVALID;
 import static eu.europa.ec.markt.dss.validation102853.rules.Indication.VALID;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.DOCUMENT_NAME;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.ERROR;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.GLOBAL;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.INDICATION;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.INFO;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.POLICY;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.POLICY_DESCRIPTION;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.POLICY_NAME;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.PRODUCTION_TIME;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNATURE;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNATURES_COUNT;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNATURE_FORMAT;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNATURE_LEVEL;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNED_BY;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNING_TIME;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIMPLE_REPORT;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SUB_INDICATION;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.TIMESTAMP;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.TIMESTAMPS;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.VALIDATION_TIME;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.VALID_SIGNATURES_COUNT;
 import static eu.europa.ec.markt.dss.validation102853.rules.SubIndication.SOME_NOT_VALID_SIGNATURES;
+import static eu.europa.ec.markt.dss.validation102853.rules.SubIndication.UNEXPECTED_ERROR;
 
 /**
  * This class builds a SimpleReport XmlDom from the diagnostic data and detailed validation report.
@@ -99,13 +118,13 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 		LOG.error(exception.getMessage(), exception);
 
 		signatureNode.removeChild(INDICATION);
-		signatureNode.removeChild(NodeName.SUB_INDICATION);
+		signatureNode.removeChild(SUB_INDICATION);
 
 		signatureNode.addChild(INDICATION, INDETERMINATE);
-		signatureNode.addChild(NodeName.SUB_INDICATION, SubIndication.UNEXPECTED_ERROR);
+		signatureNode.addChild(SUB_INDICATION, UNEXPECTED_ERROR);
 
 		final String message = DSSUtils.getSummaryMessage(exception, SimpleReportBuilder.class);
-		signatureNode.addChild(NodeName.INFO, message);
+		signatureNode.addChild(INFO, message);
 	}
 
 	/**
@@ -116,7 +135,7 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 	 */
 	public SimpleReport build(final ProcessParameters params) {
 
-		final XmlNode simpleReport = new XmlNode(NodeName.SIMPLE_REPORT);
+		final XmlNode simpleReport = new XmlNode(SIMPLE_REPORT);
 		simpleReport.setNameSpace(XmlDom.NAMESPACE);
 
 		try {
@@ -143,25 +162,25 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 
 	private void addPolicyNode(final XmlNode report) {
 
-		final XmlNode policyNode = report.addChild(NodeName.POLICY);
+		final XmlNode policyNode = report.addChild(POLICY);
 		final String policyName = constraintData.getPolicyName();
 		final String policyDescription = constraintData.getPolicyDescription();
-		policyNode.addChild(NodeName.POLICY_NAME, policyName);
+		policyNode.addChild(POLICY_NAME, policyName);
 		if (!policyDescription.isEmpty()) {
-			policyNode.addChild(NodeName.POLICY_DESCRIPTION, policyDescription);
+			policyNode.addChild(POLICY_DESCRIPTION, policyDescription);
 		}
 	}
 
 	private void addValidationTime(final ProcessParameters params, final XmlNode report) {
 
 		final Date validationTime = params.getCurrentTime();
-		report.addChild(NodeName.VALIDATION_TIME, DSSUtils.formatDate(validationTime));
+		report.addChild(VALIDATION_TIME, DSSUtils.formatDate(validationTime));
 	}
 
 	private void addDocumentsName(final XmlNode report) {
 
 		final String documentName = diagnosticData.getValue("/DiagnosticData/DocumentName/text()");
-		report.addChild(NodeName.DOCUMENT_NAME, documentName);
+		report.addChild(DOCUMENT_NAME, documentName);
 
 //		final List<XmlDom> detachedDocumentNameList = diagnosticData.getElements("/DiagnosticData/DetachedContents/DocumentName");
 //		if (detachedDocumentNameList.size() > 0) {
@@ -188,19 +207,19 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 
 	private void addGlobalResult(final ProcessParameters params, XmlNode reportXmlNode) {
 
-		final XmlNode globalXmlNode = reportXmlNode.addChild(NodeName.GLOBAL);
+		final XmlNode globalXmlNode = reportXmlNode.addChild(GLOBAL);
 		final Conclusion generalStructureConclusion = params.getGeneralStructureConclusion();
 		final String generalStructureIndication = generalStructureConclusion.getIndication();
 		if (!VALID.equals(generalStructureIndication)) {
 
 			globalXmlNode.addChild(INDICATION, generalStructureIndication);
 			final String generalStructureSubIndication = generalStructureConclusion.getSubIndication();
-			globalXmlNode.addChild(NodeName.SUB_INDICATION, generalStructureSubIndication);
+			globalXmlNode.addChild(SUB_INDICATION, generalStructureSubIndication);
 
 			final List<Conclusion.Error> errorList = generalStructureConclusion.getErrorList();
 			for (final Conclusion.Error error : errorList) {
 
-				final XmlNode xmlNode = globalXmlNode.addChild(NodeName.ERROR, error.getValue());
+				final XmlNode xmlNode = globalXmlNode.addChild(ERROR, error.getValue());
 				final HashMap<String, String> attributes = error.getAttributes();
 				for (Map.Entry<String, String> attribute : attributes.entrySet()) {
 					xmlNode.setAttribute(attribute.getKey(), attribute.getValue());
@@ -219,13 +238,13 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 				}
 			}
 			if (signatureSubIndicationSet.size() == 1) {
-				globalXmlNode.addChild(NodeName.SUB_INDICATION, (String) signatureSubIndicationSet.toArray()[0]);
+				globalXmlNode.addChild(SUB_INDICATION, (String) signatureSubIndicationSet.toArray()[0]);
 			} else if (signatureSubIndicationSet.size() > 1) {
-				globalXmlNode.addChild(NodeName.SUB_INDICATION, SOME_NOT_VALID_SIGNATURES);
+				globalXmlNode.addChild(SUB_INDICATION, SOME_NOT_VALID_SIGNATURES);
 			}
 		}
-		globalXmlNode.addChild(NodeName.VALID_SIGNATURES_COUNT, Integer.toString(validSignatureCount));
-		globalXmlNode.addChild(NodeName.SIGNATURES_COUNT, Integer.toString(totalSignatureCount));
+		globalXmlNode.addChild(VALID_SIGNATURES_COUNT, Integer.toString(validSignatureCount));
+		globalXmlNode.addChild(SIGNATURES_COUNT, Integer.toString(totalSignatureCount));
 	}
 
 	/**
@@ -238,7 +257,7 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 
 		totalSignatureCount++;
 
-		final XmlNode signatureXmlNode = reportXmlNode.addChild(NodeName.SIGNATURE);
+		final XmlNode signatureXmlNode = reportXmlNode.addChild(SIGNATURE);
 
 		final String signatureId = signatureXmlDom.getAttribute(ID);
 		signatureXmlNode.setAttribute(ID, signatureId);
@@ -299,14 +318,14 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 			if (!subIndication.isEmpty()) {
 
 				signatureIndicationSet.add(subIndication);
-				signatureXmlNode.addChild(NodeName.SUB_INDICATION, subIndication);
+				signatureXmlNode.addChild(SUB_INDICATION, subIndication);
 			}
 			final List<XmlDom> errorMessages = signatureXmlDom.getElements("./ErrorMessage");
 			for (XmlDom errorDom : errorMessages) {
 
 				String errorMessage = errorDom.getText();
 				errorMessage = StringEscapeUtils.escapeXml(errorMessage);
-				final XmlNode xmlNode = new XmlNode(NodeName.INFO, errorMessage); // Internal exceptions are handled as Info
+				final XmlNode xmlNode = new XmlNode(INFO, errorMessage); // Internal exceptions are handled as Info
 				final XmlDom xmlDom = xmlNode.toXmlDom();
 				infoList.add(xmlDom);
 			}
@@ -338,13 +357,13 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 		if (timestamps.isEmpty()) {
 			return;
 		}
-		final XmlNode timestampsXmlNode = signatureNode.addChild(NodeName.TIMESTAMPS);
+		final XmlNode timestampsXmlNode = signatureNode.addChild(TIMESTAMPS);
 		for (final XmlDom timestamp : timestamps) {
 
 			final String attributeValue = timestamp.getAttribute(AttributeName.TYPE);
-			final XmlNode timestampXmlNode = timestampsXmlNode.addChild(NodeName.TIMESTAMP).setAttribute(AttributeName.TYPE, attributeValue);
+			final XmlNode timestampXmlNode = timestampsXmlNode.addChild(TIMESTAMP).setAttribute(AttributeName.TYPE, attributeValue);
 			final String productionTime = timestamp.getValue("./ProductionTime/text()");
-			timestampXmlNode.addChild(NodeName.PRODUCTION_TIME, productionTime);
+			timestampXmlNode.addChild(PRODUCTION_TIME, productionTime);
 			// TODO-Bob (10/10/2015):  Uncomment for OPOCE
 			//			final String timestampSigningCertificateId = timestamp.getValue("./SigningCertificate/@Id");
 			//			final XmlDom signCertificate = params.getCertificate(timestampSigningCertificateId);
@@ -388,11 +407,11 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 	}
 
 	private void addSigningTime(final XmlDom diagnosticSignature, final XmlNode signatureNode) {
-		signatureNode.addChild(NodeName.SIGNING_TIME, diagnosticSignature.getValue("./DateTime/text()"));
+		signatureNode.addChild(SIGNING_TIME, diagnosticSignature.getValue("./DateTime/text()"));
 	}
 
 	private void addSignatureFormat(final XmlDom diagnosticSignature, final XmlNode signatureNode) {
-		signatureNode.setAttribute(NodeName.SIGNATURE_FORMAT, diagnosticSignature.getValue("./SignatureFormat/text()"));
+		signatureNode.setAttribute(SIGNATURE_FORMAT, diagnosticSignature.getValue("./SignatureFormat/text()"));
 	}
 
 	private void addSignedBy(final XmlNode signatureNode, final XmlDom signCert) {
@@ -417,7 +436,7 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 				}
 			}
 		}
-		signatureNode.addChild(NodeName.SIGNED_BY, signedBy);
+		signatureNode.addChild(SIGNED_BY, signedBy);
 		// TODO-Bob (10/10/2015):  Uncomment for OPOCE
 		//		final String escapedSdnString = StringEscapeUtils.escapeXml(sdnString);
 		//		signatureNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, escapedSdnString);
@@ -437,7 +456,7 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 
 			signatureType = getSignatureType(signCert);
 		}
-		signatureNode.addChild(NodeName.SIGNATURE_LEVEL, signatureType.name());
+		signatureNode.addChild(SIGNATURE_LEVEL, signatureType.name());
 	}
 
 	/**

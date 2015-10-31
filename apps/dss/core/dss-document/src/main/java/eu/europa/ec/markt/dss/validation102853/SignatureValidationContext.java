@@ -54,7 +54,7 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
  * During the validation of a signature, the software retrieves different X509 artifacts like Certificate, CRL and OCSP Response. The SignatureValidationContext is a "cache" for
  * one validation request that contains every object retrieved so far.
  * <p/>
- *
+ * <p/>
  * The validate method is multi-threaded, using an CachedThreadPool from ExecutorService, to parallelize fetching of the certificates from AIA and of the revocation information
  * from online sources.
  * <p/>
@@ -66,7 +66,7 @@ import eu.europa.ec.markt.dss.validation102853.ocsp.OCSPSource;
 
 public class SignatureValidationContext implements ValidationContext {
 
-	private static final Logger LOG = LoggerFactory.getLogger(SignatureValidationContext.class);
+	private static final Logger logger = LoggerFactory.getLogger(SignatureValidationContext.class);
 	/**
 	 * The delay used to wait for the thread execution in the loop
 	 */
@@ -76,7 +76,7 @@ public class SignatureValidationContext implements ValidationContext {
 	 */
 	public static int MAX_TIMEOUT = 5;
 	// just for convenience
-	private final boolean logEnabled = LOG.isTraceEnabled();
+	private final boolean logEnabled = logger.isTraceEnabled();
 	private final Map<CertificateToken, Boolean> processedCertificates = new ConcurrentHashMap<CertificateToken, Boolean>();
 	private final Map<RevocationToken, Boolean> processedRevocations = new ConcurrentHashMap<RevocationToken, Boolean>();
 	private final Map<TimestampToken, Boolean> processedTimestamps = new ConcurrentHashMap<TimestampToken, Boolean>();
@@ -182,18 +182,18 @@ public class SignatureValidationContext implements ValidationContext {
 	private CertificateToken getIssuerCertificate(final Token token) throws DSSException {
 
 		if (logEnabled) {
-			LOG.trace(" > Get issuer for: {}", token.getAbbreviation());
+			logger.trace(" > Get issuer for: {}", token.getAbbreviation());
 		}
 		if (token.isTrusted()) {
 			if (logEnabled) {
-				LOG.trace(" > Token is trusted: {}", token.getAbbreviation());
+				logger.trace(" > Token is trusted: {}", token.getAbbreviation());
 			}
 			return null; // When the token is trusted the check of the issuer token is not needed so null is returned. Only a certificate token can be trusted.
 		}
 		if (token.getIssuerToken() != null) {
 
 			if (logEnabled) {
-				LOG.trace(" > Token has already an issuer: {}", token.getAbbreviation());
+				logger.trace(" > Token has already an issuer: {}", token.getAbbreviation());
 			}
 			/**
 			 * The signer's certificate have been found already. This can happen in the case of:<br>
@@ -211,7 +211,7 @@ public class SignatureValidationContext implements ValidationContext {
 		if (issuerCertificateToken == null) {
 
 			if (logEnabled) {
-				LOG.trace(" > Issuer not found: {}", token.getAbbreviation());
+				logger.trace(" > Issuer not found: {}", token.getAbbreviation());
 			}
 			token.extraInfo().infoTheSigningCertNotFound();
 		}
@@ -232,24 +232,24 @@ public class SignatureValidationContext implements ValidationContext {
 		final X509Certificate issuerCert;
 		try {
 
-			LOG.debug("Retrieving {} certificate's issuer using AIA.", token.getAbbreviation());
+			logger.debug("Retrieving {} certificate's issuer using AIA.", token.getAbbreviation());
 			issuerCert = DSSUtils.loadIssuerCertificate(token.getCertificate(), dataLoader);
 			if (issuerCert != null) {
 
 				final CertificateToken issuerCertToken = validationCertificatePool.getInstance(issuerCert, CertificateSourceType.AIA);
 				if (token.isSignedBy(issuerCertToken)) {
 
-					if (LOG.isDebugEnabled()) {
-						LOG.debug(" > Issuer found in AIA: {}", token.getAbbreviation());
+					if (logger.isDebugEnabled()) {
+						logger.debug(" > Issuer found in AIA: {}", token.getAbbreviation());
 					}
 					return issuerCertToken;
 				}
-				LOG.warn("The retrieved certificate using AIA does not sign the certificate {}!", token.getAbbreviation());
+				logger.warn("The retrieved certificate using AIA does not sign the certificate {}!", token.getAbbreviation());
 			} else {
-				LOG.warn("The issuer certificate cannot be loaded using AIA!");
+				logger.warn("The issuer certificate cannot be loaded using AIA!");
 			}
 		} catch (DSSException e) {
-			LOG.error(e.getMessage());
+			logger.error(e.getMessage());
 		}
 		return null;
 	}
@@ -271,28 +271,12 @@ public class SignatureValidationContext implements ValidationContext {
 			if (token.isSignedBy(issuerCertToken)) {
 
 				if (logEnabled) {
-					LOG.trace(" > Issuer found in the validation pool: {}", token.getAbbreviation());
+					logger.trace(" > Issuer found in the validation pool: {}", token.getAbbreviation());
 				}
 				return issuerCertToken;
 			}
 		}
 		return null;
-	}
-
-	@Override
-	public void addCertificateTokenForVerification(final CertificateToken certificateToken) {
-
-		if (tokensToProcess.put(certificateToken)) {
-
-			final Boolean added = processedCertificates.put(certificateToken, true);
-			if (logEnabled) {
-				if (added == null) {
-					LOG.trace("CertificateToken added to processedCertificates: {} ", certificateToken.getAbbreviation());
-				} else {
-					LOG.trace("CertificateToken already present processedCertificates: {} ", certificateToken.getAbbreviation());
-				}
-			}
-		}
 	}
 
 	@Override
@@ -303,9 +287,25 @@ public class SignatureValidationContext implements ValidationContext {
 			final Boolean added = processedRevocations.put(revocationToken, true);
 			if (logEnabled) {
 				if (added == null) {
-					LOG.trace("RevocationToken added to processedRevocations: {} ", revocationToken.getAbbreviation());
+					logger.trace("RevocationToken added to processedRevocations: {} ", revocationToken.getAbbreviation());
 				} else {
-					LOG.trace("RevocationToken already present processedRevocations: {} ", revocationToken.getAbbreviation());
+					logger.trace("RevocationToken already present processedRevocations: {} ", revocationToken.getAbbreviation());
+				}
+			}
+		}
+	}
+
+	@Override
+	public void addCertificateTokenForVerification(final CertificateToken certificateToken) {
+
+		if (tokensToProcess.put(certificateToken)) {
+
+			final Boolean added = processedCertificates.put(certificateToken, true);
+			if (logEnabled) {
+				if (added == null) {
+					logger.trace("CertificateToken added to processedCertificates: {} ", certificateToken.getAbbreviation());
+				} else {
+					logger.trace("CertificateToken already present processedCertificates: {} ", certificateToken.getAbbreviation());
 				}
 			}
 		}
@@ -319,9 +319,9 @@ public class SignatureValidationContext implements ValidationContext {
 			final Boolean added = processedTimestamps.put(timestampToken, true);
 			if (logEnabled) {
 				if (added == null) {
-					LOG.trace("TimestampToken added to processedTimestamps: {} ", timestampToken.getAbbreviation());
+					logger.trace("TimestampToken added to processedTimestamps: {} ", timestampToken.getAbbreviation());
 				} else {
-					LOG.trace("TimestampToken already present processedTimestamps: {} ", timestampToken.getAbbreviation());
+					logger.trace("TimestampToken already present processedTimestamps: {} ", timestampToken.getAbbreviation());
 				}
 			}
 		}
@@ -358,12 +358,12 @@ public class SignatureValidationContext implements ValidationContext {
 		threshold++;
 		if (threshold > 1000) {
 
-			LOG.warn("{} active threads", threadCount);
+			logger.warn("{} active threads", threadCount);
 			max_timeout++;
 			if (max_timeout == MAX_TIMEOUT) {
 				for (final Integer activeThread : activeThreads) {
 
-					LOG.warn("Not terminated thread validating Token: " + activeThread);
+					logger.warn("Not terminated thread validating Token: " + activeThread);
 				}
 				throw new DSSException("Operation aborted, the retrieval of the validation data takes too long!");
 			}
@@ -390,7 +390,7 @@ public class SignatureValidationContext implements ValidationContext {
 			threadCount++;
 			activeThreads.add(token.getDSSId());
 		} catch (RejectedExecutionException e) {
-			LOG.error(e.getMessage(), e);
+			logger.error(e.getMessage(), e);
 			throw new DSSException(e);
 		}
 	}
@@ -399,14 +399,14 @@ public class SignatureValidationContext implements ValidationContext {
 
 		try {
 
-			LOG.debug(">>> Multithreaded validation ***DONE***");
+			logger.debug(">>> Multithreaded validation ***DONE***");
 			if (executorService == null) {
 				return;
 			}
 			executorService.shutdown();
 			final boolean completedProperly = executorService.awaitTermination(WAIT_DELAY, TimeUnit.SECONDS);
 			if (!completedProperly) {
-				LOG.warn("Timeout: The validation was interrupted!");
+				logger.warn("Timeout: The validation was interrupted!");
 			}
 		} catch (InterruptedException e) {
 			throw new DSSException(e);
@@ -423,14 +423,14 @@ public class SignatureValidationContext implements ValidationContext {
 	private RevocationToken getRevocationData(final CertificateToken certToken) {
 
 		if (logEnabled) {
-			LOG.trace(" > Retrieve revocation data for: {}", certToken.getAbbreviation());
+			logger.trace(" > Checking revocation data for: {}", certToken.getAbbreviation());
 		}
 		if (certToken.isSelfSigned() || certToken.isTrusted() || certToken.getIssuerToken() == null) {
 
 			// It is not possible to check the revocation data without its signing certificate;
 			// This check is not needed for the trust anchor.
 			if (logEnabled) {
-				LOG.trace(" > Certificate is self-signed or trusted or there is no issuer: {}", certToken.getAbbreviation());
+				logger.trace(" > Certificate is self-signed or trusted or there is no issuer: {}", certToken.getAbbreviation());
 			}
 			return null;
 		}
@@ -439,14 +439,14 @@ public class SignatureValidationContext implements ValidationContext {
 
 			certToken.extraInfo().infoOCSPCheckNotNeeded();
 			if (logEnabled) {
-				LOG.trace(" > Certificate is ocsp-signing and has id-pkix-ocsp-no-check extension : {}", certToken.getAbbreviation());
+				logger.trace(" > Certificate is ocsp-signing and has id-pkix-ocsp-no-check extension : {}", certToken.getAbbreviation());
 			}
 			return null;
 		}
 
 		boolean checkOnLine = shouldCheckOnLine(certToken);
 		if (logEnabled) {
-			LOG.trace(" > Should check revocation data online: {} / {}", checkOnLine, certToken.getAbbreviation());
+			logger.trace(" > Should check revocation data online: {} / {}", checkOnLine, certToken.getAbbreviation());
 		}
 		if (checkOnLine) {
 
@@ -454,7 +454,7 @@ public class SignatureValidationContext implements ValidationContext {
 			final RevocationToken revocationToken = onlineVerifier.check(certToken);
 			if (revocationToken != null) {
 				if (logEnabled) {
-					LOG.trace(" > Revocation data: {} found online for: {}", revocationToken.getAbbreviation(), certToken.getAbbreviation());
+					logger.trace(" > Revocation data: {} found online for: {}", revocationToken.getAbbreviation(), certToken.getAbbreviation());
 				}
 				return revocationToken;
 			}
@@ -462,7 +462,7 @@ public class SignatureValidationContext implements ValidationContext {
 		final OCSPAndCRLCertificateVerifier offlineVerifier = new OCSPAndCRLCertificateVerifier(signatureCRLSource, signatureOCSPSource, validationCertificatePool);
 		final RevocationToken revocationToken = offlineVerifier.check(certToken);
 		if (revocationToken != null && logEnabled) {
-			LOG.trace(" > Revocation data: {} found offline for: {}", revocationToken.getAbbreviation(), certToken.getAbbreviation());
+			logger.trace(" > Revocation data: {} found offline for: {}", revocationToken.getAbbreviation(), certToken.getAbbreviation());
 		}
 		return revocationToken;
 	}
@@ -584,8 +584,8 @@ public class SignatureValidationContext implements ValidationContext {
 		@Override
 		public void run() {
 
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(">>> Start multithreaded processing: token-id: {}", token.getAbbreviation());
+			if (logger.isDebugEnabled()) {
+				logger.debug(">>> Start multithreaded processing: token-id: {}", token.getAbbreviation());
 			}
 			final CertificateToken issuerCertToken = getIssuerCertificate(token); // Gets the issuer certificate of the Token and checks its signature
 			if (issuerCertToken != null) {
@@ -599,12 +599,12 @@ public class SignatureValidationContext implements ValidationContext {
 
 					if (currentRevocationToken instanceof OCSPToken && ocspSource != null) {
 						if (ocspSource.isFresh(currentRevocationToken)) {
-							LOG.debug("OCSP revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
+							logger.debug("OCSP revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
 							return;
 						}
 					} else if (currentRevocationToken instanceof CRLToken && crlSource != null) {
 						if (crlSource.isFresh(currentRevocationToken)) {
-							LOG.debug("CRL revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
+							logger.debug("CRL revocation data for the certificate {} is considered as fresh", certificateToken.getAbbreviation());
 							return;
 						}
 					}
@@ -612,8 +612,8 @@ public class SignatureValidationContext implements ValidationContext {
 				final RevocationToken revocationToken = getRevocationData(certificateToken);
 				addRevocationTokenForVerification(revocationToken);
 			}
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(">>> Multithreaded processing finished: token-id: {}", token.getAbbreviation());
+			if (logger.isDebugEnabled()) {
+				logger.debug(">>> Multithreaded processing finished: token-id: {}", token.getAbbreviation());
 			}
 			threadCount--;
 			activeThreads.remove(token.getDSSId());
@@ -637,7 +637,7 @@ public class SignatureValidationContext implements ValidationContext {
 					entry.setValue(true);
 					final Token token = entry.getKey();
 					if (logEnabled) {
-						LOG.trace("- Get {} to check: {} / {}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation(), tokensToProcess.size()});
+						logger.trace("- Get {} to check: {} / {}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation(), tokensToProcess.size()});
 					}
 					return token;
 				}
@@ -659,13 +659,13 @@ public class SignatureValidationContext implements ValidationContext {
 			if (tokensToProcess.containsKey(token)) {
 
 				if (logEnabled) {
-					LOG.trace("Token was already in the list {}:{}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation()});
+					logger.trace("Token was already in the list {}:{}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation()});
 				}
 				return false;
 			}
 			tokensToProcess.put(token, null);
 			if (logEnabled) {
-				LOG.trace("+ New {} to check: {} / {}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation(), tokensToProcess.size()});
+				logger.trace("+ New {} to check: {} / {}", new Object[]{token.getClass().getSimpleName(), token.getAbbreviation(), tokensToProcess.size()});
 			}
 			return true;
 		}
