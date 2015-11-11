@@ -7,10 +7,10 @@
 		</encoder>
 	</appender>
 	
-	<logger name="eu.europa.ec.markt.dss" level="TRACE"/>
+	<logger name="eu.europa" level="INFO"/>
 	<logger name="org.apache.pdfbox" level="ERROR"/>
 
-	<root level="debug">
+	<root level="INFO">
 		<appender-ref ref="STDOUT" />
 	</root>
 </configuration>
