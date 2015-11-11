@@ -40,6 +40,7 @@ public class ValidationResourceManager {
 	private static final Logger LOG = LoggerFactory.getLogger(ValidationResourceManager.class);
 
 	public static String defaultPolicyConstraintsLocation = "/102853/policy/constraint.xml";
+	public static String tslPolicyConstraintsLocation = "102853/policy/tsl-constraint.xml";
 	public static String defaultCountersignaturePolicyConstraintsLocation = "/102853/policy/countersignature-constraint.xml";
 	public static String defaultPolicyXsdLocation = "/102853/policy/policy.xsd";
 

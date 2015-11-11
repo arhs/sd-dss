@@ -32,6 +32,7 @@ import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.FileDocument;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.CommonCertificateVerifier;
+import eu.europa.ec.markt.dss.validation102853.KeyStoreCertificateSource;
 import eu.europa.ec.markt.dss.validation102853.SignedDocumentValidator;
 import eu.europa.ec.markt.dss.validation102853.crl.OnlineCRLSource;
 import eu.europa.ec.markt.dss.validation102853.https.CommonsDataLoader;
@@ -82,7 +83,9 @@ public class ValidateXmlXadesLTWithOnlineSources extends Cookbook {
 		certificateSource.setCheckSignature(true);
 		certificateSource.setDataLoader(fileCacheDataLoader);
 		certificateSource.setTslRefreshPolicy(TSLRefreshPolicy.NEVER);
-		certificateSource.setLotlCertificate("file:/" + getPathFromResource("/lotl.cer"));
+		KeyStoreCertificateSource keyStoreCertificateSource = new KeyStoreCertificateSource(
+				new File("src/main/resources/tsl-keystore.jks"), "dss-password");
+		certificateSource.setKeyStoreCertificateSource(keyStoreCertificateSource);
 		certificateSource.init();
 
 		certificateSource.addCertificate(trustedCertificate, new MockServiceInfo());

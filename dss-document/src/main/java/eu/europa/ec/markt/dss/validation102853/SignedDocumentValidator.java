@@ -1341,7 +1341,6 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
     BasicOCSPResp latestOcspResponse = getLatestOcspResponse(signature.getOCSPSource().getContainedOCSPResponses());
     if (latestOcspResponse == null) {
       LOG.debug("No OCSP response found in signature: " + signature.getId());
-      xmlSignature.setOcspNonce("false");
       return;
     }
 
