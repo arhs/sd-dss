@@ -250,7 +250,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 			LOG.info("The TSL signature validity: " + coreValidity);
 			if (!coreValidity) {
 
-				LOG.info("The TSL signature validity details:\n" + simpleReport);
+				LOG.debug("The TSL signature validity details:\n" + simpleReport);
 				throw new DSSException("Not ETSI compliant signature. The signature is not valid.");
 			}
 		}
@@ -447,7 +447,7 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 
 	private void makeATrace(final String url, final String message, final Exception e) {
 
-		LOG.error(message, e);
+		LOG.warn(message);
 		StringWriter w = new StringWriter();
 		e.printStackTrace(new PrintWriter(w));
 		diagnosticInfo.put(url, w.toString());
