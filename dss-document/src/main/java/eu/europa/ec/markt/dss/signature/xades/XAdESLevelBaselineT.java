@@ -242,11 +242,9 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements XAdESSignat
 				LOG.warn("The trust anchor is missing but its inclusion is required by the signature policy!");
 			}
 			//Custom Estoninan functionality: must contain OCSP request
-			/*
 			if (!ocspCertificateIncluded) {
 				throw new DSSException("OCSP request failed");
 			}
-			*/
 			//End of Custom Estonian functionality
 		}
 	}
