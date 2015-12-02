@@ -56,10 +56,12 @@ import eu.europa.ec.markt.dss.validation102853.CertificateToken;
 import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 import eu.europa.ec.markt.dss.validation102853.CommonTrustedCertificateSource;
 import eu.europa.ec.markt.dss.validation102853.CryptographicSourceProvider;
+import eu.europa.ec.markt.dss.validation102853.ValidationResourceManager;
 import eu.europa.ec.markt.dss.validation102853.certificate.CertificateSourceType;
 import eu.europa.ec.markt.dss.validation102853.condition.ServiceInfo;
 import eu.europa.ec.markt.dss.validation102853.https.FileCacheDataLoader;
 import eu.europa.ec.markt.dss.validation102853.loader.DataLoader;
+import eu.europa.ec.markt.dss.validation102853.policy.EtsiValidationPolicy;
 import eu.europa.ec.markt.dss.validation102853.report.Reports;
 import eu.europa.ec.markt.dss.validation102853.report.SimpleReport;
 import eu.europa.ec.markt.dss.validation102853.rules.Indication;
@@ -281,7 +283,9 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 			if (signatures.size() == 0) {
 				throw new DSSException("Not ETSI compliant signature. The Xml is not signed.");
 			}
-			final Reports reports = xmlDocumentValidator.validateDocument();
+			final Document tslPolicyData = ValidationResourceManager.loadTslPolicyData(null);
+			final EtsiValidationPolicy tslValidationPolicy = new EtsiValidationPolicy(tslPolicyData);
+			final Reports reports = xmlDocumentValidator.validateDocument(tslValidationPolicy);
 			final SimpleReport simpleReport = reports.getSimpleReport();
 			final List<String> signatureIdList = simpleReport.getSignatureIdList();
 			final String signatureId = signatureIdList.get(0);

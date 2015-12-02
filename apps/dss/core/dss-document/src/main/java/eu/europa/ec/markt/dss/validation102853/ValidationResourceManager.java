@@ -40,7 +40,7 @@ public class ValidationResourceManager {
 
 	public static String defaultPolicyConstraintsLocation = "/102853/policy/constraint.xml";
 	public static String defaultCountersignaturePolicyConstraintsLocation = "/102853/policy/countersignature-constraint.xml";
-	public static String defaultPolicyXsdLocation = "/102853/policy/policy.xsd";
+	public static String defaultTslPolicyConstraintsLocation = "/102853/policy/tsl-constraint.xml";
 
 	private static JAXBContext jaxbContext;
 
@@ -74,13 +74,13 @@ public class ValidationResourceManager {
 	}
 
 	/**
-	 * This method loads the policy constraint file. If the validationPolicy is not specified then the default policy file is
+	 * This method loads the countersignature policy constraint file. If the validationPolicy is not specified then the default policy file is
 	 * loaded.
 	 *
 	 * @param policyDataStream
 	 * @return
 	 */
-	public static Document loadCountersignaturePolicyData(InputStream policyDataStream) {
+	public static Document loadCountersignaturePolicyData(final InputStream policyDataStream) {
 
 		if (policyDataStream != null) {
 
@@ -89,6 +89,26 @@ public class ValidationResourceManager {
 		if (defaultCountersignaturePolicyConstraintsLocation != null && !defaultCountersignaturePolicyConstraintsLocation.isEmpty()) {
 
 			return load(defaultCountersignaturePolicyConstraintsLocation);
+		}
+		return null;
+	}
+
+	/**
+	 * This method loads the TSL policy constraint file. If the validationPolicy is not specified then the default policy file is
+	 * loaded.
+	 *
+	 * @param policyDataStream
+	 * @return
+	 */
+	public static Document loadTslPolicyData(final InputStream policyDataStream) {
+
+		if (policyDataStream != null) {
+
+			return load(policyDataStream);
+		}
+		if (defaultTslPolicyConstraintsLocation != null && !defaultTslPolicyConstraintsLocation.isEmpty()) {
+
+			return load(defaultTslPolicyConstraintsLocation);
 		}
 		return null;
 	}
