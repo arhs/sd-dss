@@ -22,6 +22,7 @@ package eu.europa.ec.markt.dss;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -77,6 +78,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.xml.security.exceptions.XMLSecurityException;
 import org.apache.xml.security.keys.content.x509.XMLX509SKI;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -137,27 +139,6 @@ import eu.europa.ec.markt.dss.validation102853.loader.Protocol;
  */
 public final class DSSUtils {
 
-	public static final String CERT_BEGIN = "-----BEGIN CERTIFICATE-----\n";
-	public static final String CERT_END = "-----END CERTIFICATE-----";
-	/**
-	 * FROM: Apache
-	 * The index value when an element is not found in a list or array: {@code -1}.
-	 * This value is returned by methods in this class and can also be used in comparisons with values returned by
-	 * various method from {@link java.util.List}.
-	 */
-	public static final int INDEX_NOT_FOUND = -1;
-	/**
-	 * The empty String {@code ""}.
-	 *
-	 * @since 2.0
-	 */
-	public static final String EMPTY = "";
-	public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-	public static final String DEFAULT_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-	/**
-	 * The default date pattern: "yyyy-MM-dd"
-	 */
-	public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
 	private static final Logger LOG = LoggerFactory.getLogger(DSSUtils.class);
 	private static final BouncyCastleProvider securityProvider = new BouncyCastleProvider();
 	/**
@@ -183,6 +164,27 @@ public final class DSSUtils {
 	private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 	private static MessageDigest sha1Digester;
 	private static JcaDigestCalculatorProviderBuilder jcaDigestCalculatorProviderBuilder;
+	public static final String CERT_BEGIN = "-----BEGIN CERTIFICATE-----\n";
+	public static final String CERT_END = "-----END CERTIFICATE-----";
+	/**
+	 * FROM: Apache
+	 * The index value when an element is not found in a list or array: {@code -1}.
+	 * This value is returned by methods in this class and can also be used in comparisons with values returned by
+	 * various method from {@link java.util.List}.
+	 */
+	public static final int INDEX_NOT_FOUND = -1;
+	/**
+	 * The empty String {@code ""}.
+	 *
+	 * @since 2.0
+	 */
+	public static final String EMPTY = "";
+	public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+	public static final String DEFAULT_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+	/**
+	 * The default date pattern: "yyyy-MM-dd"
+	 */
+	public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
 
 	static {
 
@@ -205,10 +207,6 @@ public final class DSSUtils {
 
 			LOG.error(e.toString());
 			throw new DSSException("Platform does not support BouncyCastle", e);
-		} catch (NoSuchAlgorithmException e) {
-
-			LOG.error(e.toString());
-			throw new DSSException("The digest algorithm is not supported", e);
 		}
 	}
 
@@ -1099,10 +1097,23 @@ public final class DSSUtils {
 	}
 
 	/**
+	 * This method digests the given {@code ByteArrayOutputStream} and encode returned array of bytes ashex string.
+	 *
+	 * @param baosToDigest {code ByteArrayOutputStream}
+	 * @return {@code String} hex encoded digest value
+	 */
+	public static String getMD5Digest(final ByteArrayOutputStream baosToDigest) {
+
+		final byte[] digestValue = digest(DigestAlgorithm.MD5, baosToDigest.toByteArray());
+		return Hex.encodeHexString(digestValue);
+	}
+
+
+	/**
 	 * This method digests the given string with SHA1 algorithm and encode returned array of bytes as hex string.
 	 *
 	 * @param stringToDigest Everything in the name
-	 * @return hex encoded digest value
+	 * @return {@code String} hex encoded digest value
 	 */
 	public static String getSHA1Digest(final String stringToDigest) {
 
@@ -1113,12 +1124,12 @@ public final class DSSUtils {
 	/**
 	 * This method digests the given {@code InputStream} with SHA1 algorithm and encode returned array of bytes as hex string.
 	 *
-	 * @param inputStream
-	 * @return
+	 * @param inputStreamToDigest Everything in the name
+	 * @return {@code String} hex encoded digest value
 	 */
-	public static String getSHA1Digest(final InputStream inputStream) {
+	public static String getSHA1Digest(final InputStream inputStreamToDigest) {
 
-		final byte[] bytes = DSSUtils.toByteArray(inputStream);
+		final byte[] bytes = DSSUtils.toByteArray(inputStreamToDigest);
 		final byte[] digest = sha1Digester.digest(bytes);
 		return encodeHexString(digest);
 	}
@@ -1166,23 +1177,16 @@ public final class DSSUtils {
 	 */
 	public static byte[] digest(final DigestAlgorithm digestAlgorithm, final byte[] data) throws DSSException {
 
-		try {
-
-			final MessageDigest messageDigest = getMessageDigest(digestAlgorithm);
-			final byte[] digestValue = messageDigest.digest(data);
-			return digestValue;
-		} catch (NoSuchAlgorithmException e) {
-
-			throw new DSSException("Digest algorithm error: " + e.getMessage(), e);
-		}
+		final MessageDigest messageDigest = getMessageDigest(digestAlgorithm);
+		final byte[] digestValue = messageDigest.digest(data);
+		return digestValue;
 	}
 
 	/**
 	 * @param digestAlgorithm
 	 * @return
-	 * @throws NoSuchAlgorithmException
 	 */
-	public static MessageDigest getMessageDigest(final DigestAlgorithm digestAlgorithm) throws NoSuchAlgorithmException {
+	public static MessageDigest getMessageDigest(final DigestAlgorithm digestAlgorithm) throws DSSException {
 
 		// TODO-Bob (13/07/2014):  To be checked if the default implementation copes with RIPEMD160
 		//		if (digestAlgorithm.equals(DigestAlgorithm.RIPEMD160)) {
@@ -1195,11 +1199,15 @@ public final class DSSUtils {
 		//			recalculatedBase64DigestValue = DSSUtils.base64BinaryEncode(digestValue);
 		//		} else {
 
-		final String digestAlgorithmOid = digestAlgorithm.getOid().getId();
-		// System.out.println(">>> " + digestAlgorithmOid);
-		final MessageDigest messageDigest = MessageDigest.getInstance(digestAlgorithmOid);
-		// System.out.println(">>> " + messageDigest.getProvider() + "/" + messageDigest.getClass().getName());
-		return messageDigest;
+		try {
+
+			final String digestAlgorithmOid = digestAlgorithm.getOid().getId();
+			final MessageDigest messageDigest = MessageDigest.getInstance(digestAlgorithmOid);
+			return messageDigest;
+		} catch (NoSuchAlgorithmException e) {
+			LOG.error(e.toString());
+			throw new DSSException("Digest algorithm '" + digestAlgorithm.getName() + "' error: " + e.getMessage(), e);
+		}
 	}
 
 	/**
@@ -1222,8 +1230,6 @@ public final class DSSUtils {
 			}
 			final byte[] digestValue = messageDigest.digest();
 			return digestValue;
-		} catch (NoSuchAlgorithmException e) {
-			throw new DSSException("Digest algorithm error: " + e.getMessage(), e);
 		} catch (IOException e) {
 			throw new DSSException(e);
 		}
@@ -1231,19 +1237,13 @@ public final class DSSUtils {
 
 	public static byte[] digest(DigestAlgorithm digestAlgorithm, byte[]... data) {
 
-		try {
+		final MessageDigest messageDigest = getMessageDigest(digestAlgorithm);
+		for (final byte[] bytes : data) {
 
-			final MessageDigest messageDigest = getMessageDigest(digestAlgorithm);
-			for (final byte[] bytes : data) {
-
-				messageDigest.update(bytes);
-			}
-			final byte[] digestValue = messageDigest.digest();
-			return digestValue;
-		} catch (NoSuchAlgorithmException e) {
-
-			throw new DSSException("Digest algorithm error: " + e.getMessage(), e);
+			messageDigest.update(bytes);
 		}
+		final byte[] digestValue = messageDigest.digest();
+		return digestValue;
 	}
 
 	/**
@@ -2102,42 +2102,6 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * Unconditionally close an {@code OutputStream}.
-	 * <p/>
-	 * Equivalent to {@link OutputStream#close()}, except any exceptions will be ignored.
-	 * This is typically used in finally blocks.
-	 *
-	 * @param output the OutputStream to close, may be null or already closed
-	 */
-	public static void closeQuietly(OutputStream output) {
-		try {
-			if (output != null) {
-				output.close();
-			}
-		} catch (IOException ioe) {
-			// ignore
-		}
-	}
-
-	/**
-	 * Unconditionally close an {@code InputStream}.
-	 * <p/>
-	 * Equivalent to {@link InputStream#close()}, except any exceptions will be ignored.
-	 * This is typically used in finally blocks.
-	 *
-	 * @param input the InputStream to close, may be null or already closed
-	 */
-	public static void closeQuietly(final InputStream input) {
-		try {
-			if (input != null) {
-				input.close();
-			}
-		} catch (IOException ioe) {
-			// ignore
-		}
-	}
-
-	/**
 	 * Unconditionally close an {@code Reader}.
 	 * <p/>
 	 * Equivalent to {@link Reader#close()}, except any exceptions will be ignored.
@@ -2170,6 +2134,40 @@ public final class DSSUtils {
 			}
 		} catch (IOException ioe) {
 			// ignore
+		}
+	}
+
+	/**
+	 * Unconditionally close an {@code InputStream}.
+	 * <p/>
+	 * Equivalent to {@link InputStream#close()}, except any exceptions will be ignored.
+	 * This is typically used in finally blocks.
+	 *
+	 * @param input the InputStream to close, may be null or already closed
+	 */
+	public static void closeQuietly(InputStream input) {
+		closeQuietly((Closeable) input);
+	}
+
+	/**
+	 * Unconditionally close an {@code OutputStream}.
+	 * <p/>
+	 * Equivalent to {@link OutputStream#close()}, except any exceptions will be ignored.
+	 * This is typically used in finally blocks.
+	 *
+	 * @param output the OutputStream to close, may be null or already closed
+	 */
+	public static void closeQuietly(OutputStream output) {
+		closeQuietly((Closeable) output);
+	}
+
+	public static void closeQuietly(Closeable closeable) {
+
+		try {
+			if (closeable != null) {
+				closeable.close();
+			}
+		} catch (IOException var2) {
 		}
 	}
 

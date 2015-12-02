@@ -118,7 +118,12 @@ public class SignatureParameters implements Serializable {
 	/**
 	 * The object representing the parameters related to ASiC from of the signature.
 	 */
-	private ASiCParameters aSiCParams = new ASiCParameters();
+	private ASiCParameters asicParams = new ASiCParameters();
+
+	/**
+	 * The object representing the parameters related to PAdES from of the signature.
+	 */
+	private PAdESParameters padesParams = new PAdESParameters();
 
 	private String reason;
 	private String contactInfo;
@@ -161,7 +166,7 @@ public class SignatureParameters implements Serializable {
 			throw new DSSNullException(SignatureParameters.class);
 		}
 		bLevelParams = new BLevelParameters(source.bLevelParams);
-		aSiCParams = new ASiCParameters(source.aSiCParams);
+		asicParams = new ASiCParameters(source.asicParams);
 		certificateChain = new ArrayList<ChainCertificate>(source.certificateChain);
 		contactInfo = source.contactInfo;
 		deterministicId = source.getDeterministicId();
@@ -481,7 +486,7 @@ public class SignatureParameters implements Serializable {
 		final SignatureForm signatureForm = signatureLevel.getSignatureForm();
 		if (SignatureForm.ASiC_S.equals(signatureForm) || SignatureForm.ASiC_E.equals(signatureForm)) {
 
-			aSiC().containerForm = signatureForm;
+			asic().containerForm = signatureForm;
 		}
 		this.signatureLevel = signatureLevel;
 	}
@@ -637,12 +642,20 @@ public class SignatureParameters implements Serializable {
 		return bLevelParams;
 	}
 
-	public ASiCParameters aSiC() {
+	public ASiCParameters asic() {
 
-		if (aSiCParams == null) {
-			aSiCParams = new ASiCParameters();
+		if (asicParams == null) {
+			asicParams = new ASiCParameters();
 		}
-		return aSiCParams;
+		return asicParams;
+	}
+
+	public PAdESParameters pades() {
+
+		if (padesParams == null) {
+			padesParams = new PAdESParameters();
+		}
+		return padesParams;
 	}
 
 	public TimestampParameters getSignatureTimestampParameters() {
@@ -722,7 +735,7 @@ public class SignatureParameters implements Serializable {
 			  ", digestAlgorithm=" + digestAlgorithm +
 			  ", references=" + dssReferences +
 			  ", bLevelParams=" + bLevelParams +
-			  ", aSiCParams=" + aSiCParams +
+			  ", asicParams=" + asicParams +
 			  ", reason='" + reason + '\'' +
 			  ", contactInfo='" + contactInfo + '\'' +
 			  ", deterministicId='" + deterministicId + '\'' +

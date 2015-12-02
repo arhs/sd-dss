@@ -22,41 +22,40 @@ package eu.europa.ec.markt.dss.validation102853;
 
 public class CertificateQualification {
 
-   int qcp = 0;
-   int qcpp = 0;
-   int qcc = 0;
-   int qcsscd = 0;
+	int qcp = 0;
+	int qcpp = 0;
+	int qcc = 0;
+	int qcsscd = 0;
 
-   public int getQcp() {
-      return qcp;
-   }
+	public int getQcp() {
+		return qcp;
+	}
 
-   public void setQcp(boolean qcp) {
-      this.qcp = qcp ? 1 : 0;
-   }
+	public void setQcp(boolean qcp) {
+		this.qcp = qcp ? 1 : 0;
+	}
 
-   public int getQcpp() {
-      return qcpp;
-   }
+	public int getQcpp() {
+		return qcpp;
+	}
 
-   public void setQcpp(boolean qcpp) {
-      this.qcpp = qcpp ? 1 : 0;
-   }
+	public void setQcpp(boolean qcpp) {
+		this.qcpp = qcpp ? 1 : 0;
+	}
 
-   public int getQcc() {
-      return qcc;
-   }
+	public int getQcc() {
+		return qcc;
+	}
 
-   public void setQcc(boolean qcc) {
-      this.qcc = qcc ? 1 : 0;
-   }
+	public void setQcc(boolean qcc) {
+		this.qcc = qcc ? 1 : 0;
+	}
 
-   public int getQcsscd() {
-      return qcsscd;
-   }
+	public int getQcsscd() {
+		return qcsscd;
+	}
 
-   public void setQcsscd(boolean qcsscd) {
-      this.qcsscd = qcsscd ? 1 : 0;
-   }
-
+	public void setQcsscd(boolean qcsscd) {
+		this.qcsscd = qcsscd ? 1 : 0;
+	}
 }

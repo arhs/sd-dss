@@ -101,7 +101,7 @@ public class AsicContext {
 		this.asicService = asicService;
 		assertToSignDocumentNotNull(toSignDocument);
 		assertSignatureParametersNotNull(parameters);
-		final ASiCParameters asicParameters = parameters.aSiC();
+		final ASiCParameters asicParameters = parameters.asic();
 		containerForm = asicParameters.getContainerForm();
 		assertContainerFormNotNull(containerForm);
 		assertRightContainerForm(containerForm);

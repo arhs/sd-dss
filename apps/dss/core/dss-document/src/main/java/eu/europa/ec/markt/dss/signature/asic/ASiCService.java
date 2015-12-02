@@ -302,7 +302,7 @@ public class ASiCService extends AbstractSignatureService {
 
 	private void storeZipComment(final AsicContext asicContext, final ZipOutputStream outZip, final String toSignDocumentName) {
 
-		final ASiCParameters asicParameters = asicContext.getSubordinatedParameters().aSiC();
+		final ASiCParameters asicParameters = asicContext.getSubordinatedParameters().asic();
 		// TODO-Bob (02/03/2015):  Check if the toSignDocumentName is mandatory
 		if (asicParameters.isZipComment() && DSSUtils.isNotEmpty(toSignDocumentName)) {
 
@@ -406,7 +406,7 @@ public class ASiCService extends AbstractSignatureService {
 
 	private String getMimeTypeBytes(final AsicContext asicContext) {
 
-		final ASiCParameters asicParameters = asicContext.getSubordinatedParameters().aSiC();
+		final ASiCParameters asicParameters = asicContext.getSubordinatedParameters().asic();
 		final String asicParameterMimeType = asicParameters.getMimeType();
 		String mimeTypeBytes;
 		if (DSSUtils.isBlank(asicParameterMimeType)) {

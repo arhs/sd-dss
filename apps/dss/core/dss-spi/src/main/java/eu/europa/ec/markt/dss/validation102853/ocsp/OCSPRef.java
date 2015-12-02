@@ -22,7 +22,6 @@ package eu.europa.ec.markt.dss.validation102853.ocsp;
 
 import java.io.IOException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import org.bouncycastle.asn1.esf.OtherHash;
@@ -97,8 +96,6 @@ public class OCSPRef {
 					  "BasicOCSPResp produced at " + ocspResp.getProducedAt());
 			}
 			return Arrays.equals(digestValue, computedValue);
-		} catch (NoSuchAlgorithmException e) {
-			throw new DSSException(e);
 		} catch (IOException e) {
 			throw new DSSException(e);
 		}
