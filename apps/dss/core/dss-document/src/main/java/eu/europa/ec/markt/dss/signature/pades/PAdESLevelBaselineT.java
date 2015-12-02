@@ -31,7 +31,6 @@ import eu.europa.ec.markt.dss.signature.SignatureExtension;
 import eu.europa.ec.markt.dss.signature.pdf.PDFTimestampService;
 import eu.europa.ec.markt.dss.signature.pdf.PdfObjFactory;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
-import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
 
 /**
  * TODO
@@ -44,29 +43,23 @@ import eu.europa.ec.markt.dss.validation102853.CertificateVerifier;
  */
 class PAdESLevelBaselineT implements SignatureExtension {
 
-    private final TSPSource tspSource;
-    private final CertificateVerifier certificateVerifier;
+	private final TSPSource tspSource;
 
-    public PAdESLevelBaselineT(TSPSource tspSource, CertificateVerifier certificateVerifier) {
+	public PAdESLevelBaselineT(TSPSource tspSource) {
+		this.tspSource = tspSource;
+	}
 
-        this.tspSource = tspSource;
-        this.certificateVerifier = certificateVerifier;
-    }
+	@Override
+	public DSSDocument extendSignatures(final DSSDocument document, final SignatureParameters params) throws DSSException {
 
-    @Override
-    public DSSDocument extendSignatures(final DSSDocument document, final SignatureParameters params) throws DSSException {
+		// Will add a DocumentTimeStamp. signature-timestamp (CMS) is impossible to add while extending
+		final PdfObjFactory factory = PdfObjFactory.getInstance();
+		final ByteArrayOutputStream tDoc = new ByteArrayOutputStream();
+		final PDFTimestampService timestampService = factory.newTimestampSignatureService();
+		timestampService.timestamp(document, tDoc, params, tspSource);
+		final InMemoryDocument inMemoryDocument = new InMemoryDocument(tDoc.toByteArray());
+		inMemoryDocument.setMimeType(MimeType.PDF);
+		return inMemoryDocument;
+	}
 
-        assertExtendSignaturePossible(document);
-
-        final PdfObjFactory factory = PdfObjFactory.getInstance();
-        final ByteArrayOutputStream tDoc = new ByteArrayOutputStream();
-        final PDFTimestampService timestampService = factory.newTimestampSignatureService();
-        timestampService.timestamp(document, tDoc, params, tspSource);
-	    final InMemoryDocument inMemoryDocument = new InMemoryDocument(tDoc.toByteArray());
-	    inMemoryDocument.setMimeType(MimeType.PDF);
-	    return inMemoryDocument;
-    }
-
-    private void assertExtendSignaturePossible(final DSSDocument document) {
-    }
-}
+	}

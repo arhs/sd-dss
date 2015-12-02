@@ -20,24 +20,33 @@
 
 package eu.europa.ec.markt.dss.signature.pdf.pdfbox;
 
-import java.io.IOException;
 import java.io.OutputStream;
 
 import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.io.RandomAccessBuffer;
 
+import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.signature.pdf.PdfStream;
+import eu.europa.ec.markt.dss.signature.pdf.model.ModelPdfStream;
 
 class PdfBoxStream implements PdfStream {
 
 	COSStream wrapped;
 
-	public PdfBoxStream(byte[] bytes) throws IOException {
+	public PdfBoxStream(byte[] bytes) {
+		try {
 		RandomAccessBuffer storage = new RandomAccessBuffer();
 		this.wrapped = new COSStream(storage);
-        final OutputStream unfilteredStream = this.wrapped.createUnfilteredStream();
-        unfilteredStream.write(bytes);
-        unfilteredStream.flush();
+		final OutputStream unfilteredStream = this.wrapped.createUnfilteredStream();
+		unfilteredStream.write(bytes);
+		unfilteredStream.flush();
+		} catch (Exception e) {
+			throw new DSSException(e);
+		}
+	}
+
+	public PdfBoxStream(ModelPdfStream stream) {
+		this(stream.getBytes());
 	}
 
 }

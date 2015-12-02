@@ -21,7 +21,6 @@
 package eu.europa.ec.markt.dss.signature.pdf;
 
 import java.io.OutputStream;
-import java.util.Map;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
@@ -39,7 +38,6 @@ import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
  */
 public interface PDFTimestampService extends PDFSignatureService {
 
-    void timestamp(final DSSDocument document, final OutputStream signedStream, final SignatureParameters parameters, final TSPSource tspSource,
-                   final Map.Entry<String, PdfDict>... dictToAdd) throws DSSException;
+	void timestamp(final DSSDocument document, final OutputStream signedStream, final SignatureParameters parameters, final TSPSource tspSource) throws DSSException;
 
 }

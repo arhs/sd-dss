@@ -20,11 +20,9 @@
 
 package eu.europa.ec.markt.dss.validation102853.pades;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.exception.DSSUnsupportedOperationException;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
@@ -49,6 +47,14 @@ public class PDFDocumentValidator extends SignedDocumentValidator {
 
 	final PDFSignatureService pdfSignatureService;
 
+//	/**
+//	 * Default constructor used with reflexion (see SignedDocumentValidator)
+//	 */
+//	private PDFDocumentValidator() {
+//		super(null);
+//		pdfSignatureService = null;
+//	}
+
 	/**
 	 * The default constructor for PDFDocumentValidator.
 	 */
@@ -59,6 +65,19 @@ public class PDFDocumentValidator extends SignedDocumentValidator {
 		pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
 	}
 
+//	@Override
+//	public boolean isSupported(DSSDocument dssDocument) {
+//
+//		int headerLength = 500;
+//		byte[] preamble = new byte[headerLength];
+//		DSSUtils.readToArray(dssDocument, headerLength, preamble);
+//		String preambleString = new String(preamble);
+//		if (preambleString.startsWith("%PDF-")) {
+//			return true;
+//		}
+//		return false;
+//	}
+
 	@Override
 	public List<AdvancedSignature> getSignatures() {
 
@@ -66,9 +85,7 @@ public class PDFDocumentValidator extends SignedDocumentValidator {
 			return signatures;
 		}
 		signatures = new ArrayList<AdvancedSignature>();
-		// TODO: (Bob: 2014 Feb 27) to be replaced document.openStream() by document
-		final InputStream inputStream = document.openStream();
-		pdfSignatureService.validateSignatures(validationCertPool, inputStream, new PdfSignatureValidationCallback() {
+		pdfSignatureService.validateSignatures(validationCertPool, document, new PdfSignatureValidationCallback() {
 
 			@Override
 			public void validate(final PdfSignatureInfo pdfSignatureInfo) {
@@ -84,7 +101,6 @@ public class PDFDocumentValidator extends SignedDocumentValidator {
 				}
 			}
 		});
-		DSSUtils.closeQuietly(inputStream);
 		return signatures;
 	}
 

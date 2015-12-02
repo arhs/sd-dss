@@ -32,5 +32,6 @@ import eu.europa.ec.markt.dss.validation102853.TimestampToken;
  * @version $Revision$ - $Date$
  */
 public interface PdfDocTimestampInfo extends PdfSignatureOrDocTimestampInfo {
-    TimestampToken getTimestampToken();
+
+	TimestampToken getTimestampToken();
 }

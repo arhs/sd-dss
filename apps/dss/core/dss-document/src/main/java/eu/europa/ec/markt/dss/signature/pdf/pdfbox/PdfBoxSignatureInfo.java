@@ -21,18 +21,14 @@
 package eu.europa.ec.markt.dss.signature.pdf.pdfbox;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.cert.X509Certificate;
-import java.util.List;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.bouncycastle.cms.CMSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.ec.markt.dss.signature.InMemoryDocument;
-import eu.europa.ec.markt.dss.signature.pdf.PdfDict;
 import eu.europa.ec.markt.dss.signature.pdf.PdfSignatureInfo;
 import eu.europa.ec.markt.dss.validation102853.CertificatePool;
 import eu.europa.ec.markt.dss.validation102853.CertificateToken;
@@ -46,19 +42,19 @@ class PdfBoxSignatureInfo extends PdfBoxCMSInfo implements PdfSignatureInfo {
 
 	/**
 	 * @param validationCertPool
-	 * @param outerCatalog       the PDF Dict of the outer document, if the PDFDocument in a enclosed revision. Can be null.
-	 * @param document           the signed PDFDocument
+	 * @param dssDictionary      the DSS dictionary
 	 * @param cms                the CMS (CAdES) bytes
-	 * @param inputStream        the stream of the whole signed document
+	 * @param originalBytes      the original bytes of the whole signed document
 	 * @throws IOException
 	 */
-	PdfBoxSignatureInfo(CertificatePool validationCertPool, PdfDict outerCatalog, PDDocument document, PDSignature signature, byte[] cms,
-	                    InputStream inputStream) throws IOException {
-		super(validationCertPool, outerCatalog, document, signature, cms, inputStream);
+	PdfBoxSignatureInfo(CertificatePool validationCertPool, PDSignature signature, PdfDssDict dssDictionary, byte[] cms, byte[] originalBytes) throws IOException {
+
+		super(signature, dssDictionary, cms, originalBytes);
 		try {
 			cades = new CAdESSignature(cms, validationCertPool);
-			final InMemoryDocument detachedContent = new InMemoryDocument(signedBytes);
+			final InMemoryDocument detachedContent = new InMemoryDocument(getSignedDocumentBytes());
 			cades.setDetachedContents(detachedContent);
+			cades.setPadesSigningTime(getSigningDate());
 		} catch (CMSException e) {
 			throw new IOException(e);
 		}
@@ -73,13 +69,6 @@ class PdfBoxSignatureInfo extends PdfBoxCMSInfo implements PdfSignatureInfo {
 	public X509Certificate getSigningCertificate() {
 		CertificateToken signingCertificate = cades.getSigningCertificateToken();
 		return signingCertificate == null ? null : signingCertificate.getCertificate();
-	}
-
-	@Override
-	public X509Certificate[] getCertificates() {
-		final List<CertificateToken> certificates = cades.getCertificates();
-		return toX509CertificateArray(certificates);
-
 	}
 
 	@Override
@@ -107,7 +96,7 @@ class PdfBoxSignatureInfo extends PdfBoxCMSInfo implements PdfSignatureInfo {
 	@Override
 	public int hashCode() {
 		int result = super.hashCode();
-		result = 31 * result + cades.hashCode();
+		result = (31 * result) + cades.hashCode();
 		return result;
 	}
 

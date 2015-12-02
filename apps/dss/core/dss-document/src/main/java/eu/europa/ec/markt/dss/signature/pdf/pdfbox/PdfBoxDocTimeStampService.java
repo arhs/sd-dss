@@ -22,7 +22,6 @@ package eu.europa.ec.markt.dss.signature.pdf.pdfbox;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Map;
 
 import org.apache.pdfbox.cos.COSName;
 import org.bouncycastle.tsp.TimeStampToken;
@@ -35,7 +34,6 @@ import eu.europa.ec.markt.dss.parameter.SignatureParameters;
 import eu.europa.ec.markt.dss.signature.DSSDocument;
 import eu.europa.ec.markt.dss.signature.pdf.PDFSignatureService;
 import eu.europa.ec.markt.dss.signature.pdf.PDFTimestampService;
-import eu.europa.ec.markt.dss.signature.pdf.PdfDict;
 import eu.europa.ec.markt.dss.validation102853.tsp.TSPSource;
 
 class PdfBoxDocTimeStampService extends PdfBoxSignatureService implements PDFSignatureService, PDFTimestampService {
@@ -45,22 +43,26 @@ class PdfBoxDocTimeStampService extends PdfBoxSignatureService implements PDFSig
 	 */
 	public static final COSName SUB_FILTER_ETSI_RFC3161 = COSName.getPDFName("ETSI.RFC3161");
 
+	@Override
 	protected COSName getSubFilter() {
 		return SUB_FILTER_ETSI_RFC3161;
 	}
 
 	@Override
-	public void timestamp(final DSSDocument document, final OutputStream signedStream, final SignatureParameters parameters, final TSPSource tspSource,
-	                      final Map.Entry<String, PdfDict>... dictToAdd) throws DSSException {
+	protected COSName getType() {
+		return COSName.DOC_TIME_STAMP;
+	}
+
+	public void timestamp(final DSSDocument document, final OutputStream signedStream, final SignatureParameters parameters, final TSPSource tspSource) throws DSSException {
 
 		final DigestAlgorithm timestampDigestAlgorithm = parameters.getSignatureTimestampParameters().getDigestAlgorithm();
 		InputStream inputStream = document.openStream();
-		final byte[] digest = digest(inputStream, parameters, timestampDigestAlgorithm, dictToAdd);
+		final byte[] digest = digest(inputStream, parameters, timestampDigestAlgorithm);
 		DSSUtils.closeQuietly(inputStream);
 		final TimeStampToken timeStampToken = tspSource.getTimeStampResponse(timestampDigestAlgorithm, digest);
 		final byte[] encoded = DSSASN1Utils.getEncoded(timeStampToken);
 		inputStream = document.openStream();
-		sign(inputStream, encoded, signedStream, parameters, timestampDigestAlgorithm, dictToAdd);
+		sign(inputStream, encoded, signedStream, parameters, timestampDigestAlgorithm);
 		DSSUtils.closeQuietly(inputStream);
 	}
 }

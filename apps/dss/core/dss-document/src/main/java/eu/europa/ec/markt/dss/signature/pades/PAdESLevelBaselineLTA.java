@@ -44,13 +44,13 @@ import eu.europa.ec.markt.dss.validation102853.pades.PDFDocumentValidator;
 class PAdESLevelBaselineLTA implements SignatureExtension {
 
     private final PAdESLevelBaselineLT padesLevelBaselineLT;
-    private final PAdESLevelBaselineT padesProfileT;
+	private final PAdESLevelBaselineT padesLevelBaselineT;
     private final CertificateVerifier certificateVerifier;
 
     public PAdESLevelBaselineLTA(TSPSource tspSource, CertificateVerifier certificateVerifier) {
 
         padesLevelBaselineLT = new PAdESLevelBaselineLT(tspSource, certificateVerifier);
-        padesProfileT = new PAdESLevelBaselineT(tspSource, certificateVerifier);
+		padesLevelBaselineT = new PAdESLevelBaselineT(tspSource);
         this.certificateVerifier = certificateVerifier;
     }
 
@@ -65,10 +65,9 @@ class PAdESLevelBaselineLTA implements SignatureExtension {
             if (!signature.isDataForSignatureLevelPresent(SignatureLevel.PAdES_BASELINE_LT)) {
 
                 document = padesLevelBaselineLT.extendSignatures(document, params);
-                // PAdES LT already add a timestamp on top of the LT data. No need to timestamp again.
                 return document;
             }
         }
-        return padesProfileT.extendSignatures(document, params);
+        return padesLevelBaselineT.extendSignatures(document, params);
     }
 }

@@ -22,12 +22,12 @@ package eu.europa.ec.markt.dss.signature.pdf;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.SignatureException;
-import java.util.Map;
 
 import eu.europa.ec.markt.dss.DigestAlgorithm;
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.parameter.SignatureParameters;
+import eu.europa.ec.markt.dss.signature.DSSDocument;
+import eu.europa.ec.markt.dss.signature.pdf.model.ModelPdfDict;
 import eu.europa.ec.markt.dss.validation102853.CertificatePool;
 
 /**
@@ -43,12 +43,10 @@ public interface PDFSignatureService {
 	 * @param toSignDocument
 	 * @param parameters
 	 * @param digestAlgorithm
-	 * @param extraDictionariesToAddBeforeSign only in the case of timestamp
 	 * @return
 	 * @throws DSSException
 	 */
-	byte[] digest(final InputStream toSignDocument, final SignatureParameters parameters, final DigestAlgorithm digestAlgorithm,
-	              final Map.Entry<String, PdfDict>... extraDictionariesToAddBeforeSign) throws DSSException;
+	byte[] digest(final InputStream toSignDocument, final SignatureParameters parameters, final DigestAlgorithm digestAlgorithm) throws DSSException;
 
 	/**
 	 * Signs a PDF document
@@ -58,21 +56,20 @@ public interface PDFSignatureService {
 	 * @param signedStream
 	 * @param parameters
 	 * @param digestAlgorithm
-	 * @param extraDictionariesToAddBeforeSign
 	 * @throws DSSException
 	 */
-	void sign(final InputStream pdfData, final byte[] signatureValue, final OutputStream signedStream, final SignatureParameters parameters, final DigestAlgorithm digestAlgorithm,
-	          final Map.Entry<String, PdfDict>... extraDictionariesToAddBeforeSign) throws DSSException;
+	void sign(final InputStream pdfData, final byte[] signatureValue, final OutputStream signedStream, final SignatureParameters parameters,
+	          final DigestAlgorithm digestAlgorithm) throws DSSException;
 
 	/**
 	 * Retrieves and triggers validation of the signatures from a PDF document
 	 *
 	 * @param validationCertPool
-	 * @param input
+	 * @param document
 	 * @param callback
 	 * @throws DSSException
-	 * @throws SignatureException
 	 */
-	void validateSignatures(final CertificatePool validationCertPool, final InputStream input, final SignatureValidationCallback callback) throws DSSException;
+	void validateSignatures(final CertificatePool validationCertPool, final DSSDocument document, final SignatureValidationCallback callback) throws DSSException;
 
+	void addDssDictionary(InputStream inputStream, OutputStream outputStream, ModelPdfDict dssDictionary) throws DSSException;
 }

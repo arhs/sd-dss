@@ -31,6 +31,8 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import eu.europa.ec.markt.dss.DSSUtils;
 import eu.europa.ec.markt.dss.signature.pdf.PdfArray;
 import eu.europa.ec.markt.dss.signature.pdf.PdfStream;
+import eu.europa.ec.markt.dss.signature.pdf.model.ModelPdfArray;
+import eu.europa.ec.markt.dss.signature.pdf.model.ModelPdfStream;
 
 class PdfBoxArray implements PdfArray {
 
@@ -49,6 +51,17 @@ class PdfBoxArray implements PdfArray {
 		this.document = document;
 	}
 
+	public PdfBoxArray(ModelPdfArray array) {
+		this();
+		for (Object o : array.getValues()) {
+			if (o instanceof ModelPdfStream) {
+				add(new PdfBoxStream((ModelPdfStream) o));
+			} else {
+				throw new IllegalArgumentException(o.getClass().getName());
+			}
+		}
+	}
+
 	@Override
 	public int size() {
 		return wrapped.size();
@@ -62,14 +75,14 @@ class PdfBoxArray implements PdfArray {
 
 	private byte[] toBytes(COSBase val) throws IOException {
 		COSStream cosStream = null;
-		if(val instanceof COSObject) {
+		if (val instanceof COSObject) {
 			COSObject o = (COSObject) val;
 			final COSBase object = o.getObject();
-			if(object instanceof COSStream) {
+			if (object instanceof COSStream) {
 				cosStream = (COSStream) object;
 			}
 		}
-		if(cosStream == null) {
+		if (cosStream == null) {
 			throw new RuntimeException("Cannot find value for " + val + " of class " + val.getClass());
 		}
 		final byte[] bytes = DSSUtils.toByteArray(cosStream.getUnfilteredStream());
@@ -81,10 +94,10 @@ class PdfBoxArray implements PdfArray {
 		return wrapped.toString();
 	}
 
-    @Override
-    public void add(PdfStream stream) throws IOException {
-        PdfBoxStream s = (PdfBoxStream) stream;
-        wrapped.add(s.wrapped);
-        wrapped.setNeedToBeUpdate(true);
-    }
+	@Override
+	public void add(PdfStream stream) {
+		PdfBoxStream s = (PdfBoxStream) stream;
+		wrapped.add(s.wrapped);
+		wrapped.setNeedToBeUpdate(true);
+	}
 }

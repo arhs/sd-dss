@@ -26,8 +26,7 @@ import java.util.Calendar;
 /**
  * The usage of this interface permit the user to choose the underlying PDF
  * library use to created PDF signatures.
- * 
- * 
+ *
  * @version $Revision: 1653 $ - $Date: 2013-02-01 11:48:52 +0100 (Fri, 01 Feb
  *          2013) $
  */
@@ -37,11 +36,11 @@ public interface PdfDict {
 
 	PdfArray getAsArray(String name);
 
-    boolean hasAName(String name);
+	boolean hasAName(String name);
 
-    /**
+	/**
 	 * Check if the dictionary contains a name with a specific (PDF Name) value
-	 * 
+	 *
 	 * @param name
 	 * @param value
 	 * @return
@@ -50,12 +49,13 @@ public interface PdfDict {
 
 	byte[] get(String name) throws IOException;
 
-    String[] list() throws IOException;
+	String[] list();
 
+	void add(String key, PdfArray array);
 
-    void add(String key, PdfArray array) throws IOException;
+	void add(String key, PdfStreamArray array);
 
-    void add(String key, PdfDict dict) throws IOException;
+	void add(String key, PdfDict dict);
 
-    void add(String key, Calendar cal) throws IOException;
+	void add(String key, Calendar cal);
 }

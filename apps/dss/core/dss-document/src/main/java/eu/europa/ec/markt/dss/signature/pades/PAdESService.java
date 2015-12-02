@@ -80,7 +80,7 @@ public class PAdESService extends AbstractSignatureService {
 			case PAdES_BASELINE_B:
 				return null;
 			case PAdES_BASELINE_T:
-				return new PAdESLevelBaselineT(tspSource, cryptographicSourceProvider);
+				return new PAdESLevelBaselineT(tspSource);
 			case PAdES_BASELINE_LT:
 				return new PAdESLevelBaselineLT(tspSource, cryptographicSourceProvider);
 			case PAdES_BASELINE_LTA:

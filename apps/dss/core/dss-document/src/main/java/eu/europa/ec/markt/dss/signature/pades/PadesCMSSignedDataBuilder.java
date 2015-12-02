@@ -72,8 +72,8 @@ class PadesCMSSignedDataBuilder extends CMSSignedDataBuilder {
 	 */
 	protected SignerInfoGeneratorBuilder getSignerInfoGeneratorBuilder(final SignatureParameters parameters, final byte[] messageDigest) {
 
-		final CAdESLevelBaselineB cAdESLevelBaselineB = new CAdESLevelBaselineB(true);
-		final PAdESLevelBaselineB pAdESProfileEPES = new PAdESLevelBaselineB();
+		final CAdESLevelBaselineB cadesLevelBaselineB = new CAdESLevelBaselineB(true);
+		final PAdESLevelBaselineB padesLevelBaselineB = new PAdESLevelBaselineB();
 
 		final DigestCalculatorProvider digestCalculatorProvider = new BcDigestCalculatorProvider();
 
@@ -84,14 +84,14 @@ class PadesCMSSignedDataBuilder extends CMSSignedDataBuilder {
 			@Override
 			public AttributeTable getAttributes(@SuppressWarnings("rawtypes") Map params) throws CMSAttributeTableGenerationException {
 
-				return pAdESProfileEPES.getSignedAttributes(params, cAdESLevelBaselineB, parameters, messageDigest);
+				return padesLevelBaselineB.getSignedAttributes(params, cadesLevelBaselineB, parameters, messageDigest);
 			}
 		});
 
 		signerInfoGeneratorBuilder.setUnsignedAttributeGenerator(new CMSAttributeTableGenerator() {
 			@Override
 			public AttributeTable getAttributes(Map params) throws CMSAttributeTableGenerationException {
-				return pAdESProfileEPES.getUnsignedAttributes();
+				return padesLevelBaselineB.getUnsignedAttributes();
 			}
 		});
 

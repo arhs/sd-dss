@@ -22,11 +22,8 @@ package eu.europa.ec.markt.dss.validation102853.pades;
 
 import java.security.cert.X509CRL;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 import eu.europa.ec.markt.dss.signature.pdf.pdfbox.PdfDssDict;
-import eu.europa.ec.markt.dss.validation102853.cades.CAdESSignature;
 import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 
 /**
@@ -37,39 +34,24 @@ import eu.europa.ec.markt.dss.validation102853.crl.OfflineCRLSource;
 
 public class PAdESCRLSource extends OfflineCRLSource {
 
-    private final CAdESSignature cadesSignature;
-    private final PdfDssDict dssCatalog;
+	private PdfDssDict dssDictionary;
 
-    /**
-     * The default constructor for PAdESCRLSource.
-     *
-     * @param cadesSignature
-     * @param dssCatalog
-     */
-    public PAdESCRLSource(final CAdESSignature cadesSignature, final PdfDssDict dssCatalog) {
-        this.cadesSignature = cadesSignature;
-        this.dssCatalog = dssCatalog;
-        extract();
-    }
+	/**
+	 * The default constructor for PAdESCRLSource.
+	 *
+	 * @param dssDictionary
+	 */
+	public PAdESCRLSource(final PdfDssDict dssDictionary) {
+		this.dssDictionary = dssDictionary;
+		extract();
+	}
 
-    private void extract() {
-        x509CRLList = new ArrayList<X509CRL>();
+	private void extract() {
+		x509CRLList = new ArrayList<X509CRL>();
 
-        if (cadesSignature != null) {
-            final List<X509CRL> cadesCrlSource = cadesSignature.getCRLSource().getContainedX509CRLs();
-            x509CRLList.addAll(cadesCrlSource);
-        }
+		if (dssDictionary != null) {
+			x509CRLList.addAll(dssDictionary.getCrlList());
+		}
 
-        if (dssCatalog == null) {
-            return;
-        }
-
-        final Set<X509CRL> crlList = dssCatalog.getCrlList();
-        for (final X509CRL x509CRL : crlList) {
-            if (!x509CRLList.contains(x509CRL)) {
-                x509CRLList.add(x509CRL);
-            }
-        }
-
-    }
+	}
 }

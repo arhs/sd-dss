@@ -22,9 +22,8 @@ package eu.europa.ec.markt.dss.signature.pdf;
 
 import java.security.cert.X509Certificate;
 import java.util.Date;
-import java.util.Map;
+import java.util.Set;
 
-import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.signature.pdf.pdfbox.PdfDssDict;
 import eu.europa.ec.markt.dss.validation102853.bean.SignatureCryptographicVerification;
 
@@ -37,16 +36,15 @@ public interface PdfSignatureOrDocTimestampInfo {
 
 	int[] getSignatureByteRange();
 
-	public static class DSSPadesNoSignatureFound extends DSSException {
-
-	}
-
 	SignatureCryptographicVerification checkIntegrity();
 
-
-	X509Certificate[] getCertificates();
-
 	String getLocation();
+
+	String getContactInfo();
+
+	String getReason();
+
+	String getSubFilter();
 
 	Date getSigningDate();
 
@@ -64,18 +62,16 @@ public interface PdfSignatureOrDocTimestampInfo {
 	 */
 	byte[] getOriginalBytes();
 
-	PdfDssDict getDocumentDictionary();
+	PdfDssDict getDssDictionary();
 
-	PdfDssDict getOuterCatalog();
-
-	int uniqueId();
+	String uniqueId();
 
 	void addOuterSignature(PdfSignatureOrDocTimestampInfo signatureInfo);
 
 	/**
 	 * @return signatures that covers a document that contains this signature
 	 */
-	Map<PdfSignatureOrDocTimestampInfo, Boolean> getOuterSignatures();
+	Set<PdfSignatureOrDocTimestampInfo> getOuterSignatures();
 
 	boolean isTimestamp();
 }
