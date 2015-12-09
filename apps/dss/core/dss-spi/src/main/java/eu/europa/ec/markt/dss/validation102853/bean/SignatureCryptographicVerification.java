@@ -116,8 +116,13 @@ public class SignatureCryptographicVerification implements Serializable {
 
 	@Override
 	public String toString() {
-
-		return "referenceDataFound:" + referenceDataFound + ", referenceDataIntact:" + referenceDataIntact + ", signatureValid;" + signatureIntact + " / " + errorMessage;
+		return "SignatureCryptographicVerification{" +
+			  "referenceDataFound=" + referenceDataFound +
+			  ", referenceDataIntact=" + referenceDataIntact +
+			  ", signatureIntact=" + signatureIntact +
+			  ", signatureReferences=" + signatureReferences +
+			  ", errorMessage='" + errorMessage + '\'' +
+			  '}';
 	}
 
 	public static class SignatureReference {
@@ -211,6 +216,20 @@ public class SignatureCryptographicVerification implements Serializable {
 
 		public Boolean isDataObjectFormat() {
 			return dataObjectFormat;
+		}
+
+		@Override
+		public String toString() {
+			return "SignatureReference{" +
+				  "type='" + type + '\'' +
+				  ", uri='" + uri + '\'' +
+				  ", referenceDataFound=" + referenceDataFound +
+				  ", referenceDataIntact=" + referenceDataIntact +
+				  ", realUri='" + realUri + '\'' +
+				  ", manifestReferences=" + manifestReferences +
+				  ", digestMethod='" + digestMethod + '\'' +
+				  ", dataObjectFormat=" + dataObjectFormat +
+				  '}';
 		}
 	}
 }

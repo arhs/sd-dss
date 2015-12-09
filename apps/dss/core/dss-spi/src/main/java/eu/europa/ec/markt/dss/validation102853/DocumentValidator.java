@@ -38,6 +38,13 @@ public interface DocumentValidator {
 	List<DSSDocument> getDetachedContents();
 
 	/**
+	 * Sets the {@code List} of {@code DSSDocument} containing the original contents to sign, for detached signature scenarios.
+	 *
+	 * @param detachedContent the {@code List} of {@code DSSDocument} to set
+	 */
+	void setDetachedContents(final List<DSSDocument> detachedContent);
+
+	/**
 	 * Retrieves the signatures found in the document
 	 *
 	 * @return a list of AdvancedSignatures for validation purposes
@@ -52,21 +59,25 @@ public interface DocumentValidator {
 	void setCertificateVerifier(final CertificateVerifier certVerifier);
 
 	/**
-	 * Sets the {@code List} of {@code DSSDocument} containing the original contents to sign, for detached signature scenarios.
-	 *
-	 * @param detachedContent the {@code List} of {@code DSSDocument} to set
-	 */
-	void setDetachedContents(final List<DSSDocument> detachedContent);
-
-	/**
 	 * This method allows to define the signing certificate. It is useful in the case of ,non AdES signatures.
 	 *
 	 * @param x509Certificate
 	 */
 	void defineSigningCertificate(final X509Certificate x509Certificate);
 
+	/**
+	 * This method allows to provide an external policy document to be used with all signatures within the document to validate.
+	 *
+	 * @param policyDocument {@code File} containing the policy to be used
+	 */
 	void setPolicyFile(final File policyDocument);
 
+	/**
+	 * This method allows to provide an external policy document to be used with a given signature id.
+	 *
+	 * @param signatureId    {@code String} signature id to which the policy should apply
+	 * @param policyDocument {@code File} containing the policy to be used
+	 */
 	void setPolicyFile(final String signatureId, final File policyDocument);
 
 	/**
@@ -74,7 +85,7 @@ public interface DocumentValidator {
 	 *
 	 * @param processExecutor
 	 */
-	public void setProcessExecutor(final ProcessExecutor processExecutor);
+	void setProcessExecutor(final ProcessExecutor processExecutor);
 
 
 	/**
@@ -121,7 +132,7 @@ public interface DocumentValidator {
 	 * Validates the document and all its signatures. The {@code validationPolicyDom} contains the constraint file. If null or empty the default file is used.
 	 *
 	 * @param validationPolicyDom {@code Document}
-	 * @return
+	 * @return {@code Reports}: diagnostic data, detailed report and simple report
 	 */
 	Reports validateDocument(final Document validationPolicyDom);
 
@@ -129,7 +140,7 @@ public interface DocumentValidator {
 	 * Validates the document and all its signatures. The {@code validationPolicy} contains the constraint file. If null or empty the default file is used.
 	 *
 	 * @param validationPolicy {@code ValidationPolicy}
-	 * @return
+	 * @return {@code Reports}: diagnostic data, detailed report and simple report
 	 */
 	Reports validateDocument(final ValidationPolicy validationPolicy);
 
@@ -138,12 +149,12 @@ public interface DocumentValidator {
 	 *
 	 * @return {@code SignedDocumentValidator} which corresponds to the next signature found within an ASiC-E container. {@code null} if there is no more signatures.
 	 */
-	public DocumentValidator getNextValidator();
+	DocumentValidator getNextValidator();
 
 	/**
 	 * @return
 	 */
-	public DocumentValidator getSubordinatedValidator();
+	DocumentValidator getSubordinatedValidator();
 
 	/**
 	 * This method allows the removal of the signature from the given signed document.

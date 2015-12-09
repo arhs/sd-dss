@@ -142,10 +142,12 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	private static final byte[] xmlPreamble = new byte[]{'<', '?', 'x', 'm', 'l'};
 	private static final byte[] xmlUtf8 = new byte[]{-17, -69, -65, '<', '?'};
 	private static final byte[] pdfPreamble = new byte[]{'%', 'P', 'D', 'F', '-'};
+
 	/*
 	 * The factory used to create DiagnosticData
 	 */
 	protected static final ObjectFactory DIAGNOSTIC_DATA_OBJECT_FACTORY = new ObjectFactory();
+
 	/**
 	 * This variable can hold a specific {@code ProcessExecutor}
 	 */
@@ -153,6 +155,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	protected SignatureScopeFinder<CAdESSignature> cadesSignatureScopeFinder = null;
 	protected SignatureScopeFinder<PAdESSignature> padesSignatureScopeFinder = null;
 	protected SignatureScopeFinder<XAdESSignature> xadesSignatureScopeFinder = null;
+
 	/**
 	 * This is the pool of certificates used in the validation process. The pools present in the certificate verifier are merged and added to this pool.
 	 */
@@ -170,15 +173,18 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 	protected List<DSSDocument> detachedContents = new ArrayList<DSSDocument>();
 
 	protected CertificateToken providedSigningCertificateToken = null;
+
 	/**
 	 * The reference to the certificate verifier. The current DSS implementation proposes {@link CryptographicSourceProvider}. This verifier
 	 * encapsulates the references to different sources used in the signature validation process.
 	 */
 	protected CertificateVerifier certificateVerifier;
+
 	/**
 	 * This list contains the list of signatures
 	 */
 	protected List<AdvancedSignature> signatures = null;
+
 	/**
 	 * This variable contains the reference to the diagnostic data.
 	 */
@@ -282,23 +288,12 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		validationCertPool = certificateVerifier.createValidationPool();
 	}
 
-	/**
-	 * This method allows to provide an external policy document to be used with all signatures within the document to validate.
-	 *
-	 * @param policyDocument
-	 */
 	@Override
 	public void setPolicyFile(final File policyDocument) {
 
 		this.policyDocument = policyDocument;
 	}
 
-	/**
-	 * This method allows to provide an external policy document to be used with a given signature id.
-	 *
-	 * @param signatureId    signature id
-	 * @param policyDocument
-	 */
 	@Override
 	public void setPolicyFile(final String signatureId, final File policyDocument) {
 
@@ -356,11 +351,6 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		return validateDocument(inputStream);
 	}
 
-	/**
-	 * Validates the document and all its signatures. The policyDataStream contains the constraint file. If null or empty the default file is used.
-	 *
-	 * @param policyDataStream {@code InputStream}
-	 */
 	@Override
 	public Reports validateDocument(final InputStream policyDataStream) {
 
@@ -368,25 +358,12 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		return validateDocument(validationPolicyDom);
 	}
 
-	/**
-	 * Validates the document and all its signatures. The {@code validationPolicyDom} contains the constraint file. If null or empty the default file is used.
-	 *
-	 * @param validationPolicyDom {@code Document}
-	 * @return
-	 */
-	@Override
 	public Reports validateDocument(final Document validationPolicyDom) {
 
 		final ValidationPolicy validationPolicy = new EtsiValidationPolicy(validationPolicyDom);
 		return validateDocument(validationPolicy);
 	}
 
-	/**
-	 * Validates the document and all its signatures. The {@code validationPolicyDom} contains the constraint file. If null or empty the default file is used.
-	 *
-	 * @param validationPolicy {@code ValidationPolicy}
-	 * @return
-	 */
 	@Override
 	public Reports validateDocument(final ValidationPolicy validationPolicy) {
 
@@ -1574,10 +1551,8 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 			referenceList.add(xmlReference);
 		}
 		xmlBasicSignature.setReferences(xmlReferences);
-
 		xmlSignature.setBasicSignature(xmlBasicSignature);
 		if (!scv.getErrorMessage().isEmpty()) {
-
 			xmlSignature.setErrorMessage(scv.getErrorMessage());
 		}
 	}
