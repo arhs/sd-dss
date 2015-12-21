@@ -807,4 +807,10 @@ public class DiagnosticData extends XmlDom {
 		return trueQcStatements;
 	}
 
+	public List<XmlDom> getSignatureManifestReferences(final String signatureId) {
+
+//		final List<XmlDom> references = getElements("/DiagnosticData/Signature[@Id='%s']/BasicSignature/References/Reference[@Type='http://www.w3.org/2000/09/xmldsig#Manifest']/ManifestReferences/Reference", signatureId);
+		final List<XmlDom> references = getElements("/dss:DiagnosticData/dss:Signature[@Id='%s']/dss:BasicSignature/dss:References/dss:Reference[@Type='http://www.w3.org/2000/09/xmldsig#Manifest']/dss:ManifestReferences/dss:Reference", signatureId);
+		return references;
+	}
 }

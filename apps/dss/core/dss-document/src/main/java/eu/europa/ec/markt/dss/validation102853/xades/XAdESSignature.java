@@ -662,7 +662,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 	}
 
 	@Override
-	public List<CertifiedRole> getCertifiedSignerRoles(){
+	public List<CertifiedRole> getCertifiedSignerRoles() {
 
 		NodeList nodeList = DSSXMLUtils.getNodeList(signatureElement, xPathQueryHolder.XPATH_CERTIFIED_ROLE);
 		if (nodeList.getLength() == 0) {
@@ -1296,7 +1296,7 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 
 			boolean coreValidity = false;
 			final List<CertificateValidity> certificateValidityList = getSigningCertificateValidityList(santuarioSignature, signatureCryptographicVerification,
-				  providedSigningCertificateToken);
+					providedSigningCertificateToken);
 			final SignedInfo signedInfo = santuarioSignature.getSignedInfo();
 			for (final CertificateValidity certificateValidity : certificateValidityList) {
 
@@ -1378,27 +1378,32 @@ public class XAdESSignature extends DefaultAdvancedSignature {
 					final Manifest manifest = getManifestQuietly(manifestDocument);
 					if (manifest != null) {
 
-						manifest.addResourceResolver(offlineResolver);
-						final int length1 = manifest.getLength();
-						for (int jj = 0; jj < length1; jj++) {
+						final OfflineManifestResolver manifestResolver = new OfflineManifestResolver(detachedContents);
+						manifest.addResourceResolver(manifestResolver);
+						final int manifestReferenceCount = manifest.getLength();
+						for (int jj = 0; jj < manifestReferenceCount; jj++) {
 
 							final Reference manifestItem = manifest.item(jj);
 							final String manifestItemType = manifestItem.getType();
-							final boolean manifestReferenceVerified = manifestItem.verify();
-							if (manifestReferenceVerified) {
-
-								final SignatureCryptographicVerification.SignatureReference manifestReference = signatureReference.addManifestReference();
-								if (manifestItemType != null && !manifestItemType.isEmpty()) {
-									manifestReference.setType(manifestItemType);
-								}
-								manifestReference.setUri(manifestItem.getURI());
-								manifestReference.setRealUri(offlineResolver.getLastUri());
-								manifestReference.setReferenceDataFound(manifestItem.getReferenceData() != null);
-								manifestReference.setReferenceDataIntact(manifestReferenceVerified);
-								final MessageDigestAlgorithm messageDigestAlgorithm = manifestItem.getMessageDigestAlgorithm();
-								final String algorithm = messageDigestAlgorithm.getAlgorithm().getAlgorithm();
-								manifestReference.setDigestMethod(DigestAlgorithm.forName(algorithm).getName());
+							// a trick to skip URI and to use hash value
+							manifestResolver.setCurrentDigest(manifestItem.getMessageDigestAlgorithm(), manifestItem.getDigestValue());
+							boolean manifestReferenceVerified = false;
+							try {
+								manifestReferenceVerified = manifestItem.verify();
+							} catch (XMLSecurityException e) {
+								// do nothing
 							}
+							final SignatureCryptographicVerification.SignatureReference manifestReference = signatureReference.addManifestReference();
+							if (manifestItemType != null && !manifestItemType.isEmpty()) {
+								manifestReference.setType(manifestItemType);
+							}
+							manifestReference.setUri(manifestItem.getURI());
+							manifestReference.setRealUri(manifestResolver.getLastUri());
+							manifestReference.setReferenceDataFound(manifestItem.getReferenceData() != null);
+							manifestReference.setReferenceDataIntact(manifestReferenceVerified);
+							final MessageDigestAlgorithm messageDigestAlgorithm = manifestItem.getMessageDigestAlgorithm();
+							final String algorithm = messageDigestAlgorithm.getAlgorithm().getAlgorithm();
+							manifestReference.setDigestMethod(DigestAlgorithm.forName(algorithm).getName());
 							//						System.out.println("--> " + DSSUtils.base64Encode(manifestItem.getDigestValue()));
 						}
 					}

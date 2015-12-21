@@ -51,6 +51,7 @@ public class OfflineResolver extends ResourceResolverSpi {
 	}
 
 	private final List<DSSDocument> documents;
+
 	private String lastUri;
 
 	public OfflineResolver(final List<DSSDocument> documents) {
