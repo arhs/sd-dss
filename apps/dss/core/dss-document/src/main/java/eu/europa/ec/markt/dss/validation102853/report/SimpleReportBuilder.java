@@ -58,11 +58,14 @@ import static eu.europa.ec.markt.dss.validation102853.rules.AttributeValue.COUNT
 import static eu.europa.ec.markt.dss.validation102853.rules.Indication.INDETERMINATE;
 import static eu.europa.ec.markt.dss.validation102853.rules.Indication.INVALID;
 import static eu.europa.ec.markt.dss.validation102853.rules.Indication.VALID;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.DETACHED_CONTENTS;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.DOCUMENT_NAME;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.ERROR;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.GLOBAL;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.INDICATION;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.INFO;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.NOT_AFTER;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.NOT_BEFORE;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.POLICY;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.POLICY_DESCRIPTION;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.POLICY_NAME;
@@ -74,6 +77,7 @@ import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNATURE_L
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNED_BY;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIGNING_TIME;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SIMPLE_REPORT;
+import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SUBJECT_DISTINGUISHED_NAME;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.SUB_INDICATION;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.TIMESTAMP;
 import static eu.europa.ec.markt.dss.validation102853.rules.NodeName.TIMESTAMPS;
@@ -182,15 +186,15 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 		final String documentName = diagnosticData.getValue("/DiagnosticData/DocumentName/text()");
 		report.addChild(DOCUMENT_NAME, documentName);
 
-//		final List<XmlDom> detachedDocumentNameList = diagnosticData.getElements("/DiagnosticData/DetachedContents/DocumentName");
-//		if (detachedDocumentNameList.size() > 0) {
-//
-//			final XmlNode detachedContentsXmlNode = report.addChild(NodeName.DETACHED_CONTENTS, documentName);
-//			for (final XmlDom detachedDocumentName : detachedDocumentNameList) {
-//
-//				detachedContentsXmlNode.addChild(NodeName.DOCUMENT_NAME, detachedDocumentName.getText().trim());
-//			}
-//		}
+		final List<XmlDom> detachedDocumentNameList = diagnosticData.getElements("/DiagnosticData/DetachedContents/DocumentName");
+		if (detachedDocumentNameList.size() > 0) {
+
+			final XmlNode detachedContentsXmlNode = report.addChild(DETACHED_CONTENTS, documentName);
+			for (final XmlDom detachedDocumentName : detachedDocumentNameList) {
+
+				detachedContentsXmlNode.addChild(DOCUMENT_NAME, detachedDocumentName.getText().trim());
+			}
+		}
 	}
 
 	private void addSignatures(final ProcessParameters params, final XmlNode reportXmlNode) throws DSSException {
@@ -364,22 +368,23 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 			final XmlNode timestampXmlNode = timestampsXmlNode.addChild(TIMESTAMP).setAttribute(AttributeName.TYPE, attributeValue);
 			final String productionTime = timestamp.getValue("./ProductionTime/text()");
 			timestampXmlNode.addChild(PRODUCTION_TIME, productionTime);
-			// TODO-Bob (10/10/2015):  Uncomment for OPOCE
-			//			final String timestampSigningCertificateId = timestamp.getValue("./SigningCertificate/@Id");
-			//			final XmlDom signCertificate = params.getCertificate(timestampSigningCertificateId);
-			//			if (signCertificate != null) {
-			//
-			//				final String dn = signCertificate.getValue("./SubjectDistinguishedName[@Format='RFC2253']/text()");
-			//				final X500Principal x500Principal = new X500Principal(dn);
-			//				final String sdnString = x500Principal.toString();
-			//				final String escapedSdnString = StringEscapeUtils.escapeXml(sdnString);
-			//				timestampXmlNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, escapedSdnString);
-			//
-			//				final String notBefore = signCertificate.getValue("./NotBefore/text()");
-			//				final String notAfter = signCertificate.getValue("./NotAfter/text()");
-			//				timestampXmlNode.addChild(NodeName.NOT_BEFORE, notBefore);
-			//				timestampXmlNode.addChild(NodeName.NOT_AFTER, notAfter);
-			//			}
+			// TODO-Bob (10/10/2015):  for OPOCE
+			final String timestampSigningCertificateId = timestamp.getValue("./SigningCertificate/@Id");
+			final XmlDom signCertificate = params.getCertificate(timestampSigningCertificateId);
+			if (signCertificate != null) {
+
+				final String dn = signCertificate.getValue("./SubjectDistinguishedName[@Format='RFC2253']/text()");
+				final X500Principal x500Principal = new X500Principal(dn);
+				final String sdnString = x500Principal.toString();
+				final String escapedSdnString = StringEscapeUtils.escapeXml(sdnString);
+				timestampXmlNode.addChild(SUBJECT_DISTINGUISHED_NAME, escapedSdnString);
+
+				final String notBefore = signCertificate.getValue("./NotBefore/text()");
+				final String notAfter = signCertificate.getValue("./NotAfter/text()");
+				timestampXmlNode.addChild(NOT_BEFORE, notBefore);
+				timestampXmlNode.addChild(NOT_AFTER, notAfter);
+			}
+			// TODO-Bob (10/10/2015):  for OPOCE
 		}
 	}
 
@@ -437,14 +442,15 @@ public class SimpleReportBuilder implements ValidationXPathQueryHolder {
 			}
 		}
 		signatureNode.addChild(SIGNED_BY, signedBy);
-		// TODO-Bob (10/10/2015):  Uncomment for OPOCE
-		//		final String escapedSdnString = StringEscapeUtils.escapeXml(sdnString);
-		//		signatureNode.addChild(NodeName.SUBJECT_DISTINGUISHED_NAME, escapedSdnString);
-		//
-		//		final String notBefore = signCert.getValue("./NotBefore/text()");
-		//		final String notAfter = signCert.getValue("./NotAfter/text()");
-		//		signatureNode.addChild(NodeName.NOT_BEFORE, notBefore);
-		//		signatureNode.addChild(NodeName.NOT_AFTER, notAfter);
+		// TODO-Bob (10/10/2015):  for OPOCE
+		final String escapedSdnString = StringEscapeUtils.escapeXml(sdnString);
+		signatureNode.addChild(SUBJECT_DISTINGUISHED_NAME, escapedSdnString);
+
+		final String notBefore = signCert.getValue("./NotBefore/text()");
+		final String notAfter = signCert.getValue("./NotAfter/text()");
+		signatureNode.addChild(NOT_BEFORE, notBefore);
+		signatureNode.addChild(NOT_AFTER, notAfter);
+		// TODO-Bob (10/10/2015):  for OPOCE
 	}
 
 	private void addSignatureProfile(XmlNode signatureNode, XmlDom signCert) {

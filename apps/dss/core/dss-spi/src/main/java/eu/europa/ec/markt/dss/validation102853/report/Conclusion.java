@@ -305,8 +305,8 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 
 		Map<String, String> attributes = new HashMap<String, String>();
 		if (location != null) {
-			// TODO-Bob (10/10/2015):  uncomment for OPOCE
-			//			attributes.put(LOCATION, location);
+			// TODO-Bob (10/10/2015):  for OPOCE
+			attributes.put(LOCATION, location);
 		}
 		final Error error = new Error(messageTag, attributes);
 		ensureErrorList();
@@ -325,8 +325,8 @@ public class Conclusion implements Indication, SubIndication, NodeName, Attribut
 
 		Map<String, String> allAttributes = new HashMap<String, String>(attributes);
 		if (location != null) {
-			// TODO-Bob (10/10/2015):  uncomment for OPOCE
-			//			allAttributes.put(LOCATION, location);
+			// TODO-Bob (10/10/2015):  for OPOCE
+			allAttributes.put(LOCATION, location);
 		}
 		final Error error = new Error(messageTag, allAttributes);
 		ensureErrorList();
