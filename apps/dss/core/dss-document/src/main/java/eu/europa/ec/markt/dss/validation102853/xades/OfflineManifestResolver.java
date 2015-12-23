@@ -69,11 +69,11 @@ public class OfflineManifestResolver extends ResourceResolverSpi {
 	@Override
 	public boolean engineCanResolveURI(final ResourceResolverContext context) {
 
-		final Attr uriAttr = context.attr;
-
-		String documentUri = uriAttr.getNodeValue();
-		documentUri = decodeUrl(documentUri);
-		lastUri = documentUri;
+		//		final Attr uriAttr = context.attr;
+		//		String documentUri = uriAttr.getNodeValue();
+		//		documentUri = decodeUrl(documentUri);
+		//		lastUri = documentUri;
+		lastUri = null;
 
 		HashMap<String, DSSDocument> dssDocumentHashMap = initialise();
 		return dssDocumentHashMap.containsKey(currentHexEncodedDigestValue);
@@ -107,7 +107,7 @@ public class OfflineManifestResolver extends ResourceResolverSpi {
 		final DSSDocument dssDocument = dssDocumentHashMap.get(currentHexEncodedDigestValue);
 		if (dssDocument != null) {
 
-			lastUri = dssDocument.getName();
+			lastUri = dssDocument.getAbsolutePath();
 
 			InputStream inputStream = dssDocument.openStream();
 			final byte[] bytes = DSSUtils.toByteArray(inputStream);

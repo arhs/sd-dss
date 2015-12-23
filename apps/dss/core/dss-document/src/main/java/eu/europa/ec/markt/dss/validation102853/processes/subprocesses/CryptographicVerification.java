@@ -21,6 +21,7 @@
 package eu.europa.ec.markt.dss.validation102853.processes.subprocesses;
 
 import java.util.Date;
+	import java.util.List;
 
 import eu.europa.ec.markt.dss.exception.DSSException;
 import eu.europa.ec.markt.dss.validation102853.policy.Constraint;
@@ -137,7 +138,7 @@ public class CryptographicVerification extends BasicValidationProcess implements
 	 * how to do this correctly are out of scope for the present document. See [10], [16], [12], [13], [14] and [15] for
 	 * details:
 	 *
-	 * @param params      validation process parameters
+	 * @param params        validation process parameters
 	 * @param parentXmlNode the parent process {@code XmlNode} to use to include the validation information
 	 * @return the {@code Conclusion} which indicates the result of the process
 	 */
@@ -308,9 +309,20 @@ public class CryptographicVerification extends BasicValidationProcess implements
 			return true;
 		}
 		constraint.create(subProcessXmlNode, BBB_CV_IMRDF);
-		final String manifestReferenceRealUri = contextElement.getValue(XP_MANIFEST_REFERENCE_REAL_URI);
-		constraint.setAttribute(MANIFEST_REFERENCE_REAL_URI, manifestReferenceRealUri);
-		final boolean manifestReferenceDataFound = contextElement.getBoolValue(XP_MANIFEST_REFERENCE_DATA_FOUND);
+		String detachedContentPath = null;
+		final List<XmlDom> detachedContentList = contextElement.getElements(XP_DETACHED_CONTENTS);
+		boolean manifestReferenceDataFound = detachedContentList.size() > 0;
+		for (final XmlDom detachedContent : detachedContentList) {
+
+			detachedContentPath = detachedContent.getText();
+			final List<XmlDom> referenceXmlDomList = contextElement.getElements(XP_MANIFEST_REFERENCE_WITH_REAL_URI, detachedContentPath);
+			manifestReferenceDataFound = manifestReferenceDataFound && referenceXmlDomList.size() > 0;
+			for (final XmlDom referenceXmlDom : referenceXmlDomList) {
+
+				manifestReferenceDataFound = manifestReferenceDataFound && referenceXmlDom.getBoolValue("./ReferenceDataFound/text()");
+			}
+		}
+		constraint.setAttribute(MANIFEST_REFERENCE_REAL_URI, detachedContentPath);
 		constraint.setValue(manifestReferenceDataFound);
 		constraint.setIndications(INVALID, SIG_CRYPTO_FAILURE, BBB_CV_IMRDF_ANS);
 		constraint.setConclusionReceiver(conclusion);
@@ -329,9 +341,20 @@ public class CryptographicVerification extends BasicValidationProcess implements
 			return true;
 		}
 		constraint.create(subProcessXmlNode, BBB_CV_IMRI);
-		final String manifestReferenceUri = contextElement.getValue(XP_MANIFEST_REFERENCE_URI);
-		constraint.setAttribute(MANIFEST_REFERENCE_URI, manifestReferenceUri);
-		final boolean manifestReferenceIntact = contextElement.getBoolValue(XP_MANIFEST_REFERENCE_INTACT);
+		String detachedContentPath = null;
+		final List<XmlDom> detachedContentList = contextElement.getElements(XP_DETACHED_CONTENTS);
+		boolean manifestReferenceIntact = detachedContentList.size() > 0;
+		for (final XmlDom detachedContent : detachedContentList) {
+
+			detachedContentPath = detachedContent.getText();
+			final List<XmlDom> referenceXmlDomList = contextElement.getElements(XP_MANIFEST_REFERENCE_WITH_REAL_URI, detachedContentPath);
+			manifestReferenceIntact = manifestReferenceIntact && referenceXmlDomList.size() > 0;
+			for (final XmlDom referenceXmlDom : referenceXmlDomList) {
+
+				manifestReferenceIntact = manifestReferenceIntact && referenceXmlDom.getBoolValue("./ReferenceDataIntact/text()");
+			}
+		}
+		constraint.setAttribute(MANIFEST_REFERENCE_URI, detachedContentPath);
 		constraint.setValue(manifestReferenceIntact);
 		constraint.setIndications(INVALID, SIG_CRYPTO_FAILURE, BBB_CV_IMRI_ANS);
 		constraint.setConclusionReceiver(conclusion);
