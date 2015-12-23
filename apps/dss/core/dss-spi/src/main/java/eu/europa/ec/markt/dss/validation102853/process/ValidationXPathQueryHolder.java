@@ -47,7 +47,8 @@ public interface ValidationXPathQueryHolder {
 	String XP_MANIFEST_ROOT = "./dss:BasicSignature/dss:References/dss:Reference[@Type='http://www.w3.org/2000/09/xmldsig#Manifest']";
 	String XP_MANIFEST_REFERENCE_FOUND = "boolean(" + XP_MANIFEST_ROOT + ")";
 	String XP_MANIFEST_REFERENCE = "/dss:ManifestReferences/dss:Reference";
-	String XP_MANIFEST_DIGEST_ALGORITHM = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "/dss:DigestMethod/text()";
+	// TODO-Bob (23/12/2015):  To be updated to handle multiple references (OP)
+	String XP_MANIFEST_DIGEST_ALGORITHM = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "[1]/dss:DigestMethod/text()";
 	String XP_MANIFEST_REFERENCE_WITH_REAL_URI = XP_MANIFEST_ROOT + XP_MANIFEST_REFERENCE + "[dss:RealUri='%s']";
 
 	String XP_MANIFEST_REFERENCE_COUNT = "count(" + XP_MANIFEST_ROOT + ")";
