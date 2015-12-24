@@ -228,6 +228,8 @@ public class SignatureCryptographicConstraint extends Constraint {
 			node.addChild(INFO).setAttribute(PUBLIC_KEY_SIZE, keyLength);
 			return true;
 		}
+		// !!! hardcoded
+		subIndication = CRYPTO_CONSTRAINTS_FAILURE;
 		// Encryption algorithm verification:
 		final boolean containsEncryptionAlgorithm = RuleUtils.contains1(encryptionAlgorithm, encryptionAlgorithms);
 		if (!containsEncryptionAlgorithm) {
@@ -263,6 +265,8 @@ public class SignatureCryptographicConstraint extends Constraint {
 			}
 		}
 		// Algorithm's expiration date verification:
+		// !!! hardcoded
+		subIndication = CRYPTO_CONSTRAINTS_FAILURE_NO_POE;
 		if (!algorithmExpirationDates.isEmpty()) {
 
 			final String encryptionAlgorithmAndKey = encryptionAlgorithm + keyLength;

@@ -299,6 +299,7 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 			signatureConstraint.setDigestAlgorithm(timestampXmlDom.getValue(XP_DIGEST_ALGO_USED_TO_SIGN_THIS_TOKEN));
 			signatureConstraint.setKeyLength(timestampXmlDom.getValue(XP_KEY_LENGTH_USED_TO_SIGN_THIS_TOKEN));
 			signatureConstraint.setIndications(INDETERMINATE, CRYPTO_CONSTRAINTS_FAILURE_NO_POE, EMPTY);
+			// !!! CRYPTO_CONSTRAINTS_FAILURE is also used internally
 			signatureConstraint.setConclusionReceiver(conclusion);
 
 			if (!signatureConstraint.check()) {
@@ -316,6 +317,7 @@ public class TimestampValidation extends BasicValidationProcess implements Indic
 			signingCertificateConstraint.setDigestAlgorithm(timestampXmlDom.getValue(XP_DIGEST_ALGO_USED_TO_SIGN_THIS_TOKEN));
 			signingCertificateConstraint.setKeyLength(timestampXmlDom.getValue(XP_KEY_LENGTH_USED_TO_SIGN_THIS_TOKEN));
 			signingCertificateConstraint.setIndications(INDETERMINATE, CRYPTO_CONSTRAINTS_FAILURE_NO_POE, EMPTY);
+			// !!! CRYPTO_CONSTRAINTS_FAILURE is also used internally
 			signingCertificateConstraint.setConclusionReceiver(conclusion);
 
 			if (!signingCertificateConstraint.check()) {

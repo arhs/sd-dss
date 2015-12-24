@@ -926,6 +926,7 @@ public class SignatureAcceptanceValidation extends BasicValidationProcess implem
 		constraint.setDigestAlgorithm(signatureContext.getValue(XP_DIGEST_ALGO_USED_TO_SIGN_THIS_TOKEN));
 		constraint.setKeyLength(signatureContext.getValue(XP_KEY_LENGTH_USED_TO_SIGN_THIS_TOKEN));
 		constraint.setIndications(INDETERMINATE, CRYPTO_CONSTRAINTS_FAILURE_NO_POE, EMPTY);
+		// !!! CRYPTO_CONSTRAINTS_FAILURE is also used internally
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

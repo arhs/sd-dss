@@ -1040,6 +1040,7 @@ public class X509CertificateValidation extends BasicValidationProcess implements
 		constraint.setDigestAlgorithm(getValue(contextXmlDom, XP_DIGEST_ALGO_USED_TO_SIGN_THIS_TOKEN));
 		constraint.setKeyLength(getValue(contextXmlDom, XP_KEY_LENGTH_USED_TO_SIGN_THIS_TOKEN));
 		constraint.setIndications(INDETERMINATE, CRYPTO_CONSTRAINTS_FAILURE_NO_POE, EMPTY);
+		// !!! CRYPTO_CONSTRAINTS_FAILURE is also used internally
 		constraint.setConclusionReceiver(conclusion);
 
 		return constraint.check();

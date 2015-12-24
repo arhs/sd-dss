@@ -64,7 +64,7 @@ public enum MessageTag {
 	ASCCM_ANS_5("The algorithm is expired!"),
 	AMCCM("Are manifest cryptographic constraints met?"),
 
-	BBB_SAV_DSFCVP("Does the signature format comply with the validation valid?"),
+	BBB_SAV_DSFCVP("Does the signature format comply with the validation policy?"),
 	BBB_SAV_DSFCVP_ANS("The signature format doesn't comply with the validation policy!"),
 	BBB_SAV_ISSV("Is the structure of the signature valid?"),
 	BBB_SAV_ISSV_ANS("The structure of the signature is not valid!"),
