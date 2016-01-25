@@ -38,6 +38,7 @@ import java.util.Properties;
 
 import javax.security.auth.x500.X500Principal;
 
+import eu.europa.ec.markt.dss.validation102853.report.DiagnosticData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -287,13 +288,15 @@ public class TrustedListsCertificateSource extends CommonTrustedCertificateSourc
 			final EtsiValidationPolicy tslValidationPolicy = new EtsiValidationPolicy(tslPolicyData);
 			final Reports reports = xmlDocumentValidator.validateDocument(tslValidationPolicy);
 			final SimpleReport simpleReport = reports.getSimpleReport();
+			final DiagnosticData diagnosticData = reports.getDiagnosticData();
 			final List<String> signatureIdList = simpleReport.getSignatureIdList();
 			final String signatureId = signatureIdList.get(0);
 			final String indication = simpleReport.getIndication(signatureId);
 			coreValidity = Indication.VALID.equals(indication);
 			LOG.info("The TSL signature validity: " + coreValidity);
 			if (!coreValidity) {
-
+				LOG.info("TSL signature - Diagnostic data: ");
+				LOG.info(diagnosticData.toString());
 				LOG.info("The TSL signature validity details:\n" + simpleReport);
 				throw new DSSException("Not ETSI compliant signature. The signature is not valid.");
 			}
